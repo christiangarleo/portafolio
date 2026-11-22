@@ -4,77 +4,69 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portafolio profesional | Christian Gabriel Arleo</title>
-  <meta name="description" content="Conocé el portafolio profesional de Christian Gabriel Arleo: proyectos, experiencia y resultados en marketing, tecnología y negocios.">
+  <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo: proyectos, experiencia y resultados en marketing, tecnología y negocios.">
   <link rel="canonical" href="https://christianarleo.com/portafolio/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_PE">
   <meta property="og:site_name" content="Christian Gabriel Arleo">
   <meta property="og:title" content="Portafolio profesional | Christian Gabriel Arleo">
-  <meta property="og:description" content="El trabajo detrás de los resultados. Conocé mis proyectos, experiencia y trabajo profesional.">
+  <meta property="og:description" content="El trabajo detrás de los resultados. Conocé mi experiencia y proyectos profesionales.">
   <meta property="og:url" content="https://christianarleo.com/portafolio/">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#ffffff">
   <style>
-    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #171717; background: #fff; }
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px clamp(16px, 3.8vw, 54px); border-bottom: 1px solid #e6e6e6; background: #fff; }
-    .brand { font-weight: 700; font-size: 15px; white-space: nowrap; }
-    .brand span { font-size: 12px; font-weight: 400; color: #555; }
-    .nav { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
-    a, button { -webkit-tap-highlight-color: transparent; }
-    .nav a, .nav button, .reader-controls button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; padding: 8px 10px; min-height: 36px; background: transparent; color: #171717; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; border-radius: 3px; }
-    .nav a:hover, .nav button:hover, .reader-controls button:hover { background: #f1f1f1; }
-    .nav a:focus-visible, .nav button:focus-visible, .reader-controls button:focus-visible, .reader-controls input:focus-visible { outline: 2px solid #234a83; outline-offset: 2px; }
-    .nav .primary { background: #171717; color: white; font-weight: 700; padding: 10px 15px; }
-    .nav .primary:hover { background: #393939; }
-    .share-wrap { position: relative; }
-    .share-menu { position: absolute; z-index: 10; top: calc(100% + 8px); right: 0; width: 220px; background: #fff; border: 1px solid #ddd; box-shadow: 0 8px 22px rgba(0,0,0,.12); border-radius: 5px; padding: 6px; }
-    [hidden] { display: none !important; }
-    .share-menu a, .share-menu button { display: flex; width: 100%; justify-content: flex-start; text-align: left; padding: 11px 12px; border-radius: 3px; }
-    .reader-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 9px clamp(16px, 3.8vw, 54px); background: #f8f8f8; border-bottom: 1px solid #e6e6e6; color: #4a4a4a; font-size: 12px; }
-    .page-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .page-form label { font-size: 12px; }
-    .page-form input { width: 64px; padding: 7px 8px; min-height: 32px; border: 1px solid #bcbcbc; border-radius: 3px; background: #fff; font: inherit; font-size: 13px; }
-    .reader-controls button { border-color: #d0d0d0; background: white; min-height: 32px; padding: 6px 10px; }
-    .reader-controls button:hover { background: #ececec; }
-    .page-note { color: #737373; }
-    main#readerArea { flex: 1; display: flex; flex-direction: column; min-height: 70vh; background: #fff; }
-    #pdfViewer { display: block; width: 100%; flex: 1; min-height: 73vh; border: 0; background: #f0f0f0; }
-    .help { margin: 0; padding: 11px 14px; text-align: center; color: #555; background: #fafafa; font-size: 12px; }
-    .help a { color: #174783; }
-    #readerArea:fullscreen { width: 100%; height: 100dvh; min-height: 100dvh; }
-    #readerArea:fullscreen #pdfViewer { height: 100%; min-height: 0; }
-    .toast { position: fixed; z-index: 20; right: 20px; bottom: 20px; padding: 12px 16px; font-size: 13px; background: #1b1b1b; color: white; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,.17); }
-    @media (max-width: 900px) { header { align-items: flex-start; flex-direction: column; } .nav { justify-content: flex-start; } }
-    @media (max-width: 600px) { header { padding: 12px 15px; } .nav { gap: 4px; } .nav a, .nav button { padding: 7px 9px; } .reader-controls { padding: 9px 15px; } .page-note { width: 100%; } #pdfViewer { min-height: 75vh; } }
-
-    .page-mode { flex: 1; min-height: 75vh; background: #eeeeee; display: flex; flex-direction: column; overflow: hidden; }
-    .page-mode-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 11px 15px; background: #f9f9f9; border-bottom: 1px solid #ddd; font-size: 13px; }
-    .page-mode-toolbar button { cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 7px 12px; font-size: 13px; color: #171717; }
-    .page-mode-toolbar button:hover { background: #eee; }
-    .page-mode-toolbar button:disabled { opacity: .4; cursor: default; }
-    .page-scroll { flex: 1; overflow: auto; padding: 24px 16px; text-align: center; }
-    .page-frame { position: relative; display: inline-block; line-height: 0; background: #fff; box-shadow: 0 5px 22px rgba(0,0,0,.13); max-width: 100%; }
-    #pdfCanvas { max-width: 100%; height: auto; display: block; }
-    .annotations { position: absolute; inset: 0; pointer-events: none; }
-    .annotations a { position: absolute; pointer-events: auto; }
-    .annotations a:hover, .annotations a:focus-visible { outline: 2px solid #305a9c; background: rgba(50,95,180,.08); }
-    .page-status { padding: 40px 18px; text-align: center; color: #555; font-size: 14px; line-height: 1.6; }
-    .page-mode-toolbar button:focus-visible { outline: 2px solid #234a83; outline-offset: 2px; }
-    @media (max-width:600px) { .page-scroll { padding: 12px 8px; } .page-mode-toolbar { gap: 7px; } }
+    :root { color-scheme:light; font-family:Arial,Helvetica,sans-serif; color:#171717; background:#fff; }
+    *,*::before,*::after { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+    a,button { -webkit-tap-highlight-color:transparent; }
+    header { flex-shrink:0; background:#fff; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px clamp(14px,3.7vw,52px); border-bottom:1px solid #e4e4e4; }
+    .identity { font-size:15px; font-weight:700; white-space:nowrap; }
+    .identity span { font-weight:400; font-size:12px; color:#646464; }
+    .nav { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .nav a,.nav button { font:inherit; font-size:13px; display:inline-flex; align-items:center; justify-content:center; min-height:36px; padding:8px 10px; cursor:pointer; background:transparent; color:#171717; border:0; text-decoration:none; border-radius:2px; }
+    .nav a:hover,.nav button:hover { background:#f1f1f1; }
+    .nav .download { background:#171717; color:white; font-weight:700; padding:10px 16px; }
+    .nav .download:hover { background:#363636; }
+    .shareWrap { position:relative; }
+    .shareMenu { position:absolute; top:calc(100% + 8px); right:0; z-index:10; width:226px; border:1px solid #dcdcdc; background:white; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.13); border-radius:4px; }
+    .shareMenu button,.shareMenu a { display:block; width:100%; padding:11px 12px; text-align:left; border-radius:3px; }
+    #readerPanel { min-height:0; flex:1; display:flex; flex-direction:column; background:#efefef; }
+    #pageViewport { min-height:0; flex:1; width:100%; overflow:auto; padding:20px 14px 30px; text-align:center; }
+    #pageContainer { line-height:0; display:inline-block; position:relative; background:white; box-shadow:0 4px 24px rgba(0,0,0,.15); max-width:100%; }
+    #pageCanvas { display:block; max-width:100%; height:auto; }
+    #pageLinks { position:absolute; top:0; left:0; pointer-events:none; }
+    #pageLinks a { position:absolute; display:block; pointer-events:auto; }
+    #pageLinks a:hover,#pageLinks a:focus-visible { outline:2px solid #2559a0; background:rgba(48,105,190,.08); }
+    #pageStatus { padding:30px 16px; text-align:center; color:#5a5a5a; font-size:14px; line-height:1.6; }
+    #nativeFallback { display:block; width:100%; height:75vh; min-height:350px; border:0; }
+    .bottomBar { flex-shrink:0; order:2; width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px 16px; padding:12px clamp(14px,3.7vw,52px); background:#fff; border-top:1px solid #dcdcdc; box-shadow:0 -3px 12px rgba(0,0,0,.035); }
+    .pageTools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .bottomBar label,.pageCount { color:#444; font-size:13px; }
+    .bottomBar input { width:58px; height:34px; border:1px solid #bcbcbc; border-radius:3px; padding:4px 7px; font-size:13px; }
+    .bottomBar button { background:#fff; border:1px solid #d0d0d0; color:#171717; padding:7px 10px; min-height:34px; font:inherit; font-size:13px; cursor:pointer; border-radius:3px; }
+    .bottomBar button:hover:not(:disabled) { background:#f0f0f0; }
+    .bottomBar button:disabled { opacity:.4; cursor:not-allowed; }
+    .bottomBar button:focus-visible,.nav a:focus-visible,.nav button:focus-visible,.bottomBar input:focus-visible { outline:2px solid #24538d; outline-offset:2px; }
+    .toolbarRight { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
+    .toolbarRight .sharePage { background:#171717; color:#fff; border-color:#171717; font-weight:700; }
+    .toolbarRight .sharePage:hover { background:#343434; }
+    #readerPanel:fullscreen { height:100vh; height:100dvh; width:100%; }
+    .toast { position:fixed; z-index:25; bottom:75px; right:20px; background:#1c1c1c; color:white; font-size:13px; padding:12px 18px; box-shadow:0 7px 20px rgba(0,0,0,.2); border-radius:4px; }
+    @media (max-width:960px) { header { align-items:flex-start; flex-direction:column; } .nav { justify-content:flex-start; } }
+    @media (max-width:650px) { .identity { font-size:14px; } header { padding:10px 13px; } .nav { gap:2px; } .nav a,.nav button { padding:7px 8px; font-size:12px; } #pageViewport { padding:12px 8px 22px; } .bottomBar { padding:10px 12px; gap:8px; } .toolbarRight { justify-content:flex-start; } .bottomBar label { display:none; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">Christian Gabriel Arleo <span>· Portafolio</span></div>
-    <nav class="nav" aria-label="Navegación y acciones">
+    <div class="identity">Christian Gabriel Arleo <span>· Portafolio</span></div>
+    <nav class="nav" aria-label="Acciones del portafolio">
       <a href="/">Inicio</a>
-      <div class="share-wrap" id="shareWrap">
-        <button type="button" id="shareToggle" aria-expanded="false" aria-controls="shareMenu">Compartir ↗</button>
-        <div class="share-menu" id="shareMenu" hidden>
-          <button type="button" id="nativeShare" hidden>Compartir desde el dispositivo</button>
-          <button type="button" id="copyLink">Copiar enlace</button>
+      <div class="shareWrap" id="shareWrap">
+        <button id="shareToggle" type="button" aria-controls="shareMenu" aria-expanded="false">Compartir ↗</button>
+        <div class="shareMenu" id="shareMenu" hidden>
+          <button id="nativeShare" type="button" hidden>Compartir desde el dispositivo</button>
+          <button id="copyLink" type="button">Copiar enlace</button>
           <a id="shareWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
           <a id="shareLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
           <a id="shareEmail">Compartir por correo</a>
@@ -83,282 +75,35 @@
       <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
       <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
       <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a class="primary" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargar PDF ↓</a>
+      <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargar PDF ↓</a>
     </nav>
   </header>
-  <section class="reader-controls" aria-label="Herramientas de lectura">
-    <form class="page-form" id="pageForm">
-      <label for="pageNumber">Página para abrir o compartir</label>
-      <input id="pageNumber" name="pagina" type="number" min="1" max="55" value="1" step="1" inputmode="numeric" required>
-      <button type="submit">Ir a página</button>
-      <button type="button" id="sharePage">Compartir página</button>
-    </form>
-    <button type="button" id="fullscreen">Pantalla completa ⛶</button>
-    <span class="page-note">Abrí una página concreta o compartí su enlace; el visor completo conserva su navegación habitual.</span>
-  </section>
-  <main id="readerArea">
-    <iframe id="pdfViewer" src="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf#page=1&view=FitH" title="Portafolio profesional de Christian Gabriel Arleo, PDF de 55 páginas" loading="eager"></iframe>
-    <section id="pageMode" class="page-mode" aria-label="Lector por página" hidden>
-      <div class="page-mode-toolbar">
-        <button id="prevPage" type="button">← Anterior</button>
-        <strong>Página <span id="shownPage">1</span> de 55</strong>
-        <button id="nextPage" type="button">Siguiente →</button>
-        <button id="backToPdf" type="button">Volver al PDF completo</button>
+  <main id="readerPanel">
+    <div id="pageViewport" role="region" aria-label="Páginas del portafolio">
+      <p id="pageStatus" role="status" aria-live="polite">Cargando portafolio…</p>
+      <div id="pageContainer" hidden>
+        <canvas id="pageCanvas" role="img" aria-label="Página del portafolio"></canvas>
+        <div id="pageLinks"></div>
       </div>
-      <div id="pageScroll" class="page-scroll">
-        <p id="pageStatus" class="page-status" role="status" aria-live="polite">Preparando página…</p>
-        <div id="pageFrame" class="page-frame" hidden>
-          <canvas id="pdfCanvas" role="img" aria-label="Página seleccionada del portafolio"></canvas>
-          <div id="annotations" class="annotations"></div>
-        </div>
+      <iframe id="nativeFallback" title="Portafolio PDF en visor alternativo" hidden></iframe>
+    </div>
+    <div class="bottomBar" aria-label="Controles de navegación del portafolio">
+      <form class="pageTools" id="gotoForm">
+        <button id="previousPage" type="button" aria-label="Página anterior">← Anterior</button>
+        <label for="pageNumber">Página</label>
+        <input id="pageNumber" type="number" min="1" max="55" value="1" step="1" required inputmode="numeric">
+        <span class="pageCount">de <span id="totalPages">55</span></span>
+        <button id="goToPage" type="submit">Ir a página</button>
+        <button id="nextPage" type="button" aria-label="Página siguiente">Siguiente →</button>
+      </form>
+      <div class="toolbarRight">
+        <span class="pageCount">Viendo <strong id="currentPage">1</strong>/<span id="totalPagesLabel">55</span></span>
+        <button type="button" class="sharePage" id="sharePage">Compartir página ↗</button>
+        <button type="button" id="fullscreen">Pantalla completa ⛶</button>
       </div>
-    </section>
-    <p class="help">¿Querés conservar una copia? <a href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargá el PDF</a>. También podés elegir una página desde la barra superior.</p>
+    </div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script>
-    (() => {
-      "use strict";
-      const pdfUrl = "https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf";
-      const shareUrl = "https://christianarleo.com/portafolio/";
-      const shareTitle = "Portafolio profesional de Christian Gabriel Arleo";
-      const $ = (id) => document.getElementById(id);
-      const pageInput = $("pageNumber"), viewer = $("pdfViewer"), toast = $("toast");
-      const shareMenu = $("shareMenu"), shareToggle = $("shareToggle"), shareWrap = $("shareWrap");
-      let toastTimeout;
-      const isValidPage = (value) => /^[0-9]+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= 55;
-      const pageUrl = (page) => shareUrl + "?pagina=" + page;
-      const selectedPage = () => isValidPage(pageInput.value) ? Number(pageInput.value) : null;
-
-      function notify(message) {
-        toast.textContent = message;
-        toast.hidden = false;
-        window.clearTimeout(toastTimeout);
-        toastTimeout = window.setTimeout(() => { toast.hidden = true; }, 3500);
-      }
-
-      const pageMode = $("pageMode"), status = $("pageStatus"), pageFrame = $("pageFrame");
-      const canvas = $("pdfCanvas"), annotations = $("annotations"), scroll = $("pageScroll");
-      const cdnBase = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-      let pdfLibraryPromise, documentPromise, pdfDoc, renderTask, requestId = 0;
-      let pageDisplayed = 1;
-
-      function loadPdfLibrary() {
-        if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-        if (!pdfLibraryPromise) {
-          pdfLibraryPromise = new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = cdnBase + "pdf.min.js";
-            script.onload = () => window.pdfjsLib ? resolve(window.pdfjsLib) : reject(new Error("No se cargó PDF.js"));
-            script.onerror = () => reject(new Error("No se pudo cargar el lector de páginas"));
-            document.head.appendChild(script);
-          });
-        }
-        return pdfLibraryPromise;
-      }
-
-      async function loadDocument() {
-        if (!documentPromise) {
-          documentPromise = loadPdfLibrary().then((library) => {
-            library.GlobalWorkerOptions.workerSrc = cdnBase + "pdf.worker.min.js";
-            return library.getDocument({ url: pdfUrl, withCredentials: false }).promise;
-          });
-        }
-        return documentPromise;
-      }
-
-      async function drawAnnotations(pdfPage, viewport) {
-        annotations.replaceChildren();
-        const links = await pdfPage.getAnnotations({ intent: "display" });
-        for (const item of links) {
-          if (item.subtype !== "Link" || !item.rect) continue;
-          const rect = viewport.convertToViewportRectangle(item.rect);
-          const [left, right] = [Math.min(rect[0], rect[2]), Math.max(rect[0], rect[2])];
-          const [top, bottom] = [Math.min(rect[1], rect[3]), Math.max(rect[1], rect[3])];
-          if (right - left < 2 || bottom - top < 2) continue;
-          if (!item.url && !item.dest) continue;
-          const link = document.createElement("a");
-          link.style.left = left + "px";
-          link.style.top = top + "px";
-          link.style.width = right - left + "px";
-          link.style.height = bottom - top + "px";
-          link.setAttribute("aria-label", "Abrir enlace del documento");
-          if (item.url) {
-            link.href = item.url;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-          } else {
-            link.href = "#";
-            link.addEventListener("click", async (event) => {
-              event.preventDefault();
-              try {
-                const destination = typeof item.dest === "string" ? await pdfDoc.getDestination(item.dest) : item.dest;
-                if (!destination || !destination[0]) return;
-                const index = typeof destination[0] === "object" ? await pdfDoc.getPageIndex(destination[0]) : destination[0];
-                if (Number.isInteger(index)) setPage(index + 1, true);
-              } catch { notify("No se pudo abrir ese enlace interno"); }
-            });
-          }
-          annotations.appendChild(link);
-        }
-      }
-
-      async function setPage(page, updateAddress) {
-        const ticket = ++requestId;
-        pageInput.value = String(page);
-        pageDisplayed = page;
-        pageMode.hidden = false;
-        viewer.hidden = true;
-        pageFrame.hidden = true;
-        status.hidden = false;
-        status.textContent = "Cargando página " + page + "…";
-        $("shownPage").textContent = String(page);
-        $("prevPage").disabled = page <= 1;
-        $("nextPage").disabled = page >= 55;
-        if (updateAddress) history.replaceState(null, "", page === 1 ? "/portafolio/" : "/portafolio/?pagina=" + page);
-        try {
-          pdfDoc = await loadDocument();
-          if (ticket !== requestId) return;
-          if (page > pdfDoc.numPages) throw new Error("Página fuera del documento");
-          const pdfPage = await pdfDoc.getPage(page);
-          if (ticket !== requestId) return;
-
-          if (renderTask) {
-            renderTask.cancel();
-            try { await renderTask.promise; } catch {}
-            renderTask = null;
-          }
-          if (ticket !== requestId) return;
-
-          const initialViewport = pdfPage.getViewport({ scale: 1 });
-          const availableWidth = Math.min(1040, Math.max(220, scroll.clientWidth - 32));
-          const scale = availableWidth / initialViewport.width;
-          const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-          const viewport = pdfPage.getViewport({ scale });
-          const renderedViewport = pdfPage.getViewport({ scale: scale * pixelRatio });
-          canvas.style.width = viewport.width + "px";
-          canvas.style.height = viewport.height + "px";
-          canvas.width = Math.ceil(renderedViewport.width);
-          canvas.height = Math.ceil(renderedViewport.height);
-          annotations.style.width = viewport.width + "px";
-          annotations.style.height = viewport.height + "px";
-
-          renderTask = pdfPage.render({ canvasContext: canvas.getContext("2d"), viewport: renderedViewport });
-          await renderTask.promise;
-          if (ticket !== requestId) return;
-          renderTask = null;
-          await drawAnnotations(pdfPage, viewport);
-          if (ticket !== requestId) return;
-          pageFrame.hidden = false;
-          status.hidden = true;
-          scroll.scrollTop = 0;
-        } catch (error) {
-          if (ticket !== requestId) return;
-          if (error && error.name === "RenderingCancelledException") return;
-          status.textContent = "No se pudo cargar esta página. Podés volver al PDF completo o descargarlo.";
-          pageFrame.hidden = true;
-          console.error("Error al navegar el PDF:", error);
-        }
-      }
-
-      function showFullPdf() {
-        requestId++;
-        if (renderTask) { renderTask.cancel(); renderTask = null; }
-        pageMode.hidden = true;
-        viewer.hidden = false;
-        history.replaceState(null, "", "/portafolio/");
-      }
-
-      $("prevPage").addEventListener("click", () => { if (pageDisplayed > 1) setPage(pageDisplayed - 1, true); });
-      $("nextPage").addEventListener("click", () => { if (pageDisplayed < 55) setPage(pageDisplayed + 1, true); });
-      $("backToPdf").addEventListener("click", showFullPdf);
-
-      const initialPage = new URLSearchParams(window.location.search).get("pagina");
-      if (isValidPage(initialPage)) setPage(Number(initialPage), false);
-      let resizeTimeout;
-      window.addEventListener("resize", () => {
-        if (pageMode.hidden || !pdfDoc) return;
-        window.clearTimeout(resizeTimeout);
-        resizeTimeout = window.setTimeout(() => setPage(pageDisplayed, false), 250);
-      });
-
-      async function copyText(value) {
-        try {
-          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard API no disponible");
-          await navigator.clipboard.writeText(value);
-        } catch {
-          const temp = document.createElement("textarea");
-          temp.value = value;
-          temp.setAttribute("readonly", "");
-          temp.style.position = "fixed";
-          temp.style.opacity = "0";
-          document.body.appendChild(temp);
-          temp.select();
-          let copied = false;
-          try { copied = document.execCommand("copy"); } catch {}
-          temp.remove();
-          if (!copied) { window.prompt("Copiá este enlace:", value); return; }
-        }
-        notify("Enlace copiado al portapapeles");
-      }
-
-      function setShareMenu(open) {
-        shareMenu.hidden = !open;
-        shareToggle.setAttribute("aria-expanded", String(open));
-      }
-
-      $("nativeShare").hidden = typeof navigator.share !== "function";
-      $("shareWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(shareTitle + "\n" + shareUrl);
-      $("shareLinkedIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(shareUrl);
-      $("shareEmail").href = "mailto:?subject=" + encodeURIComponent(shareTitle) + "&body=" + encodeURIComponent("Te comparto mi portafolio: " + shareUrl);
-
-      shareToggle.addEventListener("click", () => setShareMenu(shareMenu.hidden));
-      document.addEventListener("click", (event) => {
-        if (!shareWrap.contains(event.target)) setShareMenu(false);
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setShareMenu(false);
-      });
-
-      $("copyLink").addEventListener("click", async () => {
-        setShareMenu(false);
-        await copyText(shareUrl);
-      });
-      $("nativeShare").addEventListener("click", async () => {
-        setShareMenu(false);
-        try { await navigator.share({ title: shareTitle, url: shareUrl }); }
-        catch (err) { if (err.name !== "AbortError") await copyText(shareUrl); }
-      });
-
-      $("pageForm").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const page = selectedPage();
-        if (page === null) { notify("Ingresá un número de página entre 1 y 55"); return; }
-        setPage(page, true);
-      });
-      $("sharePage").addEventListener("click", async () => {
-        const page = selectedPage();
-        if (page === null) { notify("Ingresá un número de página entre 1 y 55"); return; }
-        const url = pageUrl(page);
-        if (typeof navigator.share === "function") {
-          try { await navigator.share({ title: shareTitle + " · página " + page, url }); return; }
-          catch (err) { if (err.name === "AbortError") return; }
-        }
-        await copyText(url);
-      });
-
-      const reader = $("readerArea"), fullscreen = $("fullscreen");
-      fullscreen.addEventListener("click", async () => {
-        try {
-          if (document.fullscreenElement) await document.exitFullscreen();
-          else if (reader.requestFullscreen) await reader.requestFullscreen();
-          else notify("El navegador no permite pantalla completa");
-        } catch { notify("No se pudo activar pantalla completa"); }
-      });
-      document.addEventListener("fullscreenchange", () => {
-        fullscreen.textContent = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa ⛶";
-      });
-    })();
-  </script>
+  <script src="./lector-v2.js?v=20261122-1" defer></script>
 </body>
 </html>
