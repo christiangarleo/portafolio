@@ -169,7 +169,9 @@
       byId("zoomOut").disabled = scale <= MIN_ZOOM;
       byId("zoomIn").disabled = scale >= MAX_ZOOM;
       const cssViewport = pdfPage.getViewport({scale});
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      const maxCanvasPixels = 14000000;
+      const safePixelRatio = Math.sqrt(maxCanvasPixels / (cssViewport.width * cssViewport.height));
+      const pixelRatio = Math.max(0.5, Math.min(window.devicePixelRatio || 1, 2, safePixelRatio));
       const actualViewport = pdfPage.getViewport({scale:scale*pixelRatio});
       canvas.width = Math.ceil(actualViewport.width);
       canvas.height = Math.ceil(actualViewport.height);
