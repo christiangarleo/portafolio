@@ -48,6 +48,21 @@
     .toast { position: fixed; z-index: 20; right: 20px; bottom: 20px; padding: 12px 16px; font-size: 13px; background: #1b1b1b; color: white; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,.17); }
     @media (max-width: 900px) { header { align-items: flex-start; flex-direction: column; } .nav { justify-content: flex-start; } }
     @media (max-width: 600px) { header { padding: 12px 15px; } .nav { gap: 4px; } .nav a, .nav button { padding: 7px 9px; } .reader-controls { padding: 9px 15px; } .page-note { width: 100%; } #pdfViewer { min-height: 75vh; } }
+
+    .page-mode { flex: 1; min-height: 75vh; background: #eeeeee; display: flex; flex-direction: column; overflow: hidden; }
+    .page-mode-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 11px 15px; background: #f9f9f9; border-bottom: 1px solid #ddd; font-size: 13px; }
+    .page-mode-toolbar button { cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 7px 12px; font-size: 13px; color: #171717; }
+    .page-mode-toolbar button:hover { background: #eee; }
+    .page-mode-toolbar button:disabled { opacity: .4; cursor: default; }
+    .page-scroll { flex: 1; overflow: auto; padding: 24px 16px; text-align: center; }
+    .page-frame { position: relative; display: inline-block; line-height: 0; background: #fff; box-shadow: 0 5px 22px rgba(0,0,0,.13); max-width: 100%; }
+    #pdfCanvas { max-width: 100%; height: auto; display: block; }
+    .annotations { position: absolute; inset: 0; pointer-events: none; }
+    .annotations a { position: absolute; pointer-events: auto; }
+    .annotations a:hover, .annotations a:focus-visible { outline: 2px solid #305a9c; background: rgba(50,95,180,.08); }
+    .page-status { padding: 40px 18px; text-align: center; color: #555; font-size: 14px; line-height: 1.6; }
+    .page-mode-toolbar button:focus-visible { outline: 2px solid #234a83; outline-offset: 2px; }
+    @media (max-width:600px) { .page-scroll { padding: 12px 8px; } .page-mode-toolbar { gap: 7px; } }
   </style>
 </head>
 <body>
@@ -79,11 +94,26 @@
       <button type="button" id="sharePage">Compartir página</button>
     </form>
     <button type="button" id="fullscreen">Pantalla completa ⛶</button>
-    <span class="page-note">Indicá el número manualmente; el visor no detecta tu página actual.</span>
+    <span class="page-note">Abrí una página concreta o compartí su enlace; el visor completo conserva su navegación habitual.</span>
   </section>
   <main id="readerArea">
     <iframe id="pdfViewer" src="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf#page=1&view=FitH" title="Portafolio profesional de Christian Gabriel Arleo, PDF de 55 páginas" loading="eager"></iframe>
-    <p class="help">¿Querés conservar una copia? <a href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargá el PDF</a>. La visualización de páginas específicas depende del navegador.</p>
+    <section id="pageMode" class="page-mode" aria-label="Lector por página" hidden>
+      <div class="page-mode-toolbar">
+        <button id="prevPage" type="button">← Anterior</button>
+        <strong>Página <span id="shownPage">1</span> de 55</strong>
+        <button id="nextPage" type="button">Siguiente →</button>
+        <button id="backToPdf" type="button">Volver al PDF completo</button>
+      </div>
+      <div id="pageScroll" class="page-scroll">
+        <p id="pageStatus" class="page-status" role="status" aria-live="polite">Preparando página…</p>
+        <div id="pageFrame" class="page-frame" hidden>
+          <canvas id="pdfCanvas" role="img" aria-label="Página seleccionada del portafolio"></canvas>
+          <div id="annotations" class="annotations"></div>
+        </div>
+      </div>
+    </section>
+    <p class="help">¿Querés conservar una copia? <a href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargá el PDF</a>. También podés elegir una página desde la barra superior.</p>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script>
@@ -107,14 +137,150 @@
         toastTimeout = window.setTimeout(() => { toast.hidden = true; }, 3500);
       }
 
-      function setPage(page, updateAddress) {
-        pageInput.value = String(page);
-        viewer.src = pdfUrl + "#page=" + page + "&view=FitH";
-        if (updateAddress) history.replaceState(null, "", page === 1 ? "/portafolio/" : "/portafolio/?pagina=" + page);
+      const pageMode = $("pageMode"), status = $("pageStatus"), pageFrame = $("pageFrame");
+      const canvas = $("pdfCanvas"), annotations = $("annotations"), scroll = $("pageScroll");
+      const cdnBase = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+      let pdfLibraryPromise, documentPromise, pdfDoc, renderTask, requestId = 0;
+      let pageDisplayed = 1;
+
+      function loadPdfLibrary() {
+        if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+        if (!pdfLibraryPromise) {
+          pdfLibraryPromise = new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = cdnBase + "pdf.min.js";
+            script.onload = () => window.pdfjsLib ? resolve(window.pdfjsLib) : reject(new Error("No se cargó PDF.js"));
+            script.onerror = () => reject(new Error("No se pudo cargar el lector de páginas"));
+            document.head.appendChild(script);
+          });
+        }
+        return pdfLibraryPromise;
       }
+
+      async function loadDocument() {
+        if (!documentPromise) {
+          documentPromise = loadPdfLibrary().then((library) => {
+            library.GlobalWorkerOptions.workerSrc = cdnBase + "pdf.worker.min.js";
+            return library.getDocument({ url: pdfUrl, withCredentials: false }).promise;
+          });
+        }
+        return documentPromise;
+      }
+
+      async function drawAnnotations(pdfPage, viewport) {
+        annotations.replaceChildren();
+        const links = await pdfPage.getAnnotations({ intent: "display" });
+        for (const item of links) {
+          if (item.subtype !== "Link" || !item.rect) continue;
+          const rect = viewport.convertToViewportRectangle(item.rect);
+          const [left, right] = [Math.min(rect[0], rect[2]), Math.max(rect[0], rect[2])];
+          const [top, bottom] = [Math.min(rect[1], rect[3]), Math.max(rect[1], rect[3])];
+          if (right - left < 2 || bottom - top < 2) continue;
+          if (!item.url && !item.dest) continue;
+          const link = document.createElement("a");
+          link.style.left = left + "px";
+          link.style.top = top + "px";
+          link.style.width = right - left + "px";
+          link.style.height = bottom - top + "px";
+          link.setAttribute("aria-label", "Abrir enlace del documento");
+          if (item.url) {
+            link.href = item.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+          } else {
+            link.href = "#";
+            link.addEventListener("click", async (event) => {
+              event.preventDefault();
+              try {
+                const destination = typeof item.dest === "string" ? await pdfDoc.getDestination(item.dest) : item.dest;
+                if (!destination || !destination[0]) return;
+                const index = typeof destination[0] === "object" ? await pdfDoc.getPageIndex(destination[0]) : destination[0];
+                if (Number.isInteger(index)) setPage(index + 1, true);
+              } catch { notify("No se pudo abrir ese enlace interno"); }
+            });
+          }
+          annotations.appendChild(link);
+        }
+      }
+
+      async function setPage(page, updateAddress) {
+        const ticket = ++requestId;
+        pageInput.value = String(page);
+        pageDisplayed = page;
+        pageMode.hidden = false;
+        viewer.hidden = true;
+        pageFrame.hidden = true;
+        status.hidden = false;
+        status.textContent = "Cargando página " + page + "…";
+        $("shownPage").textContent = String(page);
+        $("prevPage").disabled = page <= 1;
+        $("nextPage").disabled = page >= 55;
+        if (updateAddress) history.replaceState(null, "", page === 1 ? "/portafolio/" : "/portafolio/?pagina=" + page);
+        try {
+          pdfDoc = await loadDocument();
+          if (ticket !== requestId) return;
+          if (page > pdfDoc.numPages) throw new Error("Página fuera del documento");
+          const pdfPage = await pdfDoc.getPage(page);
+          if (ticket !== requestId) return;
+
+          if (renderTask) {
+            renderTask.cancel();
+            try { await renderTask.promise; } catch {}
+            renderTask = null;
+          }
+          if (ticket !== requestId) return;
+
+          const initialViewport = pdfPage.getViewport({ scale: 1 });
+          const availableWidth = Math.min(1040, Math.max(220, scroll.clientWidth - 32));
+          const scale = availableWidth / initialViewport.width;
+          const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+          const viewport = pdfPage.getViewport({ scale });
+          const renderedViewport = pdfPage.getViewport({ scale: scale * pixelRatio });
+          canvas.style.width = viewport.width + "px";
+          canvas.style.height = viewport.height + "px";
+          canvas.width = Math.ceil(renderedViewport.width);
+          canvas.height = Math.ceil(renderedViewport.height);
+          annotations.style.width = viewport.width + "px";
+          annotations.style.height = viewport.height + "px";
+
+          renderTask = pdfPage.render({ canvasContext: canvas.getContext("2d"), viewport: renderedViewport });
+          await renderTask.promise;
+          if (ticket !== requestId) return;
+          renderTask = null;
+          await drawAnnotations(pdfPage, viewport);
+          if (ticket !== requestId) return;
+          pageFrame.hidden = false;
+          status.hidden = true;
+          scroll.scrollTop = 0;
+        } catch (error) {
+          if (ticket !== requestId) return;
+          if (error && error.name === "RenderingCancelledException") return;
+          status.textContent = "No se pudo cargar esta página. Podés volver al PDF completo o descargarlo.";
+          pageFrame.hidden = true;
+          console.error("Error al navegar el PDF:", error);
+        }
+      }
+
+      function showFullPdf() {
+        requestId++;
+        if (renderTask) { renderTask.cancel(); renderTask = null; }
+        pageMode.hidden = true;
+        viewer.hidden = false;
+        history.replaceState(null, "", "/portafolio/");
+      }
+
+      $("prevPage").addEventListener("click", () => { if (pageDisplayed > 1) setPage(pageDisplayed - 1, true); });
+      $("nextPage").addEventListener("click", () => { if (pageDisplayed < 55) setPage(pageDisplayed + 1, true); });
+      $("backToPdf").addEventListener("click", showFullPdf);
 
       const initialPage = new URLSearchParams(window.location.search).get("pagina");
       if (isValidPage(initialPage)) setPage(Number(initialPage), false);
+      let resizeTimeout;
+      window.addEventListener("resize", () => {
+        if (pageMode.hidden || !pdfDoc) return;
+        window.clearTimeout(resizeTimeout);
+        resizeTimeout = window.setTimeout(() => setPage(pageDisplayed, false), 250);
+      });
 
       async function copyText(value) {
         try {
