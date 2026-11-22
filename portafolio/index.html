@@ -28,33 +28,38 @@
     .nav a:hover,.nav button:hover { background:#f1f1f1; }
     .nav .download { background:#171717; color:white; font-weight:700; padding:10px 16px; }
     .nav .download:hover { background:#363636; }
-    .shareWrap { position:relative; }
-    .shareMenu { position:absolute; top:calc(100% + 8px); right:0; z-index:10; width:226px; border:1px solid #dcdcdc; background:white; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.13); border-radius:4px; }
-    .shareMenu button,.shareMenu a { display:block; width:100%; padding:11px 12px; text-align:left; border-radius:3px; }
+    .actionsWrap { position:relative; }
+    .actionsMenu { position:absolute; top:calc(100% + 8px); right:0; z-index:10; width:226px; border:1px solid #dcdcdc; background:white; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.13); border-radius:4px; }
+    .actionsMenu button,.actionsMenu a { display:block; width:100%; padding:11px 12px; text-align:left; border-radius:3px; }
     #readerPanel { min-height:0; flex:1; display:flex; flex-direction:column; background:#efefef; }
-    #pageViewport { min-height:0; flex:1; width:100%; overflow:auto; padding:20px 14px 30px; text-align:center; }
-    #pageContainer { line-height:0; display:inline-block; position:relative; background:white; box-shadow:0 4px 24px rgba(0,0,0,.15); max-width:100%; }
-    #pageCanvas { display:block; max-width:100%; height:auto; }
+    #pageViewport { min-height:0; min-width:0; flex:1; width:100%; overflow:auto; padding:0; text-align:center; }
+    #pageStage { display:flex; align-items:center; justify-content:center; width:max-content; min-width:100%; min-height:100%; padding:24px; }
+    #pageContainer { line-height:0; flex:0 0 auto; position:relative; background:white; box-shadow:0 4px 24px rgba(0,0,0,.15); }
+    #pageCanvas { display:block; height:auto; }
     #pageLinks { position:absolute; top:0; left:0; pointer-events:none; }
     #pageLinks a { position:absolute; display:block; pointer-events:auto; }
     #pageLinks a:hover,#pageLinks a:focus-visible { outline:2px solid #2559a0; background:rgba(48,105,190,.08); }
     #pageStatus { padding:30px 16px; text-align:center; color:#5a5a5a; font-size:14px; line-height:1.6; }
-    #nativeFallback { display:block; width:100%; height:75vh; min-height:350px; border:0; }
-    .bottomBar { flex-shrink:0; order:2; width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px 16px; padding:12px clamp(14px,3.7vw,52px); background:#fff; border-top:1px solid #dcdcdc; box-shadow:0 -3px 12px rgba(0,0,0,.035); }
+    #nativeFallback { display:block; width:100%; height:100%; min-height:350px; border:0; }
+    .bottomBar { flex-shrink:0; order:2; width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; padding:10px clamp(14px,3vw,42px); background:#fff; border-top:1px solid #dcdcdc; box-shadow:0 -3px 12px rgba(0,0,0,.035); }
     .pageTools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .bottomBar label,.pageCount { color:#444; font-size:13px; }
+    .zoomTools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; }
+    .zoomTools button { min-width:32px; }
+    .zoomTools .zoomValue { text-align:center; min-width:49px; font-size:13px; font-weight:700; color:#242424; }
+    .zoomTools .fitButton { white-space:nowrap; }
     .bottomBar input { width:58px; height:34px; border:1px solid #bcbcbc; border-radius:3px; padding:4px 7px; font-size:13px; }
     .bottomBar button { background:#fff; border:1px solid #d0d0d0; color:#171717; padding:7px 10px; min-height:34px; font:inherit; font-size:13px; cursor:pointer; border-radius:3px; }
     .bottomBar button:hover:not(:disabled) { background:#f0f0f0; }
     .bottomBar button:disabled { opacity:.4; cursor:not-allowed; }
     .bottomBar button:focus-visible,.nav a:focus-visible,.nav button:focus-visible,.bottomBar input:focus-visible { outline:2px solid #24538d; outline-offset:2px; }
     .toolbarRight { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
-    .toolbarRight .sharePage { background:#171717; color:#fff; border-color:#171717; font-weight:700; }
-    .toolbarRight .sharePage:hover { background:#343434; }
+    .toolbarRight .sendPage { background:#171717; color:#fff; border-color:#171717; font-weight:700; }
+    .toolbarRight .sendPage:hover { background:#343434; }
     #readerPanel:fullscreen { height:100vh; height:100dvh; width:100%; }
     .toast { position:fixed; z-index:25; bottom:75px; right:20px; background:#1c1c1c; color:white; font-size:13px; padding:12px 18px; box-shadow:0 7px 20px rgba(0,0,0,.2); border-radius:4px; }
     @media (max-width:960px) { header { align-items:flex-start; flex-direction:column; } .nav { justify-content:flex-start; } }
-    @media (max-width:650px) { .identity { font-size:14px; } header { padding:10px 13px; } .nav { gap:2px; } .nav a,.nav button { padding:7px 8px; font-size:12px; } #pageViewport { padding:12px 8px 22px; } .bottomBar { padding:10px 12px; gap:8px; } .toolbarRight { justify-content:flex-start; } .bottomBar label { display:none; } }
+    @media (max-width:650px) { .identity { font-size:14px; } header { padding:10px 13px; } .nav { gap:2px; } .nav a,.nav button { padding:7px 8px; font-size:12px; } #pageStage { padding:10px; } .bottomBar { padding:9px 12px; gap:8px; justify-content:center; } .toolbarRight { justify-content:center; } .bottomBar label { display:none; } .zoomTools { justify-content:center; } .zoomTools .fitButton { font-size:12px; } }
   </style>
 </head>
 <body>
@@ -62,14 +67,14 @@
     <div class="identity">Christian Gabriel Arleo <span>· Portafolio</span></div>
     <nav class="nav" aria-label="Acciones del portafolio">
       <a href="/">Inicio</a>
-      <div class="shareWrap" id="shareWrap">
-        <button id="shareToggle" type="button" aria-controls="shareMenu" aria-expanded="false">Compartir ↗</button>
-        <div class="shareMenu" id="shareMenu" hidden>
-          <button id="nativeShare" type="button" hidden>Compartir desde el dispositivo</button>
+      <div class="actionsWrap" id="actionsWrap">
+        <button id="actionsToggle" type="button" aria-controls="actionsMenu" aria-expanded="false">Compartir ↗</button>
+        <div class="actionsMenu" id="actionsMenu" hidden>
+          <button id="deviceSend" type="button" hidden>Compartir desde el dispositivo</button>
           <button id="copyLink" type="button">Copiar enlace</button>
-          <a id="shareWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
-          <a id="shareLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
-          <a id="shareEmail">Compartir por correo</a>
+          <a id="sendWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+          <a id="sendLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
+          <a id="sendEmail">Compartir por correo</a>
         </div>
       </div>
       <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
@@ -81,9 +86,11 @@
   <main id="readerPanel">
     <div id="pageViewport" role="region" aria-label="Páginas del portafolio">
       <p id="pageStatus" role="status" aria-live="polite">Cargando portafolio…</p>
-      <div id="pageContainer" hidden>
-        <canvas id="pageCanvas" role="img" aria-label="Página del portafolio"></canvas>
-        <div id="pageLinks"></div>
+      <div id="pageStage">
+        <div id="pageContainer" hidden>
+          <canvas id="pageCanvas" role="img" aria-label="Página del portafolio"></canvas>
+          <div id="pageLinks"></div>
+        </div>
       </div>
       <iframe id="nativeFallback" title="Portafolio PDF en visor alternativo" hidden></iframe>
     </div>
@@ -96,14 +103,21 @@
         <button id="goToPage" type="submit">Ir a página</button>
         <button id="nextPage" type="button" aria-label="Página siguiente">Siguiente →</button>
       </form>
+      <div class="zoomTools" role="group" aria-label="Zoom y encuadre del portafolio">
+        <button type="button" id="zoomOut" aria-label="Reducir zoom" title="Reducir">−</button>
+        <span id="zoomReadout" class="zoomValue" aria-live="polite">—%</span>
+        <button type="button" id="zoomIn" aria-label="Aumentar zoom" title="Ampliar">+</button>
+        <button type="button" class="fitButton" id="fitPage" title="Mostrar la página completa">Ajustar página</button>
+        <button type="button" class="fitButton" id="fitWidth" title="Ajustar al ancho disponible">Ajustar ancho</button>
+      </div>
       <div class="toolbarRight">
-        <span class="pageCount">Viendo <strong id="currentPage">1</strong>/<span id="totalPagesLabel">55</span></span>
-        <button type="button" class="sharePage" id="sharePage">Compartir página ↗</button>
+        <button type="button" class="sendPage" id="sendPage">Compartir página ↗</button>
+        <button type="button" id="viewerMode" title="Ver herramientas nativas: buscar, imprimir, texto y miniaturas">Visor PDF clásico</button>
         <button type="button" id="fullscreen">Pantalla completa ⛶</button>
       </div>
     </div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./lector-v2.js?v=20261122-1" defer></script>
+  <script src="./lector-v3.js?v=20261122-2" defer></script>
 </body>
 </html>
