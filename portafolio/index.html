@@ -15,111 +15,179 @@
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#ffffff">
   <style>
-    :root { color-scheme:light; font-family:Arial,Helvetica,sans-serif; color:#171717; background:#fff; }
+    :root { color-scheme:light; font-family:Arial,Helvetica,sans-serif; color:#181818; background:#fff; }
     *,*::before,*::after { box-sizing:border-box; }
     [hidden] { display:none !important; }
-    body { margin:0; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+    body { margin:0; height:100vh; height:100dvh; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
     a,button { -webkit-tap-highlight-color:transparent; }
-    header { flex-shrink:0; background:#fff; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px clamp(14px,3.7vw,52px); border-bottom:1px solid #e4e4e4; }
-    .identity { font-size:15px; font-weight:700; white-space:nowrap; }
-    .identity span { font-weight:400; font-size:12px; color:#646464; }
-    .nav { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-    .nav a,.nav button { font:inherit; font-size:13px; display:inline-flex; align-items:center; justify-content:center; min-height:36px; padding:8px 10px; cursor:pointer; background:transparent; color:#171717; border:0; text-decoration:none; border-radius:2px; }
-    .nav a:hover,.nav button:hover { background:#f1f1f1; }
-    .nav .download { background:#171717; color:white; font-weight:700; padding:10px 16px; }
-    .nav .download:hover { background:#363636; }
+    a:focus-visible,button:focus-visible,input:focus-visible { outline:2px solid #21549a; outline-offset:2px; }
+    button { font:inherit; cursor:pointer; }
+    button:disabled { cursor:default !important; opacity:.37; }
+    .siteHeader { flex:0 0 auto; background:#fff; position:relative; z-index:8; border-bottom:1px solid #ddd; }
+    .siteRow { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px 22px; padding:11px clamp(16px,2.5vw,38px); border-bottom:1px solid #eee; }
+    .siteLeft { display:flex; align-items:center; gap:clamp(12px,2vw,28px); flex-wrap:wrap; min-width:0; }
+    .identity { text-decoration:none; white-space:nowrap; font-weight:700; color:#181818; font-size:14px; }
+    .identity small { font-size:12px; font-weight:400; color:#646464; }
+    .siteNav,.siteActions,.toolsLeft,.toolsRight,.zoomTools,.fitTools { display:flex; align-items:center; gap:4px; }
+    .siteNav { flex-wrap:wrap; }
+    .siteNav a,.siteActions a,.siteActions button,.toolsRow button { border:1px solid transparent; background:transparent; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; padding:7px 9px; color:#222; text-decoration:none; white-space:nowrap; font-size:12px; line-height:1.25; min-height:33px; }
+    .siteNav a:hover,.siteActions a:hover,.siteActions button:hover,.toolsRow button:hover:not(:disabled) { background:#eee; }
+    .siteActions { margin-left:auto; gap:5px; flex-wrap:wrap; justify-content:flex-end; }
+    .siteActions .prominent { background:#191919; color:#fff; border-color:#191919; font-weight:700; }
+    .siteActions .prominent:hover { background:#3a3a3a; color:#fff; }
+    .siteActions .download { background:#191919; color:#fff; border-color:#191919; font-weight:700; padding:9px 13px; }
+    .siteActions .download:hover { background:#3a3a3a; }
+    .siteActions .printPdf { border-color:#dedede; font-weight:700; padding:8px 11px; }
     .actionsWrap { position:relative; }
-    .actionsMenu { position:absolute; top:calc(100% + 8px); right:0; z-index:10; width:226px; border:1px solid #dcdcdc; background:white; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.13); border-radius:4px; }
-    .actionsMenu button,.actionsMenu a { display:block; width:100%; padding:11px 12px; text-align:left; border-radius:3px; }
-    #readerPanel { min-height:0; flex:1; display:flex; flex-direction:column; background:#efefef; }
-    #pageViewport { min-height:0; min-width:0; flex:1; width:100%; overflow:auto; padding:0; text-align:center; }
-    #pageStage { display:flex; align-items:center; justify-content:center; width:max-content; min-width:100%; min-height:100%; padding:24px; }
-    #pageContainer { line-height:0; flex:0 0 auto; position:relative; background:white; box-shadow:0 4px 24px rgba(0,0,0,.15); }
+    .actionsMenu { position:absolute; top:calc(100% + 7px); right:0; z-index:20; width:226px; padding:6px; border:1px solid #ddd; background:white; box-shadow:0 10px 25px rgba(0,0,0,.14); border-radius:5px; }
+    .actionsMenu a,.actionsMenu button { display:block; width:100%; text-align:left; padding:11px 12px; min-height:37px; white-space:normal; }
+    .toolsRow { display:flex; align-items:center; justify-content:space-between; gap:8px 20px; padding:7px clamp(16px,2.5vw,38px); background:#fafafa; }
+    .toolsLeft,.toolsRight { flex-wrap:wrap; gap:4px; }
+    .zoomTools { margin:0 4px; padding:0 8px; border-left:1px solid #ddd; border-right:1px solid #ddd; gap:3px; }
+    .zoomTools button { border:1px solid #ddd; background:white; min-height:30px; min-width:30px; padding:5px 9px; font-size:15px; }
+    .zoomTools #zoomReadout { min-width:43px; text-align:center; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+    .fitTools { gap:2px; }
+    .toolsRow .toolButton { border:1px solid #e4e4e4; background:#fff; min-height:30px; padding:6px 9px; }
+    .toolsRow .toolButton:hover:not(:disabled) { background:#eee; }
+    .toolsRow .indicator { font-size:12px; color:#555; white-space:nowrap; margin-right:7px; font-variant-numeric:tabular-nums; }
+    #readerPanel { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:#ededed; }
+    .viewerShell { flex:1 1 auto; min-height:0; position:relative; overflow:hidden; }
+    #pageViewport { position:absolute; inset:0; overflow:auto; overscroll-behavior:contain; text-align:center; }
+    #pageStage { display:flex; align-items:center; justify-content:center; width:max-content; min-width:100%; min-height:100%; padding:22px 78px; }
+    #pageContainer { flex:0 0 auto; line-height:0; position:relative; background:white; box-shadow:0 4px 26px rgba(0,0,0,.15); }
     #pageCanvas { display:block; height:auto; }
     #pageLinks { position:absolute; top:0; left:0; pointer-events:none; }
     #pageLinks a { position:absolute; display:block; pointer-events:auto; }
     #pageLinks a:hover,#pageLinks a:focus-visible { outline:2px solid #2559a0; background:rgba(48,105,190,.08); }
-    #pageStatus { padding:30px 16px; text-align:center; color:#5a5a5a; font-size:14px; line-height:1.6; }
-    #nativeFallback { display:block; width:100%; height:100%; min-height:350px; border:0; }
-    .bottomBar { flex-shrink:0; order:2; width:100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; padding:10px clamp(14px,3vw,42px); background:#fff; border-top:1px solid #dcdcdc; box-shadow:0 -3px 12px rgba(0,0,0,.035); }
-    .pageTools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-    .bottomBar label,.pageCount { color:#444; font-size:13px; }
-    .zoomTools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; }
-    .zoomTools button { min-width:32px; }
-    .zoomTools .zoomValue { text-align:center; min-width:49px; font-size:13px; font-weight:700; color:#242424; }
-    .zoomTools .fitButton { white-space:nowrap; }
-    .bottomBar input { width:58px; height:34px; border:1px solid #bcbcbc; border-radius:3px; padding:4px 7px; font-size:13px; }
-    .bottomBar button { background:#fff; border:1px solid #d0d0d0; color:#171717; padding:7px 10px; min-height:34px; font:inherit; font-size:13px; cursor:pointer; border-radius:3px; }
-    .bottomBar button:hover:not(:disabled) { background:#f0f0f0; }
-    .bottomBar button:disabled { opacity:.4; cursor:not-allowed; }
-    .bottomBar button:focus-visible,.nav a:focus-visible,.nav button:focus-visible,.bottomBar input:focus-visible { outline:2px solid #24538d; outline-offset:2px; }
-    .toolbarRight { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
-    .toolbarRight .sendPage { background:#171717; color:#fff; border-color:#171717; font-weight:700; }
-    .toolbarRight .sendPage:hover { background:#343434; }
-    #readerPanel:fullscreen { height:100vh; height:100dvh; width:100%; }
-    .toast { position:fixed; z-index:25; bottom:75px; right:20px; background:#1c1c1c; color:white; font-size:13px; padding:12px 18px; box-shadow:0 7px 20px rgba(0,0,0,.2); border-radius:4px; }
-    @media (max-width:960px) { header { align-items:flex-start; flex-direction:column; } .nav { justify-content:flex-start; } }
-    @media (max-width:650px) { .identity { font-size:14px; } header { padding:10px 13px; } .nav { gap:2px; } .nav a,.nav button { padding:7px 8px; font-size:12px; } #pageStage { padding:10px; } .bottomBar { padding:9px 12px; gap:8px; justify-content:center; } .toolbarRight { justify-content:center; } .bottomBar label { display:none; } .zoomTools { justify-content:center; } .zoomTools .fitButton { font-size:12px; } }
+    #pageStatus { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:3; margin:0; padding:12px 18px; color:#555; font-size:13px; line-height:1.5; background:rgba(255,255,255,.94); border:1px solid #e6e6e6; border-radius:4px; max-width:calc(100% - 40px); }
+    #nativeFallback { display:block; width:100%; height:100%; border:0; background:#fff; }
+    .sideNav { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:45px; height:58px; border:1px solid #dedede; background:rgba(255,255,255,.94); color:#333; border-radius:4px; display:flex; justify-content:center; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,.08); font-size:21px; transition:background .15s,opacity .15s; }
+    .sideNav:hover:not(:disabled) { background:white; box-shadow:0 3px 14px rgba(0,0,0,.12); }
+    .sidePrevious { left:clamp(12px,2vw,30px); }
+    .sideNext { right:clamp(12px,2vw,30px); }
+    .bottomBar { flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding:9px 16px; min-height:55px; background:#fff; border-top:1px solid #dedede; }
+    .pageTools { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
+    .pageTools label,.pageTools .pageCount { color:#4b4b4b; font-size:13px; }
+    .pageTools input { width:58px; min-height:35px; padding:5px 8px; border:1px solid #bcbcbc; border-radius:3px; font:inherit; font-size:13px; }
+    .pageTools button { border:1px solid #d5d5d5; background:#fff; border-radius:3px; min-height:35px; padding:7px 11px; color:#181818; font:inherit; font-size:12px; }
+    .pageTools button:hover:not(:disabled) { background:#f0f0f0; }
+    .toast { position:fixed; bottom:80px; right:20px; z-index:30; padding:12px 16px; max-width:min(420px,90vw); border-radius:4px; background:#1c1c1c; color:white; font-size:13px; box-shadow:0 8px 22px rgba(0,0,0,.19); }
+    :fullscreen { background:#fff; }
+    @media (max-width:1180px) {
+      .siteRow { gap:8px; }
+      .siteLeft { gap:10px; }
+      .toolsRow { flex-wrap:wrap; }
+      .toolsRight { margin-left:auto; }
+    }
+    @media (max-width:800px) {
+      .siteRow { padding:9px 14px; }
+      .siteLeft { width:100%; justify-content:space-between; }
+      .siteNav { justify-content:flex-end; gap:0; }
+      .siteActions { justify-content:flex-start; margin-left:0; }
+      .toolsRow { padding:7px 12px; }
+      .toolsLeft { flex-wrap:wrap; gap:4px; }
+      #pageStage { padding:14px 56px; }
+      .sideNav { width:38px; height:45px; font-size:18px; }
+      .sidePrevious { left:8px; }
+      .sideNext { right:8px; }
+    }
+    @media (max-width:620px) {
+      .siteLeft { align-items:flex-start; gap:6px; }
+      .identity { display:block; width:100%; font-size:13px; }
+      .siteNav { justify-content:flex-start; }
+      .siteActions { gap:3px; }
+      .siteActions a,.siteActions button,.siteNav a { font-size:11px; padding:7px 8px; }
+      .toolsRow { align-items:flex-start; gap:6px; }
+      .toolsLeft { width:100%; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:thin; }
+      .toolsLeft button { flex:0 0 auto; }
+      .toolsRight { width:100%; justify-content:flex-end; }
+      #pageStage { padding:12px; }
+      .sideNav { display:none; }
+      .bottomBar { padding:9px 7px; }
+      .pageTools { gap:5px; }
+      .pageTools button { padding:6px 7px; }
+      .pageTools input { width:48px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      .sideNav { transition:none; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="identity">Christian Gabriel Arleo <span>· Portafolio</span></div>
-    <nav class="nav" aria-label="Acciones del portafolio">
-      <a href="/">Inicio</a>
-      <div class="actionsWrap" id="actionsWrap">
-        <button id="actionsToggle" type="button" aria-controls="actionsMenu" aria-expanded="false">Compartir ↗</button>
-        <div class="actionsMenu" id="actionsMenu" hidden>
-          <button id="deviceSend" type="button" hidden>Compartir desde el dispositivo</button>
-          <button id="copyLink" type="button">Copiar enlace</button>
-          <a id="sendWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
-          <a id="sendLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
-          <a id="sendEmail">Compartir por correo</a>
+  <header class="siteHeader">
+    <div class="siteRow">
+      <div class="siteLeft">
+        <a class="identity" href="/" aria-label="Christian Gabriel Arleo, inicio">Christian Gabriel Arleo <small>· Portafolio</small></a>
+        <nav class="siteNav" aria-label="Navegación del sitio">
+          <a href="/">Inicio</a>
+          <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
+          <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </nav>
+      </div>
+      <div class="siteActions" aria-label="Acciones del portafolio">
+        <div class="actionsWrap" id="actionsWrap">
+          <button id="actionsToggle" type="button" aria-controls="actionsMenu" aria-expanded="false">Compartir ↗</button>
+          <div class="actionsMenu" id="actionsMenu" hidden>
+            <button id="deviceSend" type="button" hidden>Compartir desde el dispositivo</button>
+            <button id="copyLink" type="button">Copiar enlace</button>
+            <a id="sendWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+            <a id="sendLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
+            <a id="sendEmail">Compartir por correo</a>
+          </div>
+        </div>
+        <button class="prominent" type="button" id="sendPage" title="Compartir enlace a la página seleccionada">Compartir página ↗</button>
+        <button class="printPdf" type="button" id="printPdf" title="Abrir el PDF actualizado para imprimir" aria-label="Imprimir portafolio">Imprimir ⎙</button>
+        <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF ↓</a>
+      </div>
+    </div>
+    <div class="toolsRow" aria-label="Herramientas del visor PDF">
+      <div class="toolsLeft">
+        <button class="toolButton" type="button" id="viewerMode" title="Alternar con las herramientas nativas del navegador">Visor PDF clásico</button>
+        <div class="zoomTools" role="group" aria-label="Zoom">
+          <button type="button" id="zoomOut" aria-label="Reducir zoom">−</button>
+          <span id="zoomReadout" aria-live="polite">—%</span>
+          <button type="button" id="zoomIn" aria-label="Aumentar zoom">+</button>
+        </div>
+        <div class="fitTools" role="group" aria-label="Ajustes de visualización">
+          <button class="toolButton" type="button" id="fitPage" title="Ver la página completa">Ajustar página</button>
+          <button class="toolButton" type="button" id="fitWidth" title="Ajustar el PDF al ancho de pantalla">Ajustar ancho</button>
         </div>
       </div>
-      <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
-      <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
-      <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF ↓</a>
-    </nav>
+      <div class="toolsRight">
+        <span class="indicator">Viendo <strong id="currentPage">1</strong>/<span id="totalPagesLabel">55</span></span>
+        <button class="toolButton" type="button" id="refreshPdf" title="Recargar la última versión del PDF">Actualizar ↻</button>
+        <button class="toolButton" type="button" id="fullscreen">Pantalla completa ⛶</button>
+      </div>
+    </div>
   </header>
   <main id="readerPanel">
-    <div id="pageViewport" role="region" aria-label="Páginas del portafolio">
-      <p id="pageStatus" role="status" aria-live="polite">Cargando portafolio…</p>
-      <div id="pageStage">
-        <div id="pageContainer" hidden>
-          <canvas id="pageCanvas" role="img" aria-label="Página del portafolio"></canvas>
-          <div id="pageLinks"></div>
+    <div class="viewerShell">
+      <div id="pageViewport" role="region" aria-label="Lector del portafolio PDF" tabindex="0">
+        <p id="pageStatus" role="status" aria-live="polite">Cargando portafolio…</p>
+        <div id="pageStage">
+          <div id="pageContainer" hidden>
+            <canvas id="pageCanvas" role="img" aria-label="Página actual del portafolio"></canvas>
+            <div id="pageLinks"></div>
+          </div>
         </div>
+        <iframe id="nativeFallback" title="Lector PDF clásico" hidden></iframe>
       </div>
-      <iframe id="nativeFallback" title="Portafolio PDF en visor alternativo" hidden></iframe>
+      <button class="sideNav sidePrevious" type="button" id="sidePrevious" aria-label="Página anterior" title="Página anterior" disabled>←</button>
+      <button class="sideNav sideNext" type="button" id="sideNext" aria-label="Página siguiente" title="Página siguiente">→</button>
     </div>
-    <div class="bottomBar" aria-label="Controles de navegación del portafolio">
+    <footer class="bottomBar" aria-label="Navegación por páginas">
       <form class="pageTools" id="gotoForm">
-        <button id="previousPage" type="button" aria-label="Página anterior">← Anterior</button>
+        <button id="previousPage" type="button">← Anterior</button>
         <label for="pageNumber">Página</label>
-        <input id="pageNumber" type="number" min="1" max="55" value="1" step="1" required inputmode="numeric">
+        <input id="pageNumber" type="number" min="1" max="55" value="1" step="1" inputmode="numeric" required>
         <span class="pageCount">de <span id="totalPages">55</span></span>
         <button id="goToPage" type="submit">Ir a página</button>
-        <button id="nextPage" type="button" aria-label="Página siguiente">Siguiente →</button>
+        <button id="nextPage" type="button">Siguiente →</button>
       </form>
-      <div class="zoomTools" role="group" aria-label="Zoom y encuadre del portafolio">
-        <button type="button" id="zoomOut" aria-label="Reducir zoom" title="Reducir">−</button>
-        <span id="zoomReadout" class="zoomValue" aria-live="polite">—%</span>
-        <button type="button" id="zoomIn" aria-label="Aumentar zoom" title="Ampliar">+</button>
-        <button type="button" class="fitButton" id="fitPage" title="Mostrar la página completa">Ajustar página</button>
-        <button type="button" class="fitButton" id="fitWidth" title="Ajustar al ancho disponible">Ajustar ancho</button>
-      </div>
-      <div class="toolbarRight">
-        <span class="pageCount">Viendo <strong id="currentPage">1</strong>/<span id="totalPagesLabel">55</span></span>
-        <button type="button" class="sendPage" id="sendPage">Compartir página ↗</button>
-        <button type="button" id="refreshPdf" title="Recargar el PDF desde Supabase y evitar versiones anteriores almacenadas">Actualizar PDF ↻</button>
-        <button type="button" id="viewerMode" title="Ver herramientas nativas: buscar, imprimir, texto y miniaturas">Visor PDF clásico</button>
-        <button type="button" id="fullscreen">Pantalla completa ⛶</button>
-      </div>
-    </div>
+    </footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./lector-v5.js?v=20261122-5" defer></script>
+  <script src="./lector-v6.js?v=20261122-layout1" defer></script>
 </body>
 </html>
