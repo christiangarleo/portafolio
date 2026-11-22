@@ -268,7 +268,11 @@
       showMessage("Primero debe terminar de cargarse el PDF");
       return;
     }
-    if (printFrame) return;
+    if (printFrame) {
+      try { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }
+      catch { showMessage("Brave no permitió imprimir directamente. Usá el visor PDF clásico"); }
+      return;
+    }
     printButton.disabled = true;
     printButton.textContent = "Preparando…";
     const frame = document.createElement("iframe");
