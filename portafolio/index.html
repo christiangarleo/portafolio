@@ -33,8 +33,8 @@
     .siteNav a,.siteActions a,.siteActions button,.toolsRow button { border:1px solid transparent; background:transparent; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; padding:7px 9px; color:#222; text-decoration:none; white-space:nowrap; font-size:12px; line-height:1.25; min-height:33px; }
     .siteNav a:hover,.siteActions a:hover,.siteActions button:hover,.toolsRow button:hover:not(:disabled) { background:#eee; }
     .siteActions { margin-left:auto; gap:5px; flex-wrap:wrap; justify-content:flex-end; }
-    .siteActions .prominent { background:#191919; color:#fff; border-color:#191919; font-weight:700; }
-    .siteActions .prominent:hover { background:#3a3a3a; color:#fff; }
+    .siteActions .copyPage { background:#fff; color:#181818; border-color:#dedede; font-weight:600; }
+    .siteActions .copyPage:hover { background:#f1f1f1; }
     .siteActions .download { background:#191919; color:#fff; border-color:#191919; font-weight:700; padding:9px 13px; }
     .siteActions .download:hover { background:#3a3a3a; }
     .siteActions .printPdf { border-color:#dedede; font-weight:700; padding:8px 11px; }
@@ -127,7 +127,7 @@
       </div>
       <div class="siteActions" aria-label="Acciones del portafolio">
         <div class="actionsWrap" id="actionsWrap">
-          <button id="actionsToggle" type="button" aria-controls="actionsMenu" aria-expanded="false">Compartir ↗</button>
+          <button id="actionsToggle" type="button" aria-controls="actionsMenu" aria-expanded="false">Compartir</button>
           <div class="actionsMenu" id="actionsMenu" hidden>
             <button id="deviceSend" type="button" hidden>Compartir desde el dispositivo</button>
             <button id="copyLink" type="button">Copiar enlace</button>
@@ -136,9 +136,9 @@
             <a id="sendEmail">Compartir por correo</a>
           </div>
         </div>
-        <button class="prominent" type="button" id="sendPage" title="Compartir enlace a la página seleccionada">Compartir página ↗</button>
-        <button class="printPdf" type="button" id="printPdf" title="Abrir el PDF actualizado para imprimir" aria-label="Imprimir portafolio">Imprimir ⎙</button>
-        <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF ↓</a>
+        <button class="copyPage" type="button" id="sendPage" title="Copiar enlace de la página que estás viendo">Copiar página</button>
+        <button class="printPdf" type="button" id="printPdf" title="Abrir el PDF actualizado para imprimir" aria-label="Imprimir portafolio">Imprimir</button>
+        <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF</a>
       </div>
     </div>
     <div class="toolsRow" aria-label="Herramientas del visor PDF">
@@ -188,6 +188,6 @@
     </footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./lector-v6.js?v=20261122-layout1" defer></script>
+  <script src="./lector-v7.js?v=20261122-labels2" defer></script>
 </body>
 </html>
