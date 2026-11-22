@@ -80,7 +80,7 @@
       <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
       <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
       <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargar PDF ↓</a>
+      <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF ↓</a>
     </nav>
   </header>
   <main id="readerPanel">
@@ -111,14 +111,15 @@
         <button type="button" class="fitButton" id="fitWidth" title="Ajustar al ancho disponible">Ajustar ancho</button>
       </div>
       <div class="toolbarRight">
-        <span class="pageCount">Viendo <strong id="currentPage">1</strong>/55</span>
+        <span class="pageCount">Viendo <strong id="currentPage">1</strong>/<span id="totalPagesLabel">55</span></span>
         <button type="button" class="sendPage" id="sendPage">Compartir página ↗</button>
+        <button type="button" id="refreshPdf" title="Recargar el PDF desde Supabase y evitar versiones anteriores almacenadas">Actualizar PDF ↻</button>
         <button type="button" id="viewerMode" title="Ver herramientas nativas: buscar, imprimir, texto y miniaturas">Visor PDF clásico</button>
         <button type="button" id="fullscreen">Pantalla completa ⛶</button>
       </div>
     </div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./lector-v3.js?v=20261122-3" defer></script>
+  <script src="./lector-v4.js?v=20261122-4" defer></script>
 </body>
 </html>
