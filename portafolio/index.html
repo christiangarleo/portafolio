@@ -3,36 +3,196 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo. Proyectos, experiencia y resultados.">
-  <title>Portafolio | Christian Gabriel Arleo</title>
+  <title>Portafolio profesional | Christian Gabriel Arleo</title>
+  <meta name="description" content="Conocé el portafolio profesional de Christian Gabriel Arleo: proyectos, experiencia y resultados en marketing, tecnología y negocios.">
+  <link rel="canonical" href="https://christianarleo.com/portafolio/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_PE">
+  <meta property="og:site_name" content="Christian Gabriel Arleo">
+  <meta property="og:title" content="Portafolio profesional | Christian Gabriel Arleo">
+  <meta property="og:description" content="El trabajo detrás de los resultados. Conocé mis proyectos, experiencia y trabajo profesional.">
+  <meta property="og:url" content="https://christianarleo.com/portafolio/">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#ffffff">
   <style>
-    :root { font-family: Arial, Helvetica, sans-serif; color: #171717; background: #fff; }
-    * { box-sizing: border-box; }
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #171717; background: #fff; }
+    *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px clamp(16px, 4vw, 54px); border-bottom: 1px solid #e5e5e5; flex-wrap: wrap; }
-    .title { font-size: 16px; font-weight: 700; }
-    .sub { color: #626262; font-size: 13px; font-weight: 400; }
-    nav { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 13px; }
-    nav a { color: #171717; }
-    .primary { background: #171717; color: #fff; text-decoration: none; padding: 10px 14px; border-radius: 2px; font-weight: 700; }
-    main { flex: 1; display: flex; flex-direction: column; min-height: 70vh; }
-    .viewer { border: 0; display: block; width: 100%; flex: 1; min-height: 78vh; background: #f2f2f2; }
-    .help { margin: 0; padding: 12px 18px; text-align: center; background: #f7f7f7; font-size: 12px; color: #555; }
-    .help a { color: #164e9a; }
-    @media (max-width: 600px) { .viewer { min-height: 75vh; } header { gap: 12px; } }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px clamp(16px, 3.8vw, 54px); border-bottom: 1px solid #e6e6e6; background: #fff; }
+    .brand { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .brand span { font-size: 12px; font-weight: 400; color: #555; }
+    .nav { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    a, button { -webkit-tap-highlight-color: transparent; }
+    .nav a, .nav button, .reader-controls button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; padding: 8px 10px; min-height: 36px; background: transparent; color: #171717; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; border-radius: 3px; }
+    .nav a:hover, .nav button:hover, .reader-controls button:hover { background: #f1f1f1; }
+    .nav a:focus-visible, .nav button:focus-visible, .reader-controls button:focus-visible, .reader-controls input:focus-visible { outline: 2px solid #234a83; outline-offset: 2px; }
+    .nav .primary { background: #171717; color: white; font-weight: 700; padding: 10px 15px; }
+    .nav .primary:hover { background: #393939; }
+    .share-wrap { position: relative; }
+    .share-menu { position: absolute; z-index: 10; top: calc(100% + 8px); right: 0; width: 220px; background: #fff; border: 1px solid #ddd; box-shadow: 0 8px 22px rgba(0,0,0,.12); border-radius: 5px; padding: 6px; }
+    [hidden] { display: none !important; }
+    .share-menu a, .share-menu button { display: flex; width: 100%; justify-content: flex-start; text-align: left; padding: 11px 12px; border-radius: 3px; }
+    .reader-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 9px clamp(16px, 3.8vw, 54px); background: #f8f8f8; border-bottom: 1px solid #e6e6e6; color: #4a4a4a; font-size: 12px; }
+    .page-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .page-form label { font-size: 12px; }
+    .page-form input { width: 64px; padding: 7px 8px; min-height: 32px; border: 1px solid #bcbcbc; border-radius: 3px; background: #fff; font: inherit; font-size: 13px; }
+    .reader-controls button { border-color: #d0d0d0; background: white; min-height: 32px; padding: 6px 10px; }
+    .reader-controls button:hover { background: #ececec; }
+    .page-note { color: #737373; }
+    main#readerArea { flex: 1; display: flex; flex-direction: column; min-height: 70vh; background: #fff; }
+    #pdfViewer { display: block; width: 100%; flex: 1; min-height: 73vh; border: 0; background: #f0f0f0; }
+    .help { margin: 0; padding: 11px 14px; text-align: center; color: #555; background: #fafafa; font-size: 12px; }
+    .help a { color: #174783; }
+    #readerArea:fullscreen { width: 100%; height: 100dvh; min-height: 100dvh; }
+    #readerArea:fullscreen #pdfViewer { height: 100%; min-height: 0; }
+    .toast { position: fixed; z-index: 20; right: 20px; bottom: 20px; padding: 12px 16px; font-size: 13px; background: #1b1b1b; color: white; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,.17); }
+    @media (max-width: 900px) { header { align-items: flex-start; flex-direction: column; } .nav { justify-content: flex-start; } }
+    @media (max-width: 600px) { header { padding: 12px 15px; } .nav { gap: 4px; } .nav a, .nav button { padding: 7px 9px; } .reader-controls { padding: 9px 15px; } .page-note { width: 100%; } #pdfViewer { min-height: 75vh; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">Christian Gabriel Arleo <span class="sub"> · Portafolio</span></div>
-    <nav aria-label="Acciones del portafolio">
+    <div class="brand">Christian Gabriel Arleo <span>· Portafolio</span></div>
+    <nav class="nav" aria-label="Navegación y acciones">
       <a href="/">Inicio</a>
-      <a class="primary" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf" download="Christian_Arleo_Portafolio.pdf">Descargar PDF ↓</a>
+      <div class="share-wrap" id="shareWrap">
+        <button type="button" id="shareToggle" aria-expanded="false" aria-controls="shareMenu">Compartir ↗</button>
+        <div class="share-menu" id="shareMenu" hidden>
+          <button type="button" id="nativeShare" hidden>Compartir desde el dispositivo</button>
+          <button type="button" id="copyLink">Copiar enlace</button>
+          <a id="shareWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+          <a id="shareLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
+          <a id="shareEmail">Compartir por correo</a>
+        </div>
+      </div>
+      <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">Contactar</a>
+      <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a class="primary" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargar PDF ↓</a>
     </nav>
   </header>
-  <main>
-    <iframe class="viewer" src="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf#view=FitH" title="Portafolio profesional de Christian Gabriel Arleo, documento PDF" loading="eager"></iframe>
-    <p class="help">¿Querés guardar una copia? <a href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf" download="Christian_Arleo_Portafolio.pdf">Descargá el PDF</a>.</p>
+  <section class="reader-controls" aria-label="Herramientas de lectura">
+    <form class="page-form" id="pageForm">
+      <label for="pageNumber">Página para abrir o compartir</label>
+      <input id="pageNumber" name="pagina" type="number" min="1" max="55" value="1" step="1" inputmode="numeric" required>
+      <button type="submit">Ir a página</button>
+      <button type="button" id="sharePage">Compartir página</button>
+    </form>
+    <button type="button" id="fullscreen">Pantalla completa ⛶</button>
+    <span class="page-note">Indicá el número manualmente; el visor no detecta tu página actual.</span>
+  </section>
+  <main id="readerArea">
+    <iframe id="pdfViewer" src="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf#page=1&view=FitH" title="Portafolio profesional de Christian Gabriel Arleo, PDF de 55 páginas" loading="eager"></iframe>
+    <p class="help">¿Querés conservar una copia? <a href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf">Descargá el PDF</a>. La visualización de páginas específicas depende del navegador.</p>
   </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script>
+    (() => {
+      "use strict";
+      const pdfUrl = "https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf";
+      const shareUrl = "https://christianarleo.com/portafolio/";
+      const shareTitle = "Portafolio profesional de Christian Gabriel Arleo";
+      const $ = (id) => document.getElementById(id);
+      const pageInput = $("pageNumber"), viewer = $("pdfViewer"), toast = $("toast");
+      const shareMenu = $("shareMenu"), shareToggle = $("shareToggle"), shareWrap = $("shareWrap");
+      let toastTimeout;
+      const isValidPage = (value) => /^[0-9]+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= 55;
+      const pageUrl = (page) => shareUrl + "?pagina=" + page;
+      const selectedPage = () => isValidPage(pageInput.value) ? Number(pageInput.value) : null;
+
+      function notify(message) {
+        toast.textContent = message;
+        toast.hidden = false;
+        window.clearTimeout(toastTimeout);
+        toastTimeout = window.setTimeout(() => { toast.hidden = true; }, 3500);
+      }
+
+      function setPage(page, updateAddress) {
+        pageInput.value = String(page);
+        viewer.src = pdfUrl + "#page=" + page + "&view=FitH";
+        if (updateAddress) history.replaceState(null, "", page === 1 ? "/portafolio/" : "/portafolio/?pagina=" + page);
+      }
+
+      const initialPage = new URLSearchParams(window.location.search).get("pagina");
+      if (isValidPage(initialPage)) setPage(Number(initialPage), false);
+
+      async function copyText(value) {
+        try {
+          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard API no disponible");
+          await navigator.clipboard.writeText(value);
+        } catch {
+          const temp = document.createElement("textarea");
+          temp.value = value;
+          temp.setAttribute("readonly", "");
+          temp.style.position = "fixed";
+          temp.style.opacity = "0";
+          document.body.appendChild(temp);
+          temp.select();
+          let copied = false;
+          try { copied = document.execCommand("copy"); } catch {}
+          temp.remove();
+          if (!copied) { window.prompt("Copiá este enlace:", value); return; }
+        }
+        notify("Enlace copiado al portapapeles");
+      }
+
+      function setShareMenu(open) {
+        shareMenu.hidden = !open;
+        shareToggle.setAttribute("aria-expanded", String(open));
+      }
+
+      $("nativeShare").hidden = typeof navigator.share !== "function";
+      $("shareWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(shareTitle + "\n" + shareUrl);
+      $("shareLinkedIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(shareUrl);
+      $("shareEmail").href = "mailto:?subject=" + encodeURIComponent(shareTitle) + "&body=" + encodeURIComponent("Te comparto mi portafolio: " + shareUrl);
+
+      shareToggle.addEventListener("click", () => setShareMenu(shareMenu.hidden));
+      document.addEventListener("click", (event) => {
+        if (!shareWrap.contains(event.target)) setShareMenu(false);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") setShareMenu(false);
+      });
+
+      $("copyLink").addEventListener("click", async () => {
+        setShareMenu(false);
+        await copyText(shareUrl);
+      });
+      $("nativeShare").addEventListener("click", async () => {
+        setShareMenu(false);
+        try { await navigator.share({ title: shareTitle, url: shareUrl }); }
+        catch (err) { if (err.name !== "AbortError") await copyText(shareUrl); }
+      });
+
+      $("pageForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const page = selectedPage();
+        if (page === null) { notify("Ingresá un número de página entre 1 y 55"); return; }
+        setPage(page, true);
+      });
+      $("sharePage").addEventListener("click", async () => {
+        const page = selectedPage();
+        if (page === null) { notify("Ingresá un número de página entre 1 y 55"); return; }
+        const url = pageUrl(page);
+        if (typeof navigator.share === "function") {
+          try { await navigator.share({ title: shareTitle + " · página " + page, url }); return; }
+          catch (err) { if (err.name === "AbortError") return; }
+        }
+        await copyText(url);
+      });
+
+      const reader = $("readerArea"), fullscreen = $("fullscreen");
+      fullscreen.addEventListener("click", async () => {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (reader.requestFullscreen) await reader.requestFullscreen();
+          else notify("El navegador no permite pantalla completa");
+        } catch { notify("No se pudo activar pantalla completa"); }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        fullscreen.textContent = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa ⛶";
+      });
+    })();
+  </script>
 </body>
 </html>
