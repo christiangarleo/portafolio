@@ -52,6 +52,11 @@
       card.append(top,title,expiry,button);wrap.append(card);
     }
     show("companySection");
+    if (count === 0) {
+      // Conservar el historial de vacantes vencidas, y ofrecer contacto sin abandonar el portal.
+      by("emptySection").hidden = false;
+      by("emptySection").querySelector("h2").textContent = "Los CV de esta empresa están vencidos";
+    }
   }
   async function downloadCv(button) {
     if(button.disabled)return;
