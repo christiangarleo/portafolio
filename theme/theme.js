@@ -11,7 +11,7 @@
   menu.id = "cgaThemeMenu";
   menu.className = "cgaThemeMenu";
   menu.hidden = true;
-  menu.setAttribute("role","group");
+  menu.setAttribute("role","radiogroup");
   menu.setAttribute("aria-label","Elegir apariencia");
   const control = document.createElement("div");
   control.className = "cgaThemeControl";
@@ -32,7 +32,7 @@
   for(const mode of modes){
     const option = document.createElement("button");
     option.type = "button";
-    option.setAttribute("role","checkbox");
+    option.setAttribute("role","radio");
     option.setAttribute("aria-checked","false");
     const name = document.createElement("span");
     name.textContent = icons[mode] + "  " + labels[mode];
