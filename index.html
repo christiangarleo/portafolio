@@ -5,11 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo. Growth marketing, performance digital y proyectos.">
   <title>Christian Gabriel Arleo | Portafolio profesional</title>
+    <script>
+    (() => {
+      try {
+        const mode=localStorage.getItem("cga-appearance");
+        const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme=dark?"dark":"light";
+        document.documentElement.style.colorScheme=dark?"dark":"light";
+      }catch{}
+    })();
+  </script>
   <style>
     :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; background: #fff; color: #171717; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-    header { padding: 26px max(24px, calc((100vw - 980px)/2)); border-bottom: 1px solid #ececec; font-size: 15px; font-weight: 700; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding: 26px max(24px, calc((100vw - 980px)/2)); border-bottom: 1px solid #ececec; font-size: 15px; font-weight: 700; }
     main { width: min(100% - 48px, 980px); margin: auto; padding: 90px 0; }
     .label { color: #545454; font-size: 13px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
     h1 { font-size: clamp(38px, 7vw, 66px); line-height: 1.06; letter-spacing: -.045em; max-width: 800px; margin: 22px 0; }
@@ -19,6 +29,8 @@
     footer { width: min(100% - 48px, 980px); margin: 0 auto; padding: 25px 0; border-top: 1px solid #ececec; color: #5a5a5a; font-size: 13px; }
     footer a { color: inherit; }
   </style>
+  <link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
+
 </head>
 <body>
   <header>Christian Gabriel Arleo</header>
@@ -29,5 +41,6 @@
     <a class="cta" href="/portafolio/">Ver portafolio ↗</a>
   </main>
   <footer>Christian Gabriel Arleo · Lima, Perú · <a href="mailto:hola@christianarleo.com">hola@christianarleo.com</a></footer>
+  <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body>
 </html>
