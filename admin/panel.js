@@ -87,14 +87,46 @@ async function loadDocuments(){
      tags.append(node("span",label,"pill"));
    }
    box.append(title,tags,node("small",x.original_filename+" · Subido "+new Date(x.created_at).toLocaleString("es-PE")));
+   const stateRow=node("div",undefined,"itemStatus");
+   const stateLabel=node("label","Estado interno: ");
+   stateLabel.htmlFor="state-"+x.id;
+   const stateSelect=node("select");
+   stateSelect.id="state-"+x.id;
+   stateSelect.dataset.statusId=x.id;
+   const statuses=[["preparado","Preparado"],["postulado","Postulado"],["en_proceso","En proceso"],["finalizado","Finalizado"]];
+   for(const [value,label] of statuses) {
+     const option=node("option",label);option.value=value;
+     stateSelect.append(option);
+   }
+   stateSelect.value=x.application_status||"preparado";
+   stateRow.append(stateLabel,stateSelect);
+   box.append(stateRow);
    const actions=node("div",undefined,"itemActions");
-   for(const [action,label] of [["download","Ver CV"],["main","Marcar principal"],["toggle",x.is_active?"Desactivar":"Activar"],["delete","Eliminar"]]){
+   const availableActions=[["download","Ver CV"],["edit","Editar vacante"],["toggle",x.is_active?"Desactivar":"Activar"],["delete","Eliminar"]];
+   if(!x.is_main) availableActions.splice(2,0,["main","Marcar principal"]);
+   for(const [action,label] of availableActions){
      const b=node("button",label);b.type="button";b.dataset.id=x.id;b.dataset.action=action;actions.append(b);
    }
    box.append(actions);target.append(box);
  }
 }
 el("reloadDocuments").addEventListener("click",loadDocuments);
+el("documents").addEventListener("change", async e => {
+  const control=e.target.closest("select[data-status-id]");
+  if(!control || !isAdmin) return;
+  const id=control.dataset.statusId;
+  const selected=control.value;
+  if(!["preparado","postulado","en_proceso","finalizado"].includes(selected))return;
+  control.disabled=true;
+  const {error}=await sb.from("portfolio_cv_documents").update({application_status:selected}).eq("id",id);
+  if(error) {
+    notice("No se pudo actualizar el estado: "+error.message,true);
+    await loadDocuments();
+  } else {
+    notice("Estado de postulación actualizado (visible solo en administración).");
+    await loadDocuments();
+  }
+});
 el("uploadForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!isAdmin){notice("Sin autorización",true);return;}
   const file=el("pdf").files[0],ruc=el("ruc").value.trim();
@@ -112,10 +144,12 @@ el("uploadForm").addEventListener("submit",async e=>{
     const added=await sb.from("portfolio_cv_documents").insert({
        company_name:el("company").value.trim(),ruc,role_name:el("position").value.trim(),
        original_filename:file.name,storage_path:path,is_active:true,is_main:main,
+       application_status:el("applicationStatus").value,
        expires_at:expiry?new Date(expiry).toISOString():null
     });
     if(added.error){await sb.storage.from(bucket).remove([path]);throw added.error;}
-    e.target.reset();el("principal").checked=true;notice("CV guardado. Ya estará disponible por RUC si está activo y vigente.");await loadDocuments();
+    e.target.reset();el("principal").checked=true;el("applicationStatus").value="preparado";
+    notice("CV guardado. Ya estará disponible por RUC si está activo y vigente.");await loadDocuments();
   } catch(err){notice("No se pudo subir: "+err.message,true);}
   finally{btn.disabled=false;}
 });
@@ -127,6 +161,14 @@ el("documents").addEventListener("click",async e=>{
     if(action==="download"){
       const {data,error}=await sb.storage.from(bucket).createSignedUrl(x.storage_path,60,{download:x.original_filename});
       if(error)throw error;window.open(data.signedUrl,"_blank","noopener");
+    }else if(action==="edit"){
+      const newName=prompt("Nombre de la vacante o puesto",x.role_name);
+      if(newName===null)return;
+      const value=newName.trim();
+      if(!value || value.length>180){notice("Ingresá una vacante de 1 a 180 caracteres.",true);return;}
+      const {error}=await sb.from("portfolio_cv_documents").update({role_name:value}).eq("id",x.id);
+      if(error)throw error;
+      notice("Vacante actualizada.");await loadDocuments();
     }else if(action==="main"){
       const a=await sb.from("portfolio_cv_documents").update({is_main:false}).eq("ruc",x.ruc).eq("is_main",true);
       if(a.error)throw a.error;
