@@ -66,7 +66,11 @@
         a.href = data.url;
         a.rel = "noopener noreferrer";
         a.target = "_blank";
-        document.body.append(a); a.click(); a.remove();
+        a.textContent = "Descargar CV ahora";
+        a.className = "cvManualLink";
+        result.append(document.createTextNode(" "), a);
+        // Si el navegador bloquea el inicio automatico, queda el enlace manual.
+        a.click();
       } else {
         setResult("No hay un CV vigente asociado a ese RUC. ¿Cómo querés contactarme?", false);
         by("cvChoices").hidden = false;
@@ -85,6 +89,8 @@
     const kind = choice.dataset.kind;
     if (!headings[kind]) return;
     leadKind.value = kind;
+    by("cvInhouseFields").hidden = kind !== "in_house";
+    by("cvProjectFields").hidden = kind !== "proyecto";
     by("cvLeadTitle").textContent = headings[kind][0];
     by("cvLeadPositionLabel").textContent = headings[kind][1];
     by("cvLeadRuc").value = lastRuc;
@@ -96,6 +102,13 @@
     evt.preventDefault();
     const form = new FormData(leadForm);
     const data = Object.fromEntries(form.entries());
+    const extra = [];
+    if (data.kind === "in_house" && data.modalidad) extra.push("Modalidad: " + data.modalidad);
+    if (data.kind === "proyecto") {
+      if (data.presupuesto) extra.push("Presupuesto: " + data.presupuesto);
+      if (data.plazo) extra.push("Plazo: " + data.plazo);
+    }
+    data.details = [data.details, ...extra].filter(Boolean).join("\n");
     const submit = leadForm.querySelector("button[type=submit]");
     submit.disabled = true;
     by("cvLeadStatus").textContent = "Enviando solicitud…";
