@@ -52,24 +52,14 @@ Deno.serve(async (req: Request) => {
     if (error) { console.error("cv_lookup", error.message); return reply(req, { error: "Error temporal de consulta" }, 503); }
     const now = Date.now();
     const rows = data || [];
-    const eligible = rows.filter((row: any) => !row.expires_at || new Date(row.expires_at).getTime() > now);
-    if (!eligible.length) return reply(req, { status: "not_found" });
-    if (eligible.length === 1) {
-      const item = eligible[0];
-      try {
-        const url = await signedLink(item);
-        return reply(req, { status: "ready", url, company: item.company_name, position: item.role_name });
-      } catch (error) {
-        console.error("cv_sign", String(error));
-        return reply(req, { error: "No se pudo preparar el archivo" }, 503);
-      }
-    }
-    // Mostrar los CV de la empresa. Los vencidos aparecen sin descarga.
+    // El portal existe para cada empresa con CV registrados, incluso si hay uno solo.
+    // También muestra vencidos como historial, sin permitir descargarlos.
+    if (!rows.length) return reply(req, { status: "not_found" });
     const items = rows.map((row: any) => ({
       id: row.id, position: row.role_name, expires_at: row.expires_at,
       available: !row.expires_at || new Date(row.expires_at).getTime() > now
     })).sort((a: any,b: any) => Number(b.available) - Number(a.available));
-    return reply(req, { status: "multiple", company: eligible[0].company_name, items });
+    return reply(req, { status: "company", company: rows[0].company_name, items });
   }
   if (input.action === "download") {
     const id = text(input.id, 50);
