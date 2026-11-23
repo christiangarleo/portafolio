@@ -63,7 +63,14 @@
     .sideNav:hover:not(:disabled) { background:white; box-shadow:0 3px 14px rgba(0,0,0,.12); }
     .sidePrevious { left:clamp(12px,2vw,30px); }
     .sideNext { right:clamp(12px,2vw,30px); }
-    .bottomBar { flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding:9px 16px; min-height:55px; background:#fff; border-top:1px solid #dedede; }
+    .bottomBar { flex:0 0 auto; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:clamp(8px,1vw,16px); padding:8px clamp(10px,1.5vw,24px); min-height:55px; background:#fff; border-top:1px solid #dedede; }
+    .sectionLinks { min-width:0; display:flex; align-items:center; gap:4px; }
+    .sectionLinks--before { justify-content:flex-end; }
+    .sectionLinks--after { justify-content:flex-start; }
+    .sectionJump { border:1px solid transparent; border-radius:4px; color:#303030; background:transparent; text-decoration:none; white-space:nowrap; font-size:12px; font-weight:500; min-height:35px; padding:9px 9px; display:inline-flex; align-items:center; justify-content:center; }
+    .sectionJump:hover { background:#f2f2f2; }
+    .sectionJump[aria-current="location"] { background:#f4f4f4; color:#111; box-shadow:inset 0 -2px #222; }
+    .pageTools { flex:0 0 auto; }
     .pageTools { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
     .pageTools label,.pageTools .pageCount { color:#4b4b4b; font-size:13px; }
     .pageTools input { width:58px; min-height:35px; padding:5px 8px; border:1px solid #bcbcbc; border-radius:3px; font:inherit; font-size:13px; }
@@ -76,6 +83,15 @@
       .siteLeft { flex:1 1 auto; }
       .readerTools { order:3; flex:1 1 100%; justify-content:center; padding:2px 0; }
       .siteActions { flex:0 1 auto; }
+    }
+    @media (max-width:1180px) {
+      .bottomBar { display:flex; flex-wrap:wrap; justify-content:center; gap:5px 12px; }
+      .sectionLinks { justify-content:center; flex:0 1 auto; }
+    }
+    @media (max-width:760px) {
+      .bottomBar { flex-direction:column; padding:8px 7px; gap:4px; }
+      .sectionLinks { justify-content:center; flex-wrap:wrap; }
+      .sectionJump { min-height:30px; padding:6px 9px; }
     }
     @media (max-width:830px) {
       .siteRow { padding:9px 14px; }
@@ -161,7 +177,11 @@
       <button class="sideNav sidePrevious" type="button" id="sidePrevious" aria-label="Página anterior" title="Página anterior" disabled>←</button>
       <button class="sideNav sideNext" type="button" id="sideNext" aria-label="Página siguiente" title="Página siguiente">→</button>
     </div>
-    <footer class="bottomBar" aria-label="Navegación por páginas">
+    <footer class="bottomBar" aria-label="Navegación del portafolio">
+      <nav class="sectionLinks sectionLinks--before" aria-label="Índice y presentación">
+        <a class="sectionJump" href="?pagina=3" data-page="3" title="Ver el índice del portafolio">Volver al índice</a>
+        <a class="sectionJump" href="?pagina=4" data-page="4" title="Ir a la presentación">Presentación</a>
+      </nav>
       <form class="pageTools" id="gotoForm">
         <button id="previousPage" type="button">← Anterior</button>
         <label for="pageNumber">Página</label>
@@ -169,9 +189,13 @@
         <span class="pageCount">de <span id="totalPages">55</span></span>
         <button id="nextPage" type="button">Siguiente →</button>
       </form>
+      <nav class="sectionLinks sectionLinks--after" aria-label="Secciones del portafolio">
+        <a class="sectionJump" href="?pagina=6" data-page="6" title="Ir a los proyectos de autor">Proyectos de autor</a>
+        <a class="sectionJump" href="?pagina=23" data-page="23" title="Ir a la experiencia profesional">Experiencia profesional</a>
+      </nav>
     </footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./lector-v9.js?v=20261122-print1" defer></script>
+  <script src="./lector-v10.js?v=20261123-sectionnav1" defer></script>
 </body>
 </html>
