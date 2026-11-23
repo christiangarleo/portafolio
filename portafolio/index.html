@@ -14,6 +14,16 @@
   <meta property="og:url" content="https://christianarleo.com/portafolio/">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#ffffff">
+    <script>
+    (() => {
+      try {
+        const mode=localStorage.getItem("cga-appearance");
+        const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme=dark?"dark":"light";
+        document.documentElement.style.colorScheme=dark?"dark":"light";
+      }catch{}
+    })();
+  </script>
   <style>
     :root { color-scheme:light; font-family:Arial,Helvetica,sans-serif; color:#181818; background:#fff; }
     *,*::before,*::after { box-sizing:border-box; }
@@ -278,6 +288,8 @@
     .cvLeadBox h3 { font-size:16px; margin:4px 0 8px; }
     .cvHP { position:absolute!important; left:-10000px!important; width:1px!important; height:1px!important; overflow:hidden!important; }
   </style>
+  <link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
+
 </head>
 <body>
   <header class="siteHeader">
@@ -412,5 +424,6 @@
   </script>
   <script src="./lector-v10.js?v=20261123-cv1" defer></script>
   <script src="./cv-portal.js?v=20261123-portal-individual1" defer></script>
+  <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body>
 </html>
