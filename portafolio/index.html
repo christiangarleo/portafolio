@@ -30,6 +30,12 @@
     .identity small { font-size:11px; font-weight:400; color:#646464; }
     .siteNav,.siteActions,.readerTools,.zoomTools,.fitTools { display:flex; align-items:center; }
     .siteNav { flex-wrap:nowrap; gap:1px; }
+    .mobileContactToggle { display:none; font:inherit; font-size:13px; white-space:nowrap; padding:8px 12px; min-height:35px; color:#181818; background:#fff; border:1px solid #d6d6d6; border-radius:4px; }
+    .mobileContactToggle:hover { background:#f2f2f2; }
+    .contactMenu { position:absolute; left:12px; top:calc(100% + 1px); width:min(315px,calc(100vw - 24px)); padding:8px; background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 10px 25px rgba(0,0,0,.18); z-index:60; }
+    .contactMenu a { display:block; color:#181818; text-decoration:none; font-size:14px; padding:12px 13px; border-radius:3px; line-height:1.25; }
+    .contactMenu a:hover,.contactMenu a:focus-visible { background:#f1f1f1; }
+    .contactMenu .menuIdentity { font-weight:700; border-bottom:1px solid #e8e8e8; border-radius:0; margin-bottom:4px; }
     .siteNav a,.siteActions a,.siteActions button,.readerTools button { border:1px solid transparent; background:transparent; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; padding:7px 8px; color:#222; text-decoration:none; white-space:nowrap; font-size:12px; line-height:1.25; min-height:33px; }
     .siteNav a:hover,.siteActions a:hover,.siteActions button:hover,.readerTools button:hover:not(:disabled) { background:#eee; }
     .siteActions { flex:0 0 auto; justify-self:end; margin-left:0; gap:5px; flex-wrap:nowrap; justify-content:flex-end; }
@@ -119,6 +125,12 @@
       .pageTools button { padding:6px 7px; }
       .pageTools input { width:48px; }
     }
+    /* Menú colapsado en celular o cuando la pantalla es vertical. */
+    @media (max-width:820px), (orientation:portrait), (hover:none) and (pointer:coarse) {
+      .siteLeft { position:sticky; left:0; z-index:3; background:#fff; padding-right:8px; min-width:0; }
+      .siteLeft > .identity,.siteLeft > .siteNav { display:none; }
+      .mobileContactToggle { display:inline-flex; align-items:center; justify-content:center; }
+    }
     @media (prefers-reduced-motion:reduce) { .sideNav { transition:none; } }
   </style>
 </head>
@@ -133,6 +145,7 @@
           <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">E-mail</a>
           <a href="tel:+51902163225">Llamar</a>
         </nav>
+        <button class="mobileContactToggle" id="contactMenuToggle" type="button" aria-controls="contactMenu" aria-expanded="false" aria-label="Abrir menú de perfil y contacto">☰ Menú</button>
       </div>
       <div class="readerTools" aria-label="Herramientas del visor PDF">
         <button class="toolButton" type="button" id="viewerMode" title="Alternar con las herramientas nativas del navegador">Visor PDF clásico</button>
@@ -163,6 +176,13 @@
         <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF</a>
       </div>
     </div>
+    <nav class="contactMenu" id="contactMenu" aria-label="Perfil y contacto" hidden>
+      <a class="menuIdentity" href="/">Christian Gabriel Arleo · Portafolio</a>
+      <a href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <a href="mailto:hola@christianarleo.com?subject=Contacto%20desde%20tu%20portafolio">E-mail</a>
+      <a href="tel:+51902163225">Llamar</a>
+    </nav>
   </header>
   <main id="readerPanel">
     <div class="viewerShell">
@@ -199,6 +219,29 @@
     </footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script>
+    (() => {
+      const toggle = document.getElementById("contactMenuToggle");
+      const menu = document.getElementById("contactMenu");
+      const compact = window.matchMedia("(max-width:820px), (orientation:portrait), (hover:none) and (pointer:coarse)");
+      function showMenu(shouldOpen) {
+        const open = Boolean(shouldOpen && compact.matches);
+        menu.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "Cerrar menú de perfil y contacto" : "Abrir menú de perfil y contacto");
+      }
+      toggle.addEventListener("click", () => showMenu(menu.hidden));
+      menu.addEventListener("click", event => { if (event.target.closest("a")) showMenu(false); });
+      document.addEventListener("pointerdown", event => {
+        if (!menu.hidden && !menu.contains(event.target) && !toggle.contains(event.target)) showMenu(false);
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !menu.hidden) { showMenu(false); toggle.focus(); }
+      });
+      if (compact.addEventListener) compact.addEventListener("change", () => showMenu(false));
+      else compact.addListener(() => showMenu(false));
+    })();
+  </script>
   <script src="./lector-v10.js?v=20261123-resumen1" defer></script>
 </body>
 </html>
