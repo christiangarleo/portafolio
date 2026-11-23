@@ -36,6 +36,17 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - No se devuelve URL firmada al consultar RUC, **solo al pulsar Descargar en la tarjeta elegida**.
 - No devolver rutas privadas de Storage, estados internos ni claves secretas al frontend.
 
+## Formularios comerciales v2 (23-11-2026)
+- **Únicos dos caminos públicos:** «Contratación In-house» y «Contratación por proyecto». Se retiró «Solicitar CV personalizado» de la interfaz; se conserva la acción antigua `lead` en la función para compatibilidad con navegadores que todavía tengan caché de la versión anterior.
+- **Flujo de dos etapas:** 1) datos de empresa/contacto (RUC tomado de la URL); 2) detalles según modalidad, preferencia de contacto y observaciones.
+- **In-house:** puesto, dedicación **Full Time / Part Time / Por horas**, horas y período cuando corresponda, modalidad remoto/presencial/híbrido, ubicación si no es remoto, días presenciales si es híbrido, días de trabajo, horario o por definir, zona horaria, responsabilidades, fecha de inicio y remuneración opcionales.
+- **Por proyecto:** nombre y área del proyecto, problema, resultado, entregables opcionales, fechas o entrega por definir, presupuesto opcional, modalidad, ubicación si corresponde y referencia opcional.
+- **Común:** «¿Querés que me comunique con vos?» → «Sí, contactame.» o «No, nosotros te devolvemos la llamada.». Para la primera respuesta aparece medio preferido (WhatsApp / Llamada / E-mail) y horario opcional; teléfono requerido si se solicita llamada o WhatsApp. «Observaciones adicionales» opcional, máximo 1.000 caracteres.
+- **Persistencia:** nuevas solicitudes con `action:"lead_v2"`, `intake_version=2`, `intake_data` JSONB para las condiciones, `contact_preference`, `contact_method`, `contact_time`, `observations`. Las solicitudes previas siguen accesibles.
+- **Gestión:** panel de administración incluye detalles estructurados y estados «Nueva → Contactada → En evaluación → Cerrada». Columnas y restricción de estados actualizadas sin eliminar datos.
+- **Privacidad:** nunca se envían datos de las solicitudes al portal de reclutadores; solo son legibles desde el panel autorizado. La preferencia «la empresa nos devuelve la llamada» implica **no iniciar contacto proactivo**.
+- **Estado:** frontend, base de datos y Edge Function v5 modificados; verificación de sintaxis, IDs, permisos y esquema. Prueba real de envío desde navegador pendiente, sin crear solicitudes ficticias en producción.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
