@@ -58,6 +58,13 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - **Acceso:** ofrecer las dos oportunidades en `/empresa/` tanto con CV activos como vencidos o sin CV; no tocar el lector PDF ni los archivos del bucket.
 - **Validación estática:** sintaxis y IDs, contrato cliente/Edge, estructura SQL; prueba de envío extremo a extremo sin crear leads ficticios pendiente.
 
+## Apariencia compartida — 23/11/2026
+- **EJECUTADO:** selector de apariencia (Automático, Claro, Oscuro) en `/`, `/portafolio/`, `/empresa/` y `/admin/`.
+- Fuente de estilos y lógica única: `theme/theme.css` y `theme/theme.js`. Las páginas tienen un script mínimo en `<head>` para aplicar la preferencia antes de cargar la interfaz (evitar destello).
+- Preferencia: `localStorage["cga-appearance"]` solo guarda `system`, `light` o `dark`; sin datos personales. Automático sigue `prefers-color-scheme` del dispositivo.
+- El modo oscuro afecta únicamente **interfaz, formularios, menús, controles, barras y fondo del lector**, pero NO modifica los píxeles de los documentos PDF (canvas, página y visor nativo).
+- **VERIFICADO:** enlaces e inicialización en las cuatro páginas, sintaxis de JavaScript y balance de reglas CSS; queda pendiente revisión visual manual en navegadores/móvil tras publicación en GitHub Pages.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
