@@ -262,6 +262,19 @@
     .cvChoices button:last-child { grid-column:1 / -1; }
     .cvChoices button:hover { border-color:#444; }
     .cvLeadBox { margin-top:16px; padding-top:13px; border-top:1px solid #e5e5e5; }
+    /* Portal por empresa: visible solo tras ingresar un RUC con CV disponibles. */
+    .cvDialog { overflow-y:auto; }
+    .cvCompanyPanel { padding:16px 0 12px; border-top:1px solid #e7e7e7; }
+    .cvCompanyPanel h3 { font-size:17px; line-height:1.35; margin:0 0 4px; }
+    .cvCompanyPanel .cvCompanySub { margin:0 0 12px; color:#636363; font-size:12px; }
+    .cvDocumentList { display:grid; grid-template-columns:1fr; gap:10px; }
+    .cvDocCard { border:1px solid #e1e1e1; background:#fafafa; border-radius:6px; padding:14px; }
+    .cvDocCard h4 { margin:0 0 8px; font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
+    .cvDocCard small { display:block; color:#666; font-size:12px; line-height:1.4; margin-bottom:10px; }
+    .cvDocCard .cvDocStatus { display:inline-block; font-size:11px; padding:3px 8px; border-radius:16px; margin-bottom:8px; background:#e7e7e7; color:#222; }
+    .cvDocCard .cvDocStatus--expired { background:#ececec; color:#777; }
+    .cvDocCard button { padding:9px 13px; background:#1b1b1b; color:white; border:1px solid #1b1b1b; border-radius:4px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+    .cvDocCard button:disabled { background:#ddd; border-color:#ddd; color:#777; cursor:not-allowed; }
     .cvLeadBox h3 { font-size:16px; margin:4px 0 8px; }
     .cvHP { position:absolute!important; left:-10000px!important; width:1px!important; height:1px!important; overflow:hidden!important; }
   </style>
@@ -363,13 +376,18 @@
       <div class="cvDialogHead"><h2 id="cvDialogTitle">CV personalizado por empresa</h2>
         <button id="cvClose" type="button" aria-label="Cerrar">×</button>
       </div>
-      <p>Ingresá el RUC de tu empresa (11 dígitos). Si preparé un CV vigente para esa organización, comenzará la descarga automáticamente.</p>
+      <p>Ingresá el RUC de tu empresa (11 dígitos). Si hay un solo CV vigente, comenzará la descarga. Si hay varios, vas a poder elegir el correspondiente a cada vacante.</p>
       <form id="cvLookupForm">
         <label for="cvRuc">RUC de la empresa</label>
         <input id="cvRuc" name="ruc" inputmode="numeric" type="text" maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="Ej.: 20987654321" autocomplete="off" required>
         <p><button type="submit" class="primary">Buscar CV</button></p>
       </form>
       <div class="result" id="cvResult" role="status" aria-live="polite"></div>
+      <section id="cvCompanyPanel" class="cvCompanyPanel" hidden aria-labelledby="cvCompanyHeading">
+        <h3 id="cvCompanyHeading">CV disponibles para tu empresa</h3>
+        <p id="cvCompanySub" class="cvCompanySub"></p>
+        <div id="cvDocumentList" class="cvDocumentList"></div>
+      </section>
       <div id="cvChoices" class="cvChoices" hidden>
         <button data-kind="in_house" type="button">Contratación in-house</button>
         <button data-kind="proyecto" type="button">Contratación por proyecto</button>
@@ -428,6 +446,6 @@
     })();
   </script>
   <script src="./lector-v10.js?v=20261123-cv1" defer></script>
-  <script src="./cv-portal.js?v=20261123-cv1" defer></script>
+  <script src="./cv-portal.js?v=20261123-empresa1" defer></script>
 </body>
 </html>
