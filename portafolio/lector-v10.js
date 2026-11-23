@@ -279,7 +279,7 @@
     if (printGuard) { clearTimeout(printGuard); printGuard = null; }
     if (printFrame) { printFrame.remove(); printFrame = null; }
     printButton.disabled = false;
-    printButton.textContent = "Imprimir";
+    printButton.title = "Imprimir portafolio";
   }
   printButton.addEventListener("click", () => {
     if (!verifiedPdfBlobUrl) {
@@ -292,7 +292,7 @@
       return;
     }
     printButton.disabled = true;
-    printButton.textContent = "Preparando…";
+    printButton.title = "Preparando impresión…";
     const frame = document.createElement("iframe");
     printFrame = frame;
     frame.title = "Impresión del portafolio PDF";
@@ -310,7 +310,7 @@
         showMessage("Brave bloqueó la impresión directa. Usá «Visor PDF clásico» y Ctrl + P");
       } finally {
         printButton.disabled = false;
-        printButton.textContent = "Imprimir";
+        printButton.title = "Imprimir portafolio";
       }
     }, {once:true});
     frame.addEventListener("error", () => {
