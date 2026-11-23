@@ -203,14 +203,18 @@ const leadFieldLabels = {
   project_name:"Proyecto",project_area:"Área de proyecto",problem:"Necesidad o problema",
   outcome:"Resultado esperado",deliverables:"Entregables",
   due_date:"Fecha objetivo",deadline_tbd:"Fecha por definir",
-  budget:"Presupuesto",reference_url:"Enlace al brief"
+  budget:"Presupuesto",reference_url:"Enlace al brief",
+  project_need:"Qué necesita resolver",project_timing:"Cuándo lo necesita"
 };
 const leadFieldValues = {
   full_time:"Full Time",part_time:"Part Time",por_horas:"Por horas",
   remoto:"Remoto",presencial:"Presencial",hibrido:"Híbrido",
   semana:"Por semana",mes:"Por mes",total:"En total",
   marketing:"Marketing",tecnologia_ia:"Tecnología e IA",datos:"Datos",
-  diseno:"Diseño",otro:"Otro"
+  diseno:"Diseño",otro:"Otro / Necesita asesoramiento",
+  mas_clientes:"Conseguir más clientes",marketing_contenido:"Mejorar marketing y contenido",
+  automatizacion_ia:"Automatización e IA",solucion_digital:"Crear una solución digital",
+  urgente:"Urgente",este_mes:"Este mes",mas_adelante:"Más adelante",a_definir:"A definir"
 };
 function leadValue(v){
   if(Array.isArray(v))return v.length?v.map(x=>leadFieldValues[x]||x).join(", "):"";
@@ -231,7 +235,7 @@ async function loadLeads(){
       " · RUC "+(x.ruc||"Sin RUC")+" · "+new Date(x.created_at).toLocaleString("es-PE")));
     if(x.position_or_project)box.append(node("small","Vacante/proyecto: "+x.position_or_project));
 
-    if(x.intake_version===2){
+    if(x.intake_version>=2){
       const pref=x.contact_preference==="contactame"
         ? "Solicita contacto de Christian"
         : x.contact_preference==="empresa_contacta"
