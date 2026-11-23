@@ -138,13 +138,50 @@
       .siteLeft > .identity,.siteLeft > .siteNav { display:none; }
       .mobileContactToggle { display:inline-flex; align-items:center; justify-content:center; }
     }
-    /* La navegación inferior permanece en una única fila en vertical y celulares. */
+    /* Pie móvil/vertical: cinco secciones arriba, paginación abajo, sin scroll horizontal. */
     @media (orientation:portrait), (max-width:760px) {
-      .bottomBar { display:flex; flex-direction:row; flex-wrap:nowrap; justify-content:flex-start; align-items:center; gap:10px; padding:8px 12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
-      .bottomBar .sectionLinks { display:flex; flex:0 0 auto; flex-wrap:nowrap; justify-content:flex-start; min-width:max-content; }
-      .bottomBar .pageTools { display:flex; flex:0 0 auto; flex-wrap:nowrap; min-width:max-content; justify-content:center; }
-      .bottomBar::-webkit-scrollbar { height:5px; }
-      .bottomBar::-webkit-scrollbar-thumb { background:#a0a0a0; border-radius:5px; }
+      .bottomBar {
+        display:grid;
+        grid-template-columns:max-content max-content;
+        grid-template-rows:auto auto;
+        justify-content:center;
+        align-items:center;
+        column-gap:0;
+        row-gap:3px;
+        padding:6px 4px 8px;
+        max-width:100%;
+        overflow-x:hidden;
+        overflow-y:visible;
+      }
+      .bottomBar .sectionLinks {
+        display:flex;
+        flex:0 0 auto;
+        flex-wrap:nowrap;
+        align-items:center;
+        min-width:0;
+        gap:0;
+      }
+      .bottomBar .sectionLinks--before { grid-column:1; grid-row:1; justify-content:flex-end; }
+      .bottomBar .sectionLinks--after { grid-column:2; grid-row:1; justify-content:flex-start; }
+      .bottomBar .sectionJump {
+        flex:0 0 auto;
+        min-height:30px;
+        padding:6px 1px;
+        font-size:clamp(8px,2.3vw,11px);
+        line-height:1.15;
+        letter-spacing:-.1px;
+        white-space:nowrap;
+      }
+      .bottomBar .pageTools {
+        grid-column:1 / -1;
+        grid-row:2;
+        display:flex;
+        flex:0 0 auto;
+        flex-wrap:nowrap;
+        min-width:0;
+        justify-content:center;
+        gap:clamp(3px,1vw,8px);
+      }
     }
     /* Móvil/vertical: acciones arriba, herramientas del visor abajo. */
     @media (max-width:820px), (orientation:portrait) {
