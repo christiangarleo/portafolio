@@ -239,6 +239,31 @@
       .readerTools::-webkit-scrollbar-thumb { background:#aaa; border-radius:5px; }
     }
     @media (prefers-reduced-motion:reduce) { .sideNav { transition:none; } }
+    /* Descarga y CV bajo RUC: superficie independiente del lector PDF. */
+    .downloadMenu { position:fixed; z-index:70; width:228px; background:#fff; border:1px solid #ddd; padding:6px; box-shadow:0 12px 30px rgba(0,0,0,.16); border-radius:5px; }
+    .downloadMenu a,.downloadMenu button { display:block; width:100%; padding:12px; border:0; background:transparent; text-align:left; font:inherit; font-size:13px; line-height:1.3; color:#171717; text-decoration:none; border-radius:3px; cursor:pointer; }
+    .downloadMenu a:hover,.downloadMenu button:hover { background:#f2f2f2; }
+    .cvDialog { width:min(510px,calc(100vw - 24px)); max-height:min(88vh,780px); padding:0; border:1px solid #dedede; border-radius:9px; box-shadow:0 18px 65px rgba(0,0,0,.27); color:#222; }
+    .cvDialog::backdrop { background:rgba(0,0,0,.58); }
+    .cvDialogBody { padding:23px clamp(16px,4vw,28px) 28px; }
+    .cvDialogHead { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+    .cvDialogHead h2 { font-size:21px; line-height:1.2; margin:0; }
+    .cvDialogHead button { border:1px solid #ddd; background:white; border-radius:4px; min-width:32px; min-height:32px; cursor:pointer; font-size:22px; }
+    .cvDialog p { font-size:13px; color:#555; line-height:1.5; }
+    .cvDialog label { font-size:12px; font-weight:700; display:block; margin:11px 0 5px; }
+    .cvDialog input,.cvDialog textarea { display:block; width:100%; padding:10px; border:1px solid #bcbcbc; border-radius:4px; background:#fff; color:#181818; font:inherit; font-size:14px; }
+    .cvDialog textarea { min-height:90px; resize:vertical; }
+    .cvDialog .primary { background:#191919; color:white; border:1px solid #191919; border-radius:4px; padding:11px 15px; cursor:pointer; font:inherit; font-size:13px; font-weight:700; }
+    .cvDialog .primary:disabled { opacity:.6; }
+    .cvDialog .result { padding:8px 0; min-height:28px; font-size:13px; line-height:1.45; }
+    .cvDialog .result[data-error="true"] { color:#a22; }
+    .cvChoices { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; }
+    .cvChoices button { padding:11px; border:1px solid #ddd; background:#f9f9f9; color:#222; border-radius:4px; font:inherit; font-size:12px; cursor:pointer; text-align:left; }
+    .cvChoices button:last-child { grid-column:1 / -1; }
+    .cvChoices button:hover { border-color:#444; }
+    .cvLeadBox { margin-top:16px; padding-top:13px; border-top:1px solid #e5e5e5; }
+    .cvLeadBox h3 { font-size:16px; margin:4px 0 8px; }
+    .cvHP { position:absolute!important; left:-10000px!important; width:1px!important; height:1px!important; overflow:hidden!important; }
   </style>
 </head>
 <body>
@@ -284,8 +309,12 @@
         </div>
         <button class="copyPage iconOnly" type="button" id="sendPage" aria-label="Copiar enlace de la página actual" title="Copiar enlace de la página actual"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
         <button class="printPdf iconOnly" type="button" id="printPdf" title="Imprimir portafolio" aria-label="Imprimir portafolio"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="10" rx="2"/><path d="M7 15h10v6H7zM17 11h.01"/></svg></button>
-        <a class="download iconOnly" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420" aria-label="Descargar PDF" title="Descargar PDF"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></a>
+        <button class="download iconOnly" id="downloadToggle" type="button" aria-controls="downloadMenu" aria-expanded="false" aria-label="Opciones de descarga" title="Descargar portafolio o CV"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></button>
       </div>
+    </div>
+    <div class="downloadMenu" id="downloadMenu" role="menu" aria-label="Opciones de descarga" hidden>
+      <a id="downloadPortfolio" role="menuitem" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar portafolio PDF</a>
+      <button id="cvOpen" type="button" role="menuitem">Descargar CV personalizado</button>
     </div>
     <nav class="contactMenu" id="contactMenu" aria-label="Perfil y contacto" hidden>
       <a class="menuIdentity" href="/">Christian Gabriel Arleo · Portafolio</a>
@@ -329,6 +358,41 @@
       </nav>
     </footer>
   </main>
+  <dialog id="cvDialog" class="cvDialog" aria-labelledby="cvDialogTitle">
+    <div class="cvDialogBody">
+      <div class="cvDialogHead"><h2 id="cvDialogTitle">CV personalizado por empresa</h2>
+        <button id="cvClose" type="button" aria-label="Cerrar">×</button>
+      </div>
+      <p>Ingresá el RUC de tu empresa (11 dígitos). Si preparé un CV vigente para esa organización, comenzará la descarga automáticamente.</p>
+      <form id="cvLookupForm">
+        <label for="cvRuc">RUC de la empresa</label>
+        <input id="cvRuc" name="ruc" inputmode="numeric" type="text" maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="Ej.: 20987654321" autocomplete="off" required>
+        <p><button type="submit" class="primary">Buscar CV</button></p>
+      </form>
+      <div class="result" id="cvResult" role="status" aria-live="polite"></div>
+      <div id="cvChoices" class="cvChoices" hidden>
+        <button data-kind="in_house" type="button">Contratación in-house</button>
+        <button data-kind="proyecto" type="button">Contratación por proyecto</button>
+        <button data-kind="solicitud_cv" type="button">Solicitar un CV personalizado</button>
+      </div>
+      <div id="cvLeadBox" class="cvLeadBox" hidden>
+        <h3 id="cvLeadTitle">Solicitar CV</h3>
+        <form id="cvLeadForm">
+          <input type="hidden" id="cvLeadKind" name="kind" value="solicitud_cv">
+          <input class="cvHP" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
+          <label for="cvLeadCompany">Empresa</label><input id="cvLeadCompany" name="company_name" maxlength="160" required>
+          <label for="cvLeadRuc">RUC (opcional)</label><input id="cvLeadRuc" name="ruc" pattern="[0-9]{11}" maxlength="11" inputmode="numeric">
+          <label for="cvLeadName">Persona de contacto</label><input id="cvLeadName" name="contact_name" maxlength="140" required>
+          <label for="cvLeadEmail">Correo corporativo</label><input id="cvLeadEmail" name="email" type="email" maxlength="200" required>
+          <label for="cvLeadPhone">Teléfono (opcional)</label><input id="cvLeadPhone" name="phone" type="tel" maxlength="65">
+          <label id="cvLeadPositionLabel" for="cvLeadPosition">Puesto o proyecto</label><input id="cvLeadPosition" name="position_or_project" maxlength="180">
+          <label for="cvLeadDetails">Contame qué necesitás</label><textarea id="cvLeadDetails" name="details" maxlength="1600"></textarea>
+          <p><button class="primary" type="submit">Enviar solicitud</button></p>
+          <div class="result" id="cvLeadStatus" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script>
     (() => {
@@ -353,6 +417,7 @@
       else compact.addListener(() => showMenu(false));
     })();
   </script>
-  <script src="./lector-v10.js?v=20261123-iconos1" defer></script>
+  <script src="./lector-v10.js?v=20261123-cv1" defer></script>
+  <script src="./cv-portal.js?v=20261123-cv1" defer></script>
 </body>
 </html>
