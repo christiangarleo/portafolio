@@ -36,7 +36,7 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - No se devuelve URL firmada al consultar RUC, **solo al pulsar Descargar en la tarjeta elegida**.
 - No devolver rutas privadas de Storage, estados internos ni claves secretas al frontend.
 
-## Formularios comerciales v2 (23-11-2026)
+## Formularios comerciales v2 (histórico; reemplazados por v3)
 - **Únicos dos caminos públicos:** «Contratación In-house» y «Contratación por proyecto». Se retiró «Solicitar CV personalizado» de la interfaz; se conserva la acción antigua `lead` en la función para compatibilidad con navegadores que todavía tengan caché de la versión anterior.
 - **Flujo de dos etapas:** 1) datos de empresa/contacto (RUC tomado de la URL); 2) detalles según modalidad, preferencia de contacto y observaciones.
 - **In-house:** puesto, dedicación **Full Time / Part Time / Por horas**, horas y período cuando corresponda, modalidad remoto/presencial/híbrido, ubicación si no es remoto, días presenciales si es híbrido, días de trabajo, horario o por definir, zona horaria, responsabilidades, fecha de inicio y remuneración opcionales.
@@ -64,7 +64,7 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - Sin notificaciones automáticas por correo; las solicitudes se visualizan en administración.
 
 ## Estado de implementación
-- EJECUTADO: esquema, columna de estado, Edge Function v4, portal individual `/empresa/`, enlace desde el panel, controles de vacante/estado, RLS y bucket privado.
+- EJECUTADO: esquema, columna de estado, Edge Function v6, portal individual `/empresa/`, enlace desde el panel, controles de vacante/estado, RLS y bucket privado.
 - VERIFICADO: código JS sintácticamente válido; backend activo y sincronizado con GitHub; esquema actualizado.
-- PENDIENTE DE VERIFICAR: render en navegador del portal con un CV real y, luego, con dos CV vigentes del mismo RUC; descarga y expiración en móvil.
+- PENDIENTE DE VERIFICAR: prueba end-to-end de los formularios rápidos v3 y de descargas en móvil; no se generan solicitudes ficticias en producción.
 - PENDIENTE DE REVISIÓN (separado de este cambio): el auditor de seguridad de Supabase avisa sobre función `public.rls_auto_enable()` ejecutable por roles públicos y protección contra contraseñas filtradas desactivada. No se modificó automáticamente ese componente ajeno al flujo.
