@@ -47,6 +47,17 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - **Privacidad:** nunca se envían datos de las solicitudes al portal de reclutadores; solo son legibles desde el panel autorizado. La preferencia «la empresa nos devuelve la llamada» implica **no iniciar contacto proactivo**.
 - **Estado:** frontend, base de datos y Edge Function v5 modificados; verificación de sintaxis, IDs, permisos y esquema. Prueba real de envío desde navegador pendiente, sin crear solicitudes ficticias en producción.
 
+## Formularios rápidos v3 — 23/11/2026
+- **Decisión:** optimizar conversión antes de calificación exhaustiva; no solicitar un brief ni condiciones laborales completas para captar el primer interés.
+- **2 buyer persona / 2 formularios:** `in_house` (reclutadores) y `proyecto` (empresarios o responsables de área). Una sola pantalla, sin pasos de avance.
+- **In-house:** empresa, vacante, dedicación por selección múltiple (Full Time / Part Time / Por horas), modalidad por selección múltiple (Remoto / Híbrido / Presencial), correo y preferencia de contacto. El detalle de remuneración, ubicación y horarios pasa a la conversación posterior.
+- **Proyecto:** empresa, necesidad por selección múltiple (más clientes / marketing y contenido / automatización e IA / solución digital / otro), urgencia por selección múltiple (urgente / este mes / más adelante / a definir), correo y preferencia de contacto. No se pide brief ni presupuesto al inicio.
+- **Contacto:** «Sí, contactame.» o «No, nosotros te devolvemos la llamada.»; si pide contacto, el e-mail está seleccionado por defecto y puede cambiar a WhatsApp o llamada (piden teléfono solo entonces).
+- **Opcionales ocultos en `<details>`:** observaciones (hasta 1000 caracteres) y nombre del contacto. La empresa se precarga si el RUC está asociado a CV registrados.
+- **Persistencia:** nueva acción `lead_v3` en Edge Function v6, `intake_version=3` y `intake_data` JSONB con campos estructurados. Se preservan `lead_v2` y `lead` para cachés y registros históricos. El administrador muestra v2 y v3.
+- **Acceso:** ofrecer las dos oportunidades en `/empresa/` tanto con CV activos como vencidos o sin CV; no tocar el lector PDF ni los archivos del bucket.
+- **Validación estática:** sintaxis y IDs, contrato cliente/Edge, estructura SQL; prueba de envío extremo a extremo sin crear leads ficticios pendiente.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
