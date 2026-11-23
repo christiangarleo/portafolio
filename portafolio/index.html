@@ -386,6 +386,16 @@
           <label for="cvLeadEmail">Correo corporativo</label><input id="cvLeadEmail" name="email" type="email" maxlength="200" required>
           <label for="cvLeadPhone">Teléfono (opcional)</label><input id="cvLeadPhone" name="phone" type="tel" maxlength="65">
           <label id="cvLeadPositionLabel" for="cvLeadPosition">Puesto o proyecto</label><input id="cvLeadPosition" name="position_or_project" maxlength="180">
+          <div id="cvInhouseFields" hidden>
+            <label for="cvLeadMode">Modalidad de contratación</label>
+            <select id="cvLeadMode" name="modalidad"><option value="">A definir</option><option value="Tiempo completo">Tiempo completo</option><option value="Tiempo parcial">Tiempo parcial</option><option value="Servicios continuos">Servicios continuos</option></select>
+          </div>
+          <div id="cvProjectFields" hidden>
+            <label for="cvLeadBudget">Presupuesto estimado (opcional)</label>
+            <input id="cvLeadBudget" name="presupuesto" maxlength="90" placeholder="Ej.: a definir">
+            <label for="cvLeadDeadline">Plazo aproximado (opcional)</label>
+            <input id="cvLeadDeadline" name="plazo" maxlength="100" placeholder="Ej.: 2 meses">
+          </div>
           <label for="cvLeadDetails">Contame qué necesitás</label><textarea id="cvLeadDetails" name="details" maxlength="1600"></textarea>
           <p><button class="primary" type="submit">Enviar solicitud</button></p>
           <div class="result" id="cvLeadStatus" role="status" aria-live="polite"></div>
