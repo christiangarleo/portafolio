@@ -78,6 +78,64 @@ Deno.serve(async (req: Request) => {
       return reply(req,{ error:"No se pudo preparar el archivo" },503);
     }
   }
+  // Formulario breve por buyer persona. La v2 se conserva para sesiones cacheadas.
+  if (input.action === "lead_v3") {
+    if (text(input.website, 100)) return reply(req, { status: "received" });
+    const kind = text(input.kind, 25);
+    const company = text(input.company_name, 160);
+    const ruc = text(input.ruc, 11);
+    const email = text(input.email, 200).toLowerCase();
+    const contactName = text(input.contact_name, 140);
+    const phone = text(input.phone, 65);
+    const preference = text(input.contact_preference, 30);
+    const method = text(input.contact_method, 25);
+    const observations = text(input.observations, 1000);
+    const data = input.intake;
+    const values = data && typeof data === "object" && !Array.isArray(data)
+      ? data as Record<string, unknown> : null;
+    const pick = (k: string, n: number) => text(values?.[k], n);
+    const bad = () => reply(req, { error: "Revisá los campos obligatorios antes de enviar." }, 400);
+    if (!["in_house","proyecto"].includes(kind) || !digits(ruc) || company.length < 2 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !values ||
+      !["contactame","empresa_contacta"].includes(preference) ||
+      (preference === "contactame" && (!["email","whatsapp","llamada"].includes(method) ||
+        ((method === "whatsapp" || method === "llamada") && phone.length < 6))) ||
+      (preference === "empresa_contacta" && method !== ""))
+      return bad();
+    let position = "";
+    const intake: Record<string, string> = {};
+    if (kind === "in_house") {
+      position = pick("position", 180);
+      const dedication = pick("dedication", 20);
+      const workMode = pick("work_mode", 20);
+      if (!position || !["full_time","part_time","por_horas"].includes(dedication) ||
+        !["remoto","presencial","hibrido"].includes(workMode)) return bad();
+      Object.assign(intake, { position, dedication, work_mode: workMode });
+    } else {
+      const need = pick("project_need", 30);
+      const timing = pick("project_timing", 20);
+      if (!["mas_clientes","marketing_contenido","automatizacion_ia","solucion_digital","otro"].includes(need) ||
+        !["urgente","este_mes","mas_adelante","a_definir"].includes(timing)) return bad();
+      Object.assign(intake, { project_need: need, project_timing: timing });
+      position = {
+        mas_clientes:"Conseguir más clientes", marketing_contenido:"Mejorar marketing y contenido",
+        automatizacion_ia:"Automatización e IA", solucion_digital:"Solución digital",
+        otro:"Otro proyecto / asesoramiento"
+      }[need] || "Propuesta de proyecto";
+    }
+    const { error } = await supabase.from("portfolio_cv_leads").insert({
+      kind, company_name: company, ruc, contact_name: contactName || "Equipo de " + company.slice(0, 120),
+      email, phone: phone || null, position_or_project: position,
+      details: observations,
+      contact_preference: preference,
+      contact_method: preference === "contactame" ? method : null,
+      contact_time: null,
+      observations: observations || null,
+      intake_data: intake, intake_version: 3
+    });
+    if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
+    return reply(req, { status: "received" });
+  }
   if (input.action === "lead_v2") {
     if (text(input.website, 300)) return reply(req, { status: "received" });
     const kind = text(input.kind, 25);
