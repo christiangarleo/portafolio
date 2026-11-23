@@ -1,14 +1,15 @@
 # CV personalizados — guía operativa vigente
 
 ## Objetivo
-Desde https://christianarleo.com/portafolio/ una empresa identifica CV por RUC (11 dígitos), sin códigos adicionales.
-- **0 CV vigentes:** ofrecer solicitud de CV / in-house / proyecto.
-- **1 CV vigente:** descarga automática de CV a través de un enlace temporal.
-- **2 o más CV vigentes:** mostrar un panel con las vacantes, CV vigentes y vencidos de ese RUC. Cada CV vigente se descarga individualmente. Los vencidos no generan enlace.
-- No mostrar el **estado de postulación** del registro interno al reclutador.
+Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 dígitos) y abre **siempre una página dedicada**: https://christianarleo.com/empresa/?ruc=<RUC> (el RUC es público y no autentica).
+- **0 CV registrados/activos:** la página muestra formularios de solicitud de CV / in-house / proyecto.
+- **1 o más CV asociados al RUC:** se muestra el portal de la empresa con todas las vacantes vinculadas a CV activos, incluso cuando hay uno solo. Cada tarjeta ofrece la descarga bajo demanda de su CV vigente.
+- **CV vencidos:** visibles como historial del portal, sin descarga.
+- No mostrar el **estado de postulación** del registro interno al reclutador, ni URLs permanentes de Storage.
+- El panel privado de administración ofrece «Abrir portal de la empresa» para comprobar la experiencia del reclutador.
 
 ## Componentes y fuente de verdad
-- Frontend público: `portafolio/index.html` y `portafolio/cv-portal.js`.
+- Frontend público: `portafolio/index.html`, `portafolio/cv-portal.js`; portal por empresa: `empresa/index.html`, `empresa/empresa.js`.
 - Lector PDF público: `portafolio/lector-v10.js` (no modificar al evolucionar los CV).
 - Administración privada: `admin/index.html` y `admin/panel.js`, https://christianarleo.com/admin/.
 - Supabase: proyecto `gprhevdotoykofrxbufv`, Edge Function `portfolio-cv-portal`; fuente versionada de función en `supabase/functions/portfolio-cv-portal/index.ts`.
@@ -16,7 +17,7 @@ Desde https://christianarleo.com/portafolio/ una empresa identifica CV por RUC (
 - Bucket privado `cv-personalizados` (mantener aparte de `portafolio`, el bucket público).
 - Campo nuevo ejecutado en producción: `public.portfolio_cv_documents.application_status` (por defecto `preparado`; permitidos `preparado`, `postulado`, `en_proceso`, `finalizado`). Es **solo interno**.
 - `role_name` representa la **vacante**, editable posteriormente con «Editar vacante».
-- `is_main` solo prioriza orden del selector. NO excluye otros CV del mismo RUC cuando hay varios vigentes.
+- `is_main` solo prioriza orden del portal. NO excluye otros CV del mismo RUC. No se usa para descargar automáticamente.
 
 ## Administración
 1. Acceder con la cuenta verificada y autorizada en Supabase Auth; la autorización vive en `portfolio_cv_admins` con RLS.
@@ -28,12 +29,12 @@ Desde https://christianarleo.com/portafolio/ una empresa identifica CV por RUC (
 
 ## Contratos de la función
 - `POST {action:"resolve",ruc:"<11 dígitos>"}`:
-  - `{status:"not_found"}` si no hay CV vigentes;
-  - `{status:"ready",url,company,position}` si hay exactamente uno;
-  - `{status:"multiple",company,items:[{id,position,expires_at,available}]}` si hay más de uno.
-- `POST {action:"download",ruc,id}`: valida RUC, CV activo, vencimiento y genera un enlace firmado de 90s.
-- `POST {action:"lead",...}`: registra solicitud comercial en `portfolio_cv_leads`.
-- No devolver rutas privadas de Storage, estados internos ni claves secretas en el frontend.
+  - `{status:"not_found"}` si no existen CV activos registrados;
+  - `{status:"company",company,items:[{id,position,expires_at,available}]}` si existe uno o más CV activos, incluidos los vencidos.
+- `POST {action:"download",ruc,id}`: valida que el CV pertenezca al RUC, esté activo y vigente, y genera enlace firmado de 90 segundos.
+- `POST {action:"lead",...}`: registra la solicitud en `portfolio_cv_leads`.
+- No se devuelve URL firmada al consultar RUC, **solo al pulsar Descargar en la tarjeta elegida**.
+- No devolver rutas privadas de Storage, estados internos ni claves secretas al frontend.
 
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
@@ -41,7 +42,7 @@ Desde https://christianarleo.com/portafolio/ una empresa identifica CV por RUC (
 - Sin notificaciones automáticas por correo; las solicitudes se visualizan en administración.
 
 ## Estado de implementación
-- EJECUTADO: esquema, columna de estado, Edge Function v3, frontend selector, controles de vacante y estado, RLS y bucket privado.
+- EJECUTADO: esquema, columna de estado, Edge Function v4, portal individual `/empresa/`, enlace desde el panel, controles de vacante/estado, RLS y bucket privado.
 - VERIFICADO: código JS sintácticamente válido; backend activo y sincronizado con GitHub; esquema actualizado.
-- PENDIENTE DE VERIFICAR: flujo extremo a extremo para **2 CV vigentes del mismo RUC** (actualmente hay uno cargado); prueba de vencimiento y descarga en móvil.
+- PENDIENTE DE VERIFICAR: render en navegador del portal con un CV real y, luego, con dos CV vigentes del mismo RUC; descarga y expiración en móvil.
 - PENDIENTE DE REVISIÓN (separado de este cambio): el auditor de seguridad de Supabase avisa sobre función `public.rls_auto_enable()` ejecutable por roles públicos y protección contra contraseñas filtradas desactivada. No se modificó automáticamente ese componente ajeno al flujo.
