@@ -1,48 +1,47 @@
-# CV personalizados — guía operativa
+# CV personalizados — guía operativa vigente
 
 ## Objetivo
-El lector de https://christianarleo.com/portafolio/ puede solicitar un CV personalizado usando un RUC de 11 dígitos. Sin CV principal activo y vigente, se habilitan formularios **in-house**, **proyecto** y **solicitud de CV**.
+Desde https://christianarleo.com/portafolio/ una empresa identifica CV por RUC (11 dígitos), sin códigos adicionales.
+- **0 CV vigentes:** ofrecer solicitud de CV / in-house / proyecto.
+- **1 CV vigente:** descarga automática de CV a través de un enlace temporal.
+- **2 o más CV vigentes:** mostrar un panel con las vacantes, CV vigentes y vencidos de ese RUC. Cada CV vigente se descarga individualmente. Los vencidos no generan enlace.
+- No mostrar el **estado de postulación** del registro interno al reclutador.
 
-## Fuente de verdad / componentes
-- Frontend lector: `portafolio/index.html`, `portafolio/cv-portal.js`.
-- Visor PDF público: `portafolio/lector-v10.js` (conserva el portafolio público).
-- Panel: `admin/index.html`, `admin/panel.js`; URL: https://christianarleo.com/admin/
-- Supabase: proyecto `gprhevdotoykofrxbufv`, función `portfolio-cv-portal`, tablas `portfolio_cv_admins`, `portfolio_cv_documents`, `portfolio_cv_leads`.
-- Bucket privado: `cv-personalizados`. No modificar el bucket público `portafolio`.
+## Componentes y fuente de verdad
+- Frontend público: `portafolio/index.html` y `portafolio/cv-portal.js`.
+- Lector PDF público: `portafolio/lector-v10.js` (no modificar al evolucionar los CV).
+- Administración privada: `admin/index.html` y `admin/panel.js`, https://christianarleo.com/admin/.
+- Supabase: proyecto `gprhevdotoykofrxbufv`, Edge Function `portfolio-cv-portal`; fuente versionada de función en `supabase/functions/portfolio-cv-portal/index.ts`.
+- Tablas: `public.portfolio_cv_admins`, `public.portfolio_cv_documents`, `public.portfolio_cv_leads`.
+- Bucket privado `cv-personalizados` (mantener aparte de `portafolio`, el bucket público).
+- Campo nuevo ejecutado en producción: `public.portfolio_cv_documents.application_status` (por defecto `preparado`; permitidos `preparado`, `postulado`, `en_proceso`, `finalizado`). Es **solo interno**.
+- `role_name` representa la **vacante**, editable posteriormente con «Editar vacante».
+- `is_main` solo prioriza orden del selector. NO excluye otros CV del mismo RUC cuando hay varios vigentes.
 
-## Activación inicial del panel (una sola vez)
-1. Abrir https://christianarleo.com/admin/ y seleccionar **Crear mi cuenta** con el correo de administración que controles. No compartir contraseñas.
-2. Confirmar el correo de Supabase Auth. Si la redirección del mensaje va a otro sitio, volver manualmente a https://christianarleo.com/admin/.
-3. En Supabase Dashboard, verificar el usuario en **Authentication > Users**. En **SQL Editor**, ejecutar, usando el correo registrado (sin copiar contraseñas):
+## Administración
+1. Acceder con la cuenta verificada y autorizada en Supabase Auth; la autorización vive en `portfolio_cv_admins` con RLS.
+2. Subir archivo PDF (máximo 30 MB), empresa, RUC, puesto, fecha de vencimiento opcional y estado interno.
+3. Ver/editar postulación en el listado: cambiar estado, editar nombre de vacante, seleccionar principal, activar/desactivar y eliminar.
+4. Si un RUC tiene varios CV, no borrar los alternativos: se muestran por vacante; los vencidos aparecen como «No disponible».
+5. Archivo recién subido: ruta única con UUID, para evitar colisiones de nombres y versiones.
+6. Revocar el acceso desactivando el registro; los enlaces de descarga generados tienen un TTL máximo de 90 segundos.
 
-```sql
-insert into public.portfolio_cv_admins (user_id)
-select id from auth.users
-where lower(email) = lower('hola@christianarleo.com') and email_confirmed_at is not null
-on conflict (user_id) do nothing;
-```
+## Contratos de la función
+- `POST {action:"resolve",ruc:"<11 dígitos>"}`:
+  - `{status:"not_found"}` si no hay CV vigentes;
+  - `{status:"ready",url,company,position}` si hay exactamente uno;
+  - `{status:"multiple",company,items:[{id,position,expires_at,available}]}` si hay más de uno.
+- `POST {action:"download",ruc,id}`: valida RUC, CV activo, vencimiento y genera un enlace firmado de 90s.
+- `POST {action:"lead",...}`: registra solicitud comercial en `portfolio_cv_leads`.
+- No devolver rutas privadas de Storage, estados internos ni claves secretas en el frontend.
 
-4. En el panel privado, pulsar **Comprobar acceso**. Si registraste otro correo, reemplazar la dirección del SQL por tu dirección verificada.
+## Riesgos aceptados
+- RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
+- Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
+- Sin notificaciones automáticas por correo; las solicitudes se visualizan en administración.
 
-## Cargar un CV
-- Ingresar empresa, RUC (11 dígitos), puesto, archivo PDF (máximo 30 MB), y opcionalmente fecha de vencimiento.
-- Si seleccionás **Principal**, el panel desmarca el anterior principal del mismo RUC. Solo el principal debe usarse para una entrega automática.
-- Los archivos tienen rutas únicas (sin `(1)`). Cargar otra versión y marcar Principal no sobrescribe físicamente versiones anteriores; desactivar o eliminar las anteriores si es necesario.
-- Podés desactivar un CV y revocar accesos futuros. Los enlaces firmados ya emitidos siguen válidos hasta 90 segundos.
-
-## Comportamiento público
-- Descargar > Portafolio PDF: descarga pública ya existente.
-- Descargar > CV personalizado: ingresar RUC > función `portfolio-cv-portal`.
-- CV disponible: enlace firmado de descarga (90 segundos).
-- CV no disponible/vencido: elegir in-house, proyecto o solicitud de CV; el formulario se guarda en `portfolio_cv_leads` y puede revisarse en el panel.
-
-## Alcance / riesgos
-- **El RUC no autentica a un reclutador**: cualquiera que lo conozca puede descargar el CV durante su vigencia. Es una decisión expresa del proyecto.
-- La cuenta administradora sí está protegida por Auth + membresía + RLS. No usar nunca una clave secreta de Supabase en el navegador.
-- No hay notificaciones automáticas por correo en esta versión: las solicitudes se leen en el panel privado.
-- Si no hay usuarios administradores o archivos cargados, el sistema responde con la ruta de solicitud. No se debe crear información ficticia de prueba en producción.
-- El frontend y las migraciones fueron revisados estáticamente; prueba E2E con usuario real y PDF real pendiente.
-
-## Estado
-- EJECUTADO: schema Supabase, RLS, bucket privado, Edge Function pública, frontend, panel de administración.
-- PENDIENTE: registrar y aprobar usuario administrador; subir CV real; verificar descarga, vencimiento y formularios desde dispositivo real.
+## Estado de implementación
+- EJECUTADO: esquema, columna de estado, Edge Function v3, frontend selector, controles de vacante y estado, RLS y bucket privado.
+- VERIFICADO: código JS sintácticamente válido; backend activo y sincronizado con GitHub; esquema actualizado.
+- PENDIENTE DE VERIFICAR: flujo extremo a extremo para **2 CV vigentes del mismo RUC** (actualmente hay uno cargado); prueba de vencimiento y descarga en móvil.
+- PENDIENTE DE REVISIÓN (separado de este cambio): el auditor de seguridad de Supabase avisa sobre función `public.rls_auto_enable()` ejecutable por roles públicos y protección contra contraseñas filtradas desactivada. No se modificó automáticamente ese componente ajeno al flujo.
