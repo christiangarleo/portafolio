@@ -54,6 +54,9 @@
     .zoomTools button { border:1px solid #dedede; background:white; min-height:31px; min-width:30px; padding:5px 8px; font-size:14px; }
     .zoomTools #zoomReadout { min-width:38px; text-align:center; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
     .fitTools { gap:3px; }
+    .fitTools .fitIconButton { flex:0 0 34px; width:34px; height:34px; min-height:34px; padding:5px; }
+    .fitIconButton svg { width:20px; height:20px; display:block; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    .fitIconButton .fitArrow { fill:currentColor; stroke:none; }
     #readerPanel { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:#ededed; }
     .viewerShell { flex:1 1 auto; min-height:0; position:relative; overflow:hidden; }
     #pageViewport { position:absolute; inset:0; overflow:auto; overscroll-behavior:contain; text-align:center; }
@@ -155,8 +158,12 @@
           <button type="button" id="zoomIn" aria-label="Aumentar zoom">+</button>
         </div>
         <div class="fitTools" role="group" aria-label="Ajustes de visualización">
-          <button class="toolButton" type="button" id="fitPage" title="Ver la página completa">Ajustar página</button>
-          <button class="toolButton" type="button" id="fitWidth" title="Ajustar el PDF al ancho de pantalla">Ajustar ancho</button>
+          <button class="toolButton fitIconButton" type="button" id="fitPage" aria-label="Ajustar página" title="Ajustar página" >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="2.8" width="10" height="18.4" rx="1.2"/><path class="fitArrow" d="M12 7.1 9.3 10.2h5.4zM12 16.9l-2.7-3.1h5.4z"/></svg>
+          </button>
+          <button class="toolButton fitIconButton" type="button" id="fitWidth" aria-label="Ajustar ancho" title="Ajustar ancho" >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.8" y="7" width="18.4" height="10" rx="1.2"/><path class="fitArrow" d="M7.3 12 10.5 9.3v5.4zM16.7 12l-3.2-2.7v5.4z"/></svg>
+          </button>
         </div>
         <button class="toolButton" type="button" id="fullscreen">Pantalla completa ⛶</button>
       </div>
