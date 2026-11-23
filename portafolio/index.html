@@ -327,7 +327,7 @@
     </div>
     <div class="downloadMenu" id="downloadMenu" role="menu" aria-label="Opciones de descarga" hidden>
       <a id="downloadPortfolio" role="menuitem" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar portafolio PDF</a>
-      <button id="cvOpen" type="button" role="menuitem">Descargar CV personalizado</button>
+      <button id="cvOpen" type="button" role="menuitem">Acceder a CV por empresa</button>
     </div>
     <nav class="contactMenu" id="contactMenu" aria-label="Perfil y contacto" hidden>
       <a class="menuIdentity" href="/">Christian Gabriel Arleo · Portafolio</a>
@@ -373,52 +373,17 @@
   </main>
   <dialog id="cvDialog" class="cvDialog" aria-labelledby="cvDialogTitle">
     <div class="cvDialogBody">
-      <div class="cvDialogHead"><h2 id="cvDialogTitle">CV personalizado por empresa</h2>
+      <div class="cvDialogHead">
+        <h2 id="cvDialogTitle">Portal de postulaciones por empresa</h2>
         <button id="cvClose" type="button" aria-label="Cerrar">×</button>
       </div>
-      <p>Ingresá el RUC de tu empresa (11 dígitos). Si hay un solo CV vigente, comenzará la descarga. Si hay varios, vas a poder elegir el correspondiente a cada vacante.</p>
+      <p>Ingresá el RUC de la empresa (11 dígitos) para acceder a su página con todas las vacantes asociadas y sus respectivos CV.</p>
       <form id="cvLookupForm">
         <label for="cvRuc">RUC de la empresa</label>
         <input id="cvRuc" name="ruc" inputmode="numeric" type="text" maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="Ej.: 20987654321" autocomplete="off" required>
-        <p><button type="submit" class="primary">Buscar CV</button></p>
+        <p><button type="submit" class="primary">Ingresar al portal</button></p>
       </form>
       <div class="result" id="cvResult" role="status" aria-live="polite"></div>
-      <section id="cvCompanyPanel" class="cvCompanyPanel" hidden aria-labelledby="cvCompanyHeading">
-        <h3 id="cvCompanyHeading">CV disponibles para tu empresa</h3>
-        <p id="cvCompanySub" class="cvCompanySub"></p>
-        <div id="cvDocumentList" class="cvDocumentList"></div>
-      </section>
-      <div id="cvChoices" class="cvChoices" hidden>
-        <button data-kind="in_house" type="button">Contratación in-house</button>
-        <button data-kind="proyecto" type="button">Contratación por proyecto</button>
-        <button data-kind="solicitud_cv" type="button">Solicitar un CV personalizado</button>
-      </div>
-      <div id="cvLeadBox" class="cvLeadBox" hidden>
-        <h3 id="cvLeadTitle">Solicitar CV</h3>
-        <form id="cvLeadForm">
-          <input type="hidden" id="cvLeadKind" name="kind" value="solicitud_cv">
-          <input class="cvHP" name="website" autocomplete="off" tabindex="-1" aria-hidden="true">
-          <label for="cvLeadCompany">Empresa</label><input id="cvLeadCompany" name="company_name" maxlength="160" required>
-          <label for="cvLeadRuc">RUC (opcional)</label><input id="cvLeadRuc" name="ruc" pattern="[0-9]{11}" maxlength="11" inputmode="numeric">
-          <label for="cvLeadName">Persona de contacto</label><input id="cvLeadName" name="contact_name" maxlength="140" required>
-          <label for="cvLeadEmail">Correo corporativo</label><input id="cvLeadEmail" name="email" type="email" maxlength="200" required>
-          <label for="cvLeadPhone">Teléfono (opcional)</label><input id="cvLeadPhone" name="phone" type="tel" maxlength="65">
-          <label id="cvLeadPositionLabel" for="cvLeadPosition">Puesto o proyecto</label><input id="cvLeadPosition" name="position_or_project" maxlength="180">
-          <div id="cvInhouseFields" hidden>
-            <label for="cvLeadMode">Modalidad de contratación</label>
-            <select id="cvLeadMode" name="modalidad"><option value="">A definir</option><option value="Tiempo completo">Tiempo completo</option><option value="Tiempo parcial">Tiempo parcial</option><option value="Servicios continuos">Servicios continuos</option></select>
-          </div>
-          <div id="cvProjectFields" hidden>
-            <label for="cvLeadBudget">Presupuesto estimado (opcional)</label>
-            <input id="cvLeadBudget" name="presupuesto" maxlength="90" placeholder="Ej.: a definir">
-            <label for="cvLeadDeadline">Plazo aproximado (opcional)</label>
-            <input id="cvLeadDeadline" name="plazo" maxlength="100" placeholder="Ej.: 2 meses">
-          </div>
-          <label for="cvLeadDetails">Contame qué necesitás</label><textarea id="cvLeadDetails" name="details" maxlength="1600"></textarea>
-          <p><button class="primary" type="submit">Enviar solicitud</button></p>
-          <div class="result" id="cvLeadStatus" role="status" aria-live="polite"></div>
-        </form>
-      </div>
     </div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
@@ -446,6 +411,6 @@
     })();
   </script>
   <script src="./lector-v10.js?v=20261123-cv1" defer></script>
-  <script src="./cv-portal.js?v=20261123-empresa1" defer></script>
+  <script src="./cv-portal.js?v=20261123-portal-individual1" defer></script>
 </body>
 </html>
