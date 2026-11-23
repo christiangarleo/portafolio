@@ -5,6 +5,7 @@
   const button = by("downloadToggle"), menu = by("downloadMenu"), dialog = by("cvDialog");
   const lookup = by("cvLookupForm"), rucField = by("cvRuc"), result = by("cvResult");
   const leadBox = by("cvLeadBox"), leadForm = by("cvLeadForm"), leadKind = by("cvLeadKind");
+  const companyPanel = by("cvCompanyPanel"), documentList = by("cvDocumentList");
   let lastRuc = "";
   function closeMenu() { menu.hidden = true; button.setAttribute("aria-expanded", "false"); }
   function locateMenu() {
@@ -30,6 +31,8 @@
     closeMenu();
     leadBox.hidden = true;
     by("cvChoices").hidden = true;
+    companyPanel.hidden = true;
+    documentList.replaceChildren();
     result.textContent = "";
     dialog.showModal();
     rucField.focus();
@@ -49,31 +52,83 @@
     result.textContent = value;
     result.setAttribute("data-error", String(Boolean(error)));
   }
+  function beginDownload(data) {
+    setResult("CV " + (data.position || "") + " disponible. Iniciando descarga…", false);
+    const link = document.createElement("a");
+    link.href = data.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Descargar ahora";
+    link.className = "cvManualLink";
+    result.append(document.createTextNode(" "), link);
+    link.click();
+  }
+  function displayCompanyPortal(data) {
+    by("cvCompanyHeading").textContent = "CV disponibles para " + data.company;
+    documentList.replaceChildren();
+    for (const item of data.items) {
+      const card = document.createElement("article");
+      card.className = "cvDocCard";
+      const heading = document.createElement("h4");
+      heading.textContent = item.position || "CV personalizado";
+      const badge = document.createElement("span");
+      badge.className = "cvDocStatus" + (item.available ? "" : " cvDocStatus--expired");
+      badge.textContent = item.available ? "Vigente" : "Vencido";
+      const expiry = document.createElement("small");
+      expiry.textContent = item.expires_at
+        ? "Vigencia hasta: " + new Date(item.expires_at).toLocaleString("es-PE",{dateStyle:"medium"})
+        : "Sin fecha de vencimiento";
+      const download = document.createElement("button");
+      download.type = "button";
+      download.dataset.cvId = item.id;
+      download.disabled = !item.available;
+      download.textContent = item.available ? "Descargar este CV ↓" : "No disponible";
+      card.append(badge, heading, expiry, download);
+      documentList.append(card);
+    }
+    const count = data.items.filter(item => item.available).length;
+    by("cvCompanySub").textContent =
+      count + (count === 1 ? " CV vigente" : " CV vigentes") + " para este RUC. Elegí la vacante que te interesa.";
+    companyPanel.hidden = false;
+  }
+  documentList.addEventListener("click", async event => {
+    const action = event.target.closest("button[data-cv-id]");
+    if (!action || action.disabled) return;
+    action.disabled = true;
+    setResult("Preparando CV seleccionado…", false);
+    try {
+      const data = await send({ action: "download", ruc: lastRuc, id: action.dataset.cvId });
+      if (data.status === "ready" && data.url) beginDownload(data);
+      else setResult("No se pudo generar la descarga.", true);
+    } catch(error) {
+      setResult(error.message || "No se pudo descargar el CV.", true);
+    } finally {
+      action.disabled = false;
+    }
+  });
   lookup.addEventListener("submit", async evt => {
     evt.preventDefault();
     lastRuc = rucField.value.replace(/\D/g, "");
     if (!/^\d{11}$/.test(lastRuc)) { setResult("Ingresá un RUC de 11 dígitos.", true); return; }
     leadBox.hidden = true;
     by("cvChoices").hidden = true;
+    companyPanel.hidden = true;
+    documentList.replaceChildren();
     const submit = lookup.querySelector("button[type=submit]");
     submit.disabled = true;
     setResult("Buscando un CV disponible…", false);
     try {
       const data = await send({ action: "resolve", ruc: lastRuc });
       if (data.status === "ready" && data.url) {
-        setResult("CV disponible para " + data.company + ". Iniciando descarga…", false);
-        const a = document.createElement("a");
-        a.href = data.url;
-        a.rel = "noopener noreferrer";
-        a.target = "_blank";
-        a.textContent = "Descargar CV ahora";
-        a.className = "cvManualLink";
-        result.append(document.createTextNode(" "), a);
-        // Si el navegador bloquea el inicio automatico, queda el enlace manual.
-        a.click();
-      } else {
-        setResult("No hay un CV vigente asociado a ese RUC. ¿Cómo querés contactarme?", false);
+        beginDownload(data);
+      } else if (data.status === "multiple" && Array.isArray(data.items)) {
+        setResult("", false);
+        displayCompanyPortal(data);
+      } else if (data.status === "not_found") {
+        setResult("No hay CV vigentes asociados a ese RUC. ¿Cómo querés contactarme?", false);
         by("cvChoices").hidden = false;
+      } else {
+        setResult("No pudimos obtener los CV. Intentá nuevamente.", true);
       }
     } catch (e) { setResult(e.message || "Ocurrió un error al consultar.", true); }
     finally { submit.disabled = false; }
