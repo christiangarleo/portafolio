@@ -52,6 +52,33 @@
     textarea { min-height:93px; resize:vertical; }
     .fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:15px; }
     .hp { position:absolute!important; width:1px!important; height:1px!important; overflow:hidden!important; left:-10000px!important; }
+    .empty { max-width:900px; }
+    .choices { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .formProgress { display:flex;gap:8px;align-items:center;margin:15px 0 19px;font-size:12px;color:#606060; }
+    .formProgress span { padding:7px 12px;border:1px solid #ddd;border-radius:4px;background:#f7f7f7; }
+    .formProgress .active { border-color:#222;color:#222;background:#fff;font-weight:700; }
+    .formStep h4 { font-size:16px;margin:5px 0 10px; }
+    .formStep > p { font-size:13px;color:#606060; }
+    fieldset.formGroup { border:0;padding:0;margin:0;min-width:0; }
+    fieldset.formGroup legend { font-weight:700;font-size:12px;margin:12px 0 6px; }
+    fieldset.formGroup label { display:inline-flex;align-items:center;gap:7px;margin:0 8px 6px 0;padding:7px 9px;border:1px solid #ddd;border-radius:4px;font-size:12px;font-weight:400; }
+    .optionGrid { display:flex;flex-wrap:wrap;gap:5px; }
+    .optionGrid input { width:auto;min-height:0;margin:0;accent-color:#222; }
+    .choiceGroup { margin:13px 0 0; }
+    .conditional { margin:9px 0 6px;padding:12px;background:#fafafa;border:1px solid #ebebeb;border-radius:5px; }
+    .conditional > .fields { margin:0; }
+    .helper {font-size:12px;color:#777;margin:7px 0 0; }
+    .formActions {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:19px 0 8px;}
+    .formActions .secondary { min-height:42px; }
+    .errorBox { font-size:13px;color:#a21d35;min-height:18px;margin:8px 0;}
+    .inlineCheck { display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:400; }
+    .inlineCheck input {width:auto;min-height:0;margin:0;}
+    .contactChoice { display:flex;gap:12px;flex-wrap:wrap;margin-top:9px; }
+    .contactChoice label { display:inline-flex;gap:8px;align-items:flex-start;font-weight:400;border:1px solid #ddd;border-radius:4px;padding:12px;margin:0;flex:1 1 240px; }
+    .contactChoice input {width:auto;min-height:0;margin:2px 0 0;accent-color:#222;}
+    .contactChoice strong {font-size:13px;line-height:1.4;}
+    .closingSmall {font-size:11px;color:#777;line-height:1.5;}
+
     .closing { margin-top:30px; padding-top:16px; border-top:1px solid #e4e4e4; font-size:12px; color:#666; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
     .closing a { color:#222; text-decoration:underline; }
     [hidden] { display:none!important; }
@@ -81,38 +108,186 @@
     <p class="sub" style="margin-top:20px;font-size:12px">Cada CV corresponde a una vacante específica. Los documentos vencidos permanecen visibles, pero no se pueden descargar.</p>
   </section>
   <section id="emptySection" class="panel empty" hidden>
-    <h2>No encontramos CV disponibles para ese RUC</h2>
-    <p>Si representás a una empresa interesada en mi perfil, elegí cómo querés contactarme. Podés solicitar un CV específico, contratar servicios in-house o proponer un proyecto.</p>
-    <div class="choices" id="choices">
-      <button type="button" data-kind="solicitud_cv" aria-pressed="false">Solicitar CV personalizado</button>
-      <button type="button" data-kind="in_house" aria-pressed="false">Contratación in-house</button>
+    <h2 id="requestHeading">¿Cómo te gustaría trabajar conmigo?</h2>
+    <p id="requestIntro">Todavía no hay CV disponibles para ese RUC. Podés enviarme una propuesta de contratación directamente desde acá.</p>
+    <div class="choices" id="choices" role="group" aria-label="Tipo de contratación">
+      <button type="button" data-kind="in_house" aria-pressed="false">Contratación In-house</button>
       <button type="button" data-kind="proyecto" aria-pressed="false">Contratación por proyecto</button>
     </div>
     <form id="leadForm" hidden>
-      <h3 id="leadTitle">Solicitud</h3>
-      <input type="hidden" id="leadKind" name="kind" value="solicitud_cv">
-      <div class="hp" aria-hidden="true"><label for="website">No completar</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
-      <div class="fields">
-        <div><label for="companyName">Empresa</label><input id="companyName" name="company_name" required maxlength="160"></div>
-        <div><label for="rucField">RUC</label><input id="rucField" name="ruc" readonly maxlength="11"></div>
-        <div><label for="contactName">Contacto</label><input id="contactName" name="contact_name" required maxlength="140"></div>
-        <div><label for="email">Correo corporativo</label><input id="email" name="email" required type="email" maxlength="200"></div>
-        <div><label for="phone">Teléfono (opcional)</label><input id="phone" name="phone" type="tel" maxlength="65"></div>
-        <div><label for="position">Vacante o proyecto</label><input id="position" name="position_or_project" maxlength="180"></div>
+      <h3 id="leadTitle">Propuesta de contratación</h3>
+      <input type="hidden" id="leadKind" name="kind">
+      <div class="hp" aria-hidden="true"><label for="website">Dejar vacío</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <div class="formProgress" aria-label="Progreso del formulario">
+        <span id="stageLabel1" class="active">1. Empresa y contacto</span>
+        <span id="stageLabel2">2. Detalles de la propuesta</span>
       </div>
-      <div id="inhouseFields" hidden><label for="modality">Modalidad</label>
-        <select id="modality" name="modalidad"><option value="">A definir</option><option value="Tiempo completo">Tiempo completo</option><option value="Tiempo parcial">Tiempo parcial</option><option value="Servicios recurrentes (contrato mensual)">Servicios recurrentes (contrato mensual)</option></select>
-      </div>
-      <div id="projectFields" hidden>
-        <div class="fields"><div><label for="budget">Presupuesto estimado</label><input id="budget" name="presupuesto" maxlength="90"></div>
-        <div><label for="deadline">Plazo aproximado</label><input id="deadline" name="plazo" maxlength="100"></div></div>
-      </div>
-      <label for="details">Contame qué necesitás</label><textarea id="details" name="details" maxlength="1600"></textarea>
-      <p><button type="submit" class="action">Enviar solicitud</button></p>
+      <section id="stepContact" class="formStep" aria-labelledby="contactHeading">
+        <h4 id="contactHeading">Datos de la empresa</h4>
+        <div class="fields">
+          <div><label for="companyName">Empresa *</label><input id="companyName" name="company_name" required minlength="2" maxlength="160" autocomplete="organization"></div>
+          <div><label for="rucField">RUC</label><input id="rucField" name="ruc" readonly maxlength="11"></div>
+          <div><label for="contactName">Persona de contacto *</label><input id="contactName" name="contact_name" required minlength="2" maxlength="140" autocomplete="name"></div>
+          <div><label for="email">Correo corporativo *</label><input id="email" name="email" required type="email" maxlength="200" autocomplete="email"></div>
+          <div><label for="phone">WhatsApp o teléfono (opcional)</label><input id="phone" name="phone" type="tel" maxlength="65" autocomplete="tel" placeholder="+51 ..."></div>
+        </div>
+        <div class="formActions"><button id="nextStep" type="button" class="action">Continuar →</button></div>
+      </section>
+      <section id="stepDetails" class="formStep" aria-labelledby="detailsHeading" hidden>
+        <h4 id="detailsHeading">Detalles de la propuesta</h4>
+        <fieldset id="inhouseFields" class="formGroup" disabled hidden>
+          <div class="fields">
+            <div><label for="jobRole">Puesto o cargo *</label><input id="jobRole" name="position_or_project" required maxlength="180" placeholder="Ej.: Especialista de Marketing"></div>
+            <div><label for="dedication">Dedicación *</label>
+              <select id="dedication" name="dedication" required>
+                <option value="">Seleccionar</option>
+                <option value="full_time">Full Time</option>
+                <option value="part_time">Part Time</option>
+                <option value="por_horas">Por horas</option>
+              </select>
+            </div>
+          </div>
+          <div id="hoursFields" class="conditional" hidden>
+            <div class="fields">
+              <div><label for="hours">Cantidad de horas *</label><input id="hours" name="hours" type="number" min="1" max="240" step="1" placeholder="Ej.: 12"></div>
+              <div><label for="hoursPeriod">¿En qué período? *</label>
+                <select id="hoursPeriod" name="hours_period">
+                  <option value="semana">Por semana</option>
+                  <option value="mes">Por mes</option>
+                  <option value="total">En total</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="fields">
+            <div><label for="ihWorkMode">Modalidad de trabajo *</label>
+              <select id="ihWorkMode" name="work_mode" required><option value="">Seleccionar</option><option value="remoto">Remoto</option><option value="presencial">Presencial</option><option value="hibrido">Híbrido</option></select>
+            </div>
+            <div><label for="timezone">Zona horaria *</label>
+              <select id="timezone" name="timezone" required>
+                <option value="America/Lima">Perú (UTC−5)</option><option value="America/Bogota">Colombia (UTC−5)</option>
+                <option value="America/Mexico_City">México (zona centro)</option><option value="America/Santiago">Chile</option>
+                <option value="America/Argentina/Buenos_Aires">Argentina (UTC−3)</option><option value="UTC">UTC</option>
+              </select>
+            </div>
+          </div>
+          <div id="ihLocation" class="conditional" hidden>
+            <div class="fields">
+              <div><label for="ihCountry">País *</label><input id="ihCountry" name="work_country" maxlength="80" placeholder="Ej.: Perú"></div>
+              <div><label for="ihCity">Ciudad *</label><input id="ihCity" name="work_city" maxlength="100" placeholder="Ej.: Lima"></div>
+              <div><label for="ihDistrict">Distrito o zona *</label><input id="ihDistrict" name="work_district" maxlength="100" placeholder="Ej.: Miraflores"></div>
+            </div>
+          </div>
+          <fieldset id="ihHybridDays" class="formGroup conditional" hidden>
+            <legend>¿Qué días necesitás que vaya presencialmente? *</legend>
+            <div class="optionGrid" id="officeDays">
+              <label><input type="checkbox" name="office_days" value="lunes"> Lun</label>
+              <label><input type="checkbox" name="office_days" value="martes"> Mar</label>
+              <label><input type="checkbox" name="office_days" value="miercoles"> Mié</label>
+              <label><input type="checkbox" name="office_days" value="jueves"> Jue</label>
+              <label><input type="checkbox" name="office_days" value="viernes"> Vie</label>
+              <label><input type="checkbox" name="office_days" value="sabado"> Sáb</label>
+              <label><input type="checkbox" name="office_days" value="domingo"> Dom</label>
+            </div>
+          </fieldset>
+          <fieldset class="formGroup choiceGroup">
+            <legend>¿Qué días necesitás que trabaje? *</legend>
+            <div class="optionGrid" id="workDays">
+              <label><input type="checkbox" name="work_days" value="lunes"> Lun</label>
+              <label><input type="checkbox" name="work_days" value="martes"> Mar</label>
+              <label><input type="checkbox" name="work_days" value="miercoles"> Mié</label>
+              <label><input type="checkbox" name="work_days" value="jueves"> Jue</label>
+              <label><input type="checkbox" name="work_days" value="viernes"> Vie</label>
+              <label><input type="checkbox" name="work_days" value="sabado"> Sáb</label>
+              <label><input type="checkbox" name="work_days" value="domingo"> Dom</label>
+            </div>
+          </fieldset>
+          <div class="conditional">
+            <label class="inlineCheck" for="scheduleTbd"><input id="scheduleTbd" type="checkbox" name="schedule_tbd" value="true"> El horario todavía está por definir</label>
+            <div class="fields" id="scheduleFields">
+              <div><label for="dailyStart">Hora de inicio *</label><input id="dailyStart" name="daily_start" type="time"></div>
+              <div><label for="dailyEnd">Hora de finalización *</label><input id="dailyEnd" name="daily_end" type="time"></div>
+            </div>
+          </div>
+          <div class="fields">
+            <div><label for="ihStartDate">Fecha estimada de inicio (opcional)</label><input id="ihStartDate" name="start_date" type="date"></div>
+            <div><label for="salary">Rango de remuneración (opcional)</label><input id="salary" name="salary" maxlength="100" placeholder="Ej.: A conversar / S/ 4.000–5.000"></div>
+          </div>
+          <label for="responsibilities">Principales responsabilidades del puesto *</label>
+          <textarea id="responsibilities" name="responsibilities" required maxlength="1500" placeholder="¿Qué actividades principales esperás que desarrolle?"></textarea>
+        </fieldset>
+        <fieldset id="projectFields" class="formGroup" disabled hidden>
+          <div class="fields">
+            <div><label for="projectName">Nombre del proyecto *</label><input id="projectName" name="project_name" maxlength="180" required></div>
+            <div><label for="projectArea">Área del proyecto *</label>
+              <select id="projectArea" name="project_area" required>
+                <option value="">Seleccionar</option><option value="marketing">Marketing</option>
+                <option value="tecnologia_ia">Tecnología e IA</option><option value="datos">Datos</option>
+                <option value="diseno">Diseño</option><option value="otro">Otro</option>
+              </select>
+            </div>
+          </div>
+          <label for="problem">¿Qué necesitás resolver? *</label><textarea id="problem" name="problem" maxlength="1800" required placeholder="Describí el problema o la necesidad de tu empresa."></textarea>
+          <label for="outcome">¿Qué resultado esperás obtener? *</label><textarea id="outcome" name="outcome" maxlength="1200" required placeholder="Ej.: automatizar una operación, aumentar prospectos, lanzar una campaña..."></textarea>
+          <label for="deliverables">Entregables esperados (opcional)</label><textarea id="deliverables" name="deliverables" maxlength="1000" placeholder="Si ya tenés definido qué deberíamos entregar, detallalo acá."></textarea>
+          <div class="fields">
+            <div><label for="projectStartDate">Fecha de inicio (opcional)</label><input id="projectStartDate" name="start_date" type="date"></div>
+            <div>
+              <label for="dueDate">Fecha objetivo de entrega *</label><input id="dueDate" name="due_date" type="date">
+              <label class="inlineCheck" for="deadlineTbd" style="margin-top:7px"><input id="deadlineTbd" name="deadline_tbd" type="checkbox" value="true"> Todavía no está definida</label>
+            </div>
+            <div><label for="budget">Presupuesto estimado (opcional)</label><input id="budget" name="budget" maxlength="100" placeholder="Ej.: S/ 5.000 o A definir"></div>
+            <div><label for="pjWorkMode">Modalidad de trabajo *</label>
+              <select id="pjWorkMode" name="work_mode" required><option value="">Seleccionar</option><option value="remoto">Remoto</option><option value="presencial">Presencial</option><option value="hibrido">Híbrido</option></select>
+            </div>
+          </div>
+          <div id="pjLocation" class="conditional" hidden>
+            <div class="fields">
+              <div><label for="pjCountry">País *</label><input id="pjCountry" name="work_country" maxlength="80"></div>
+              <div><label for="pjCity">Ciudad *</label><input id="pjCity" name="work_city" maxlength="100"></div>
+              <div><label for="pjDistrict">Distrito o zona *</label><input id="pjDistrict" name="work_district" maxlength="100"></div>
+            </div>
+          </div>
+          <label for="referenceUrl">Enlace al brief o documentación (opcional)</label>
+          <input id="referenceUrl" name="reference_url" type="url" maxlength="400" placeholder="https://...">
+        </fieldset>
+        <fieldset class="formGroup" id="contactPreferenceGroup">
+          <legend>¿Querés que me comunique con vos? *</legend>
+          <div class="contactChoice">
+            <label><input type="radio" name="contact_preference" value="contactame" required><strong>Sí, contactame.</strong></label>
+            <label><input type="radio" name="contact_preference" value="empresa_contacta" required><strong>No, nosotros te devolvemos la llamada.</strong></label>
+          </div>
+        </fieldset>
+        <div id="contactExtra" class="conditional" hidden>
+          <div class="fields">
+            <div><label for="contactMethod">¿Por qué medio preferís que te contacte? *</label>
+              <select id="contactMethod" name="contact_method">
+                <option value="">Seleccionar</option><option value="whatsapp">WhatsApp</option>
+                <option value="llamada">Llamada</option><option value="email">E-mail</option>
+              </select>
+            </div>
+            <div><label for="contactTime">¿En qué horario puedo contactarte? (opcional)</label>
+              <select id="contactTime" name="contact_time">
+                <option value="">Sin preferencia</option><option value="manana">Mañana</option>
+                <option value="tarde">Tarde</option><option value="indistinto">Indistinto</option>
+              </select>
+            </div>
+          </div>
+          <p id="phoneHint" class="helper" hidden>Para WhatsApp o llamada, ingresá un teléfono de contacto en el paso anterior.</p>
+        </div>
+        <label for="observations">Observaciones adicionales (opcional)</label>
+        <textarea id="observations" name="observations" maxlength="1000" placeholder="¿Hay algún detalle, condición o información importante que debería conocer?"></textarea>
+        <p class="closingSmall">Los datos de este formulario se utilizarán para gestionar la propuesta y, si lo autorizás, contactarte según tu preferencia.</p>
+        <div class="formActions">
+          <button id="prevStep" class="secondary" type="button">← Volver</button>
+          <button id="submitLead" type="submit" class="action">Enviar propuesta</button>
+        </div>
+      </section>
+      <div id="formError" class="errorBox" role="alert" aria-live="polite"></div>
       <div id="leadMessage" class="message" role="status" aria-live="polite"></div>
     </form>
   </section>
-  <section id="invalidSection" class="panel" hidden>
+    <section id="invalidSection" class="panel" hidden>
     <h2>RUC no válido</h2><p class="sub">Volvé al portafolio e ingresá los 11 dígitos del RUC de tu empresa.</p>
     <p><a class="actionLink" href="/portafolio/">Volver al portafolio</a></p>
   </section>
@@ -121,5 +296,5 @@
     <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
   </div>
 </main>
-<script src="./empresa.js?v=20261123-portal2" defer></script>
+<script src="./empresa.js?v=20261123-formularios2" defer></script>
 </body></html>
