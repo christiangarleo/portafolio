@@ -34,26 +34,59 @@ Deno.serve(async (req: Request) => {
   let input: Record<string, unknown>;
   try { input = await req.json(); if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error(); }
   catch { return reply(req, { error: "Solicitud invalida" }, 400); }
+  // El RUC identifica a la empresa; NO autentica al reclutador.
+  // No exponer el estado interno de las postulaciones en este portal.
+  const cvSelect = "id,company_name,role_name,storage_path,original_filename,expires_at,is_main";
+  async function signedLink(row: { storage_path: string; original_filename: string }) {
+    const { data, error } = await supabase.storage.from("cv-personalizados")
+      .createSignedUrl(row.storage_path, 90, { download: row.original_filename });
+    if (error || !data?.signedUrl) throw Error(error?.message || "Signed URL missing");
+    return data.signedUrl;
+  }
   if (input.action === "resolve") {
     if (!digits(input.ruc)) return reply(req, { error: "El RUC debe tener 11 digitos" }, 400);
     const { data, error } = await supabase.from("portfolio_cv_documents")
-      .select("id,company_name,role_name,storage_path,original_filename,expires_at,is_main")
+      .select(cvSelect)
       .eq("ruc", input.ruc as string).eq("is_active", true)
-      .order("is_main", { ascending: false }).order("created_at", { ascending: false }).limit(25);
+      .order("is_main", { ascending: false }).order("created_at", { ascending: false }).limit(100);
     if (error) { console.error("cv_lookup", error.message); return reply(req, { error: "Error temporal de consulta" }, 503); }
     const now = Date.now();
-    // Si el CV principal esta vencido, no enviar un alternativo de otro puesto.
     const rows = data || [];
-    const selected = rows.find((row: any) => row.is_main) || rows[0] || null;
-    const item = selected && (!selected.expires_at || new Date(selected.expires_at).getTime() > now) ? selected : null;
-    if (!item) return reply(req, { status: "not_found" });
-    const { data: signed, error: signError } = await supabase.storage.from("cv-personalizados")
-      .createSignedUrl(item.storage_path, 90, { download: item.original_filename });
-    if (signError || !signed?.signedUrl) {
-      console.error("cv_sign", signError?.message || "signed URL missing");
-      return reply(req, { error: "No se pudo preparar el archivo" }, 503);
+    const eligible = rows.filter((row: any) => !row.expires_at || new Date(row.expires_at).getTime() > now);
+    if (!eligible.length) return reply(req, { status: "not_found" });
+    if (eligible.length === 1) {
+      const item = eligible[0];
+      try {
+        const url = await signedLink(item);
+        return reply(req, { status: "ready", url, company: item.company_name, position: item.role_name });
+      } catch (error) {
+        console.error("cv_sign", String(error));
+        return reply(req, { error: "No se pudo preparar el archivo" }, 503);
+      }
     }
-    return reply(req, { status: "ready", url: signed.signedUrl, company: item.company_name, position: item.role_name });
+    // Mostrar los CV de la empresa. Los vencidos aparecen sin descarga.
+    const items = rows.map((row: any) => ({
+      id: row.id, position: row.role_name, expires_at: row.expires_at,
+      available: !row.expires_at || new Date(row.expires_at).getTime() > now
+    })).sort((a: any,b: any) => Number(b.available) - Number(a.available));
+    return reply(req, { status: "multiple", company: eligible[0].company_name, items });
+  }
+  if (input.action === "download") {
+    const id = text(input.id, 50);
+    if (!digits(input.ruc) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+      return reply(req, { error: "Solicitud invalida" }, 400);
+    const { data: row, error } = await supabase.from("portfolio_cv_documents")
+      .select(cvSelect).eq("id", id).eq("ruc", input.ruc as string).eq("is_active", true).maybeSingle();
+    if (error) { console.error("cv_download_lookup",error.message); return reply(req,{ error:"No se pudo consultar el archivo" },503); }
+    if (!row || (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()))
+      return reply(req,{ error:"Este CV ya no está disponible" },404);
+    try {
+      const url = await signedLink(row);
+      return reply(req, { status:"ready", url, company:row.company_name, position:row.role_name });
+    } catch (error) {
+      console.error("cv_download_sign",String(error));
+      return reply(req,{ error:"No se pudo preparar el archivo" },503);
+    }
   }
   if (input.action === "lead") {
     // Simple honeypot for automated form submissions.
