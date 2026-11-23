@@ -24,7 +24,22 @@ async function verifyAdmin(){
   if(error||!user){ currentUser=null;isAdmin=false;show("login");return; }
   currentUser=user;
   const found=await sb.from("portfolio_cv_admins").select("user_id").eq("user_id",user.id).maybeSingle();
-  isAdmin=Boolean(found.data && !found.error);
+  if (found.error) {
+    isAdmin=false;
+    show("pending");
+    const dataApiDown=found.error.code==="PGRST002" || found.status===503 || found.error.code==="3F000";
+    el("pendingTitle").textContent=dataApiDown?"Servicio de datos no disponible":"No se pudo comprobar tu permiso";
+    el("pendingMessage").textContent=dataApiDown
+      ? "Tu cuenta está autenticada, pero Supabase no puede consultar la base de datos. Esto no significa que tu usuario carezca de autorización."
+      : "Supabase devolvió un error al consultar los permisos. Podés reintentar o revisar el servicio.";
+    el("serviceHint").hidden=!dataApiDown;
+    notice("Error de consulta: "+(found.error.message||found.error.code||"desconocido"),true);
+    return;
+  }
+  isAdmin=Boolean(found.data);
+  el("serviceHint").hidden=true;
+  el("pendingTitle").textContent="Cuenta autenticada, pendiente de autorización";
+  el("pendingMessage").textContent="La consulta funciona, pero tu cuenta todavía no aparece habilitada como administradora.";
   show(isAdmin?"app":"pending");
   if(isAdmin){await loadDocuments();await loadLeads();}
 }
