@@ -102,6 +102,12 @@ async function loadDocuments(){
    stateRow.append(stateLabel,stateSelect);
    box.append(stateRow);
    const actions=node("div",undefined,"itemActions");
+   const portal=node("a","Abrir portal de la empresa ↗");
+   portal.href="/empresa/?ruc="+encodeURIComponent(x.ruc);
+   portal.target="_blank";
+   portal.rel="noopener noreferrer";
+   portal.style.cssText="display:inline-flex;align-items:center;border:1px solid #d3d3d3;padding:7px 9px;border-radius:4px;color:#191919;text-decoration:none;font-size:13px";
+   actions.append(portal);
    const availableActions=[["download","Ver CV"],["edit","Editar vacante"],["toggle",x.is_active?"Desactivar":"Activar"],["delete","Eliminar"]];
    if(!x.is_main) availableActions.splice(2,0,["main","Marcar principal"]);
    for(const [action,label] of availableActions){
