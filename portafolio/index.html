@@ -54,6 +54,10 @@
     .zoomTools button { border:1px solid #dedede; background:white; min-height:31px; min-width:30px; padding:5px 8px; font-size:14px; }
     .zoomTools #zoomReadout { min-width:38px; text-align:center; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
     .fitTools { gap:3px; }
+    .readerTools .iconOnly,.siteActions .iconOnly { display:inline-flex; flex:0 0 34px; width:34px; height:34px; min-width:34px; min-height:34px; padding:6px; align-items:center; justify-content:center; }
+    .iconOnly svg { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+    .siteActions .download.iconOnly { background:#191919; color:#fff; border-color:#191919; padding:6px; }
+    .siteActions .download.iconOnly:hover { background:#3a3a3a; }
     .fitTools .fitIconButton { flex:0 0 34px; width:34px; height:34px; min-height:34px; padding:5px; }
     .fitIconButton svg { width:20px; height:20px; display:block; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
     .fitIconButton .fitArrow { fill:currentColor; stroke:none; }
@@ -134,6 +138,14 @@
       .siteLeft > .identity,.siteLeft > .siteNav { display:none; }
       .mobileContactToggle { display:inline-flex; align-items:center; justify-content:center; }
     }
+    /* La navegación inferior permanece en una única fila en vertical y celulares. */
+    @media (orientation:portrait), (max-width:760px) {
+      .bottomBar { display:flex; flex-direction:row; flex-wrap:nowrap; justify-content:flex-start; align-items:center; gap:10px; padding:8px 12px; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+      .bottomBar .sectionLinks { display:flex; flex:0 0 auto; flex-wrap:nowrap; justify-content:flex-start; min-width:max-content; }
+      .bottomBar .pageTools { display:flex; flex:0 0 auto; flex-wrap:nowrap; min-width:max-content; justify-content:center; }
+      .bottomBar::-webkit-scrollbar { height:5px; }
+      .bottomBar::-webkit-scrollbar-thumb { background:#a0a0a0; border-radius:5px; }
+    }
     @media (prefers-reduced-motion:reduce) { .sideNav { transition:none; } }
   </style>
 </head>
@@ -165,7 +177,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.8" y="7" width="18.4" height="10" rx="1.2"/><path class="fitArrow" d="M7.3 12 10.5 9.3v5.4zM16.7 12l-3.2-2.7v5.4z"/></svg>
           </button>
         </div>
-        <button class="toolButton" type="button" id="fullscreen">Pantalla completa ⛶</button>
+        <button class="toolButton iconOnly" type="button" id="fullscreen" aria-label="Pantalla completa" aria-pressed="false" title="Pantalla completa"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/></svg></button>
       </div>
       <div class="siteActions" aria-label="Acciones del portafolio">
         <div class="actionsWrap" id="actionsWrap">
@@ -178,9 +190,9 @@
             <a id="sendEmail">Compartir por correo</a>
           </div>
         </div>
-        <button class="copyPage" type="button" id="sendPage" title="Copiar enlace de la página que estás viendo">Copiar página</button>
-        <button class="printPdf" type="button" id="printPdf" title="Abrir el PDF actualizado para imprimir" aria-label="Imprimir portafolio">Imprimir</button>
-        <a class="download" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420">Descargar PDF</a>
+        <button class="copyPage iconOnly" type="button" id="sendPage" aria-label="Copiar enlace de la página actual" title="Copiar enlace de la página actual"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
+        <button class="printPdf iconOnly" type="button" id="printPdf" title="Imprimir portafolio" aria-label="Imprimir portafolio"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="10" rx="2"/><path d="M7 15h10v6H7zM17 11h.01"/></svg></button>
+        <a class="download iconOnly" href="https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf?download=Christian_Arleo_Portafolio.pdf&cacheNonce=20261122T220420" aria-label="Descargar PDF" title="Descargar PDF"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></a>
       </div>
     </div>
     <nav class="contactMenu" id="contactMenu" aria-label="Perfil y contacto" hidden>
@@ -249,6 +261,6 @@
       else compact.addListener(() => showMenu(false));
     })();
   </script>
-  <script src="./lector-v10.js?v=20261123-resumen1" defer></script>
+  <script src="./lector-v10.js?v=20261123-iconos1" defer></script>
 </body>
 </html>
