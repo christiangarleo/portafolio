@@ -215,7 +215,8 @@
         grid-area:viewer;
         order:initial;
         display:flex;
-        justify-content:flex-start;
+        justify-content:center;
+        justify-content:safe center;
         flex-wrap:nowrap;
         width:100%;
         max-width:100%;
@@ -229,6 +230,10 @@
         -webkit-overflow-scrolling:touch;
         scrollbar-width:thin;
       }
+      /* Un punto menos en controles y porcentaje cuando la pantalla se reduce. */
+      .readerTools button { font-size:11px; }
+      .readerTools .zoomTools button { font-size:13px; }
+      .readerTools .zoomTools #zoomReadout { font-size:11px; }
       .readerTools > * { flex:0 0 auto; }
       .readerTools::-webkit-scrollbar { height:4px; }
       .readerTools::-webkit-scrollbar-thumb { background:#aaa; border-radius:5px; }
