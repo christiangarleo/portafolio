@@ -78,11 +78,13 @@
     .pageTools button:hover:not(:disabled) { background:#f0f0f0; }
     .toast { position:fixed; bottom:80px; right:20px; z-index:30; padding:12px 16px; max-width:min(420px,90vw); border-radius:4px; background:#1c1c1c; color:white; font-size:13px; box-shadow:0 8px 22px rgba(0,0,0,.19); }
     :fullscreen { background:#fff; }
+    /* Una sola fila: en anchos reducidos se desplaza horizontalmente, nunca se apila. */
     @media (max-width:1550px) {
-      .siteRow { display:flex; flex-wrap:wrap; gap:6px 14px; }
-      .siteLeft { flex:1 1 auto; }
-      .readerTools { order:3; flex:1 1 100%; justify-content:center; padding:2px 0; }
-      .siteActions { flex:0 1 auto; }
+      .siteRow { display:flex; flex-wrap:nowrap; align-items:center; gap:8px; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+      .siteLeft { flex:0 0 auto; min-width:max-content; gap:8px; flex-wrap:nowrap; }
+      .readerTools { order:initial; flex:0 0 auto; min-width:max-content; justify-content:center; gap:4px; padding:0; flex-wrap:nowrap; }
+      .siteActions { flex:0 0 auto; min-width:max-content; justify-content:flex-end; flex-wrap:nowrap; }
+      .actionsMenu { position:fixed; top:52px; right:12px; }
     }
     @media (max-width:900px) {
       .bottomBar { display:flex; flex-wrap:wrap; justify-content:center; gap:5px 12px; }
@@ -95,20 +97,20 @@
     }
     @media (max-width:830px) {
       .siteRow { padding:9px 14px; }
-      .siteLeft { flex-wrap:wrap; }
-      .siteNav { flex-wrap:wrap; }
-      .siteActions { flex-wrap:wrap; justify-content:flex-start; margin-left:0; }
-      .readerTools { justify-content:flex-start; flex-wrap:wrap; }
+      .siteLeft { flex-wrap:nowrap; }
+      .siteNav { flex-wrap:nowrap; }
+      .siteActions { flex-wrap:nowrap; justify-content:flex-end; margin-left:0; }
+      .readerTools { justify-content:center; flex-wrap:nowrap; }
       #pageStage { padding:14px 56px; }
       .sideNav { width:38px; height:45px; font-size:18px; }
       .sidePrevious { left:8px; }
       .sideNext { right:8px; }
     }
     @media (max-width:620px) {
-      .identity { display:block; width:100%; font-size:13px; }
+      .identity { display:inline; width:auto; font-size:13px; }
       .siteNav { justify-content:flex-start; }
       .siteActions a,.siteActions button,.siteNav a { font-size:11px; padding:7px 8px; }
-      .readerTools { overflow-x:auto; flex-wrap:nowrap; scrollbar-width:thin; }
+      .readerTools { overflow:visible; flex-wrap:nowrap; }
       .readerTools button { flex:0 0 auto; }
       #pageStage { padding:12px; }
       .sideNav { display:none; }
