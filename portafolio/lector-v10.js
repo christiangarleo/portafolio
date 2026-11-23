@@ -30,7 +30,7 @@
   const sidePrevious = byId("sidePrevious");
   const sideNext = byId("sideNext");
   const printButton = byId("printPdf");
-  const downloadLink = document.querySelector("a.download");
+  const downloadLink = byId("downloadPortfolio");
   if (downloadLink) downloadLink.href = DOWNLOAD_URL;
   const shareMenu = byId("actionsMenu");
   const shareButton = byId("actionsToggle");
