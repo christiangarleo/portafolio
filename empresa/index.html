@@ -79,6 +79,37 @@
     .contactChoice strong {font-size:13px;line-height:1.4;}
     .closingSmall {font-size:11px;color:#777;line-height:1.5;}
 
+    .empty{max-width:900px;}
+    .choices{grid-template-columns:repeat(2,minmax(0,1fr));margin:16px 0;}
+    .choices button{min-height:72px;font-size:14px;font-weight:700;background:#fff;line-height:1.35;}
+    .choices button[aria-pressed="true"]{border-color:#191919;background:#f7f7f7;box-shadow:inset 0 0 0 1px #191919;}
+    .quickForm{border-top:1px solid #ededed;margin-top:14px;padding-top:19px;}
+    .quickForm h3{font-size:18px;margin:0 0 4px;}
+    .formHint{font-size:12px;color:#666;margin:0 0 17px;}
+    .formGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;}
+    .formGrid>div{min-width:0;}
+    .quickForm input[type=text],.quickForm input[type=email],.quickForm input[type=tel]{min-height:44px;}
+    .fieldChoice{padding:0;border:0;margin:14px 0 0;min-width:0;}
+    .fieldChoice legend{font-weight:700;font-size:13px;margin:0 0 8px;}
+    .chipRow{display:flex;flex-wrap:wrap;gap:7px;}
+    .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #d5d5d5;border-radius:6px;padding:11px 12px;min-height:42px;background:#fff;cursor:pointer;font-size:13px;margin:0;font-weight:500;}
+    .chip:has(input:checked){background:#191919;border-color:#191919;color:#fff;}
+    .chip:has(input:focus-visible){outline:2px solid #df3e89;outline-offset:2px;}
+    .chip input{width:15px;min-height:0;height:15px;margin:0;accent-color:#df3e89;cursor:pointer;}
+    .chip:has(input:checked) input{accent-color:#fff;}
+    .contactMethods{margin-top:11px;padding:12px;border-radius:6px;background:#f7f7f7;border:1px solid #e6e6e6;}
+    .contactMethods .fieldChoice{margin:0;}
+    .contactMethods .chip{background:#fff;}
+    .contactMethods .chip:has(input:checked){background:#191919;}
+    .moreInfo{border-top:1px solid #eee;margin-top:20px;padding-top:14px;}
+    .moreInfo summary{font-size:13px;cursor:pointer;color:#303030;line-height:1.5;}
+    .moreInfo textarea{min-height:74px;}
+    .quickSubmit{margin:21px 0 4px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
+    .quickSubmit button{min-width:190px;}
+    .privacyNote{font-size:11px;color:#777;margin:0;max-width:580px;}
+    @media(max-width:660px){.formGrid{grid-template-columns:1fr}.choices{gap:8px}.choices button{padding:11px;font-size:12px;min-height:74px}.chip{flex:1 1 auto;justify-content:center;font-size:12px;padding:11px 9px}.quickSubmit button{width:100%}.quickForm h3{font-size:17px}}
+
+
     .closing { margin-top:30px; padding-top:16px; border-top:1px solid #e4e4e4; font-size:12px; color:#666; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
     .closing a { color:#222; text-decoration:underline; }
     [hidden] { display:none!important; }
@@ -108,181 +139,106 @@
     <p class="sub" style="margin-top:20px;font-size:12px">Cada CV corresponde a una vacante específica. Los documentos vencidos permanecen visibles, pero no se pueden descargar.</p>
   </section>
   <section id="emptySection" class="panel empty" hidden>
-    <h2 id="requestHeading">¿Cómo te gustaría trabajar conmigo?</h2>
-    <p id="requestIntro">Todavía no hay CV disponibles para ese RUC. Podés enviarme una propuesta de contratación directamente desde acá.</p>
+    <h2 id="requestHeading">¿Te interesa trabajar conmigo?</h2>
+    <p id="requestIntro">Elegí qué necesitás. Es un formulario breve; los detalles los conversamos después.</p>
     <div class="choices" id="choices" role="group" aria-label="Tipo de contratación">
       <button type="button" data-kind="in_house" aria-pressed="false">Contratación In-house</button>
       <button type="button" data-kind="proyecto" aria-pressed="false">Contratación por proyecto</button>
     </div>
-    <form id="leadForm" hidden>
-      <h3 id="leadTitle">Propuesta de contratación</h3>
+    <form id="leadForm" class="quickForm" hidden>
+      <h3 id="leadTitle">Invitar a una entrevista</h3>
+      <p id="leadSubtitle" class="formHint">Solo lo esencial. Podés completar el resto en una conversación.</p>
       <input type="hidden" id="leadKind" name="kind">
-      <div class="hp" aria-hidden="true"><label for="website">Dejar vacío</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
-      <div class="formProgress" aria-label="Progreso del formulario">
-        <span id="stageLabel1" class="active">1. Empresa y contacto</span>
-        <span id="stageLabel2">2. Detalles de la propuesta</span>
+      <input type="hidden" id="rucField" name="ruc">
+      <div class="hp" aria-hidden="true">
+        <label for="website">No completar</label>
+        <input id="website" name="website" tabindex="-1" autocomplete="off">
       </div>
-      <section id="stepContact" class="formStep" aria-labelledby="contactHeading">
-        <h4 id="contactHeading">Datos de la empresa</h4>
-        <div class="fields">
-          <div><label for="companyName">Empresa *</label><input id="companyName" name="company_name" required minlength="2" maxlength="160" autocomplete="organization"></div>
-          <div><label for="rucField">RUC</label><input id="rucField" name="ruc" readonly maxlength="11"></div>
-          <div><label for="contactName">Persona de contacto *</label><input id="contactName" name="contact_name" required minlength="2" maxlength="140" autocomplete="name"></div>
-          <div><label for="email">Correo corporativo *</label><input id="email" name="email" required type="email" maxlength="200" autocomplete="email"></div>
-          <div><label for="phone">WhatsApp o teléfono (opcional)</label><input id="phone" name="phone" type="tel" maxlength="65" autocomplete="tel" placeholder="+51 ..."></div>
+      <div class="formGrid">
+        <div><label for="companyName">Nombre de la empresa *</label>
+          <input id="companyName" name="company_name" type="text" required minlength="2" maxlength="160" autocomplete="organization" placeholder="Ej.: Nombre de tu empresa">
         </div>
-        <div class="formActions"><button id="nextStep" type="button" class="action">Continuar →</button></div>
-      </section>
-      <section id="stepDetails" class="formStep" aria-labelledby="detailsHeading" hidden>
-        <h4 id="detailsHeading">Detalles de la propuesta</h4>
-        <fieldset id="inhouseFields" class="formGroup" disabled hidden>
-          <div class="fields">
-            <div><label for="jobRole">Puesto o cargo *</label><input id="jobRole" name="position_or_project" required maxlength="180" placeholder="Ej.: Especialista de Marketing"></div>
-            <div><label for="dedication">Dedicación *</label>
-              <select id="dedication" name="dedication" required>
-                <option value="">Seleccionar</option>
-                <option value="full_time">Full Time</option>
-                <option value="part_time">Part Time</option>
-                <option value="por_horas">Por horas</option>
-              </select>
-            </div>
-          </div>
-          <div id="hoursFields" class="conditional" hidden>
-            <div class="fields">
-              <div><label for="hours">Cantidad de horas *</label><input id="hours" name="hours" type="number" min="1" max="240" step="1" placeholder="Ej.: 12"></div>
-              <div><label for="hoursPeriod">¿En qué período? *</label>
-                <select id="hoursPeriod" name="hours_period">
-                  <option value="semana">Por semana</option>
-                  <option value="mes">Por mes</option>
-                  <option value="total">En total</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="fields">
-            <div><label for="ihWorkMode">Modalidad de trabajo *</label>
-              <select id="ihWorkMode" name="work_mode" required><option value="">Seleccionar</option><option value="remoto">Remoto</option><option value="presencial">Presencial</option><option value="hibrido">Híbrido</option></select>
-            </div>
-            <div><label for="timezone">Zona horaria *</label>
-              <select id="timezone" name="timezone" required>
-                <option value="America/Lima">Perú (UTC−5)</option><option value="America/Bogota">Colombia (UTC−5)</option>
-                <option value="America/Mexico_City">México (zona centro)</option><option value="America/Santiago">Chile</option>
-                <option value="America/Argentina/Buenos_Aires">Argentina (UTC−3)</option><option value="UTC">UTC</option>
-              </select>
-            </div>
-          </div>
-          <div id="ihLocation" class="conditional" hidden>
-            <div class="fields">
-              <div><label for="ihCountry">País *</label><input id="ihCountry" name="work_country" maxlength="80" placeholder="Ej.: Perú"></div>
-              <div><label for="ihCity">Ciudad *</label><input id="ihCity" name="work_city" maxlength="100" placeholder="Ej.: Lima"></div>
-              <div><label for="ihDistrict">Distrito o zona *</label><input id="ihDistrict" name="work_district" maxlength="100" placeholder="Ej.: Miraflores"></div>
-            </div>
-          </div>
-          <fieldset id="ihHybridDays" class="formGroup conditional" hidden>
-            <legend>¿Qué días necesitás que vaya presencialmente? *</legend>
-            <div class="optionGrid" id="officeDays">
-              <label><input type="checkbox" name="office_days" value="lunes"> Lun</label>
-              <label><input type="checkbox" name="office_days" value="martes"> Mar</label>
-              <label><input type="checkbox" name="office_days" value="miercoles"> Mié</label>
-              <label><input type="checkbox" name="office_days" value="jueves"> Jue</label>
-              <label><input type="checkbox" name="office_days" value="viernes"> Vie</label>
-              <label><input type="checkbox" name="office_days" value="sabado"> Sáb</label>
-              <label><input type="checkbox" name="office_days" value="domingo"> Dom</label>
-            </div>
-          </fieldset>
-          <fieldset class="formGroup choiceGroup">
-            <legend>¿Qué días necesitás que trabaje? *</legend>
-            <div class="optionGrid" id="workDays">
-              <label><input type="checkbox" name="work_days" value="lunes"> Lun</label>
-              <label><input type="checkbox" name="work_days" value="martes"> Mar</label>
-              <label><input type="checkbox" name="work_days" value="miercoles"> Mié</label>
-              <label><input type="checkbox" name="work_days" value="jueves"> Jue</label>
-              <label><input type="checkbox" name="work_days" value="viernes"> Vie</label>
-              <label><input type="checkbox" name="work_days" value="sabado"> Sáb</label>
-              <label><input type="checkbox" name="work_days" value="domingo"> Dom</label>
-            </div>
-          </fieldset>
-          <div class="conditional">
-            <label class="inlineCheck" for="scheduleTbd"><input id="scheduleTbd" type="checkbox" name="schedule_tbd" value="true"> El horario todavía está por definir</label>
-            <div class="fields" id="scheduleFields">
-              <div><label for="dailyStart">Hora de inicio *</label><input id="dailyStart" name="daily_start" type="time"></div>
-              <div><label for="dailyEnd">Hora de finalización *</label><input id="dailyEnd" name="daily_end" type="time"></div>
-            </div>
-          </div>
-          <div class="fields">
-            <div><label for="ihStartDate">Fecha estimada de inicio (opcional)</label><input id="ihStartDate" name="start_date" type="date"></div>
-            <div><label for="salary">Rango de remuneración (opcional)</label><input id="salary" name="salary" maxlength="100" placeholder="Ej.: A conversar / S/ 4.000–5.000"></div>
-          </div>
-          <label for="responsibilities">Principales responsabilidades del puesto *</label>
-          <textarea id="responsibilities" name="responsibilities" required maxlength="1500" placeholder="¿Qué actividades principales esperás que desarrolle?"></textarea>
-        </fieldset>
-        <fieldset id="projectFields" class="formGroup" disabled hidden>
-          <div class="fields">
-            <div><label for="projectName">Nombre del proyecto *</label><input id="projectName" name="project_name" maxlength="180" required></div>
-            <div><label for="projectArea">Área del proyecto *</label>
-              <select id="projectArea" name="project_area" required>
-                <option value="">Seleccionar</option><option value="marketing">Marketing</option>
-                <option value="tecnologia_ia">Tecnología e IA</option><option value="datos">Datos</option>
-                <option value="diseno">Diseño</option><option value="otro">Otro</option>
-              </select>
-            </div>
-          </div>
-          <label for="problem">¿Qué necesitás resolver? *</label><textarea id="problem" name="problem" maxlength="1800" required placeholder="Describí el problema o la necesidad de tu empresa."></textarea>
-          <label for="outcome">¿Qué resultado esperás obtener? *</label><textarea id="outcome" name="outcome" maxlength="1200" required placeholder="Ej.: automatizar una operación, aumentar prospectos, lanzar una campaña..."></textarea>
-          <label for="deliverables">Entregables esperados (opcional)</label><textarea id="deliverables" name="deliverables" maxlength="1000" placeholder="Si ya tenés definido qué deberíamos entregar, detallalo acá."></textarea>
-          <div class="fields">
-            <div><label for="projectStartDate">Fecha de inicio (opcional)</label><input id="projectStartDate" name="start_date" type="date"></div>
-            <div>
-              <label for="dueDate">Fecha objetivo de entrega *</label><input id="dueDate" name="due_date" type="date">
-              <label class="inlineCheck" for="deadlineTbd" style="margin-top:7px"><input id="deadlineTbd" name="deadline_tbd" type="checkbox" value="true"> Todavía no está definida</label>
-            </div>
-            <div><label for="budget">Presupuesto estimado (opcional)</label><input id="budget" name="budget" maxlength="100" placeholder="Ej.: S/ 5.000 o A definir"></div>
-            <div><label for="pjWorkMode">Modalidad de trabajo *</label>
-              <select id="pjWorkMode" name="work_mode" required><option value="">Seleccionar</option><option value="remoto">Remoto</option><option value="presencial">Presencial</option><option value="hibrido">Híbrido</option></select>
-            </div>
-          </div>
-          <div id="pjLocation" class="conditional" hidden>
-            <div class="fields">
-              <div><label for="pjCountry">País *</label><input id="pjCountry" name="work_country" maxlength="80"></div>
-              <div><label for="pjCity">Ciudad *</label><input id="pjCity" name="work_city" maxlength="100"></div>
-              <div><label for="pjDistrict">Distrito o zona *</label><input id="pjDistrict" name="work_district" maxlength="100"></div>
-            </div>
-          </div>
-          <label for="referenceUrl">Enlace al brief o documentación (opcional)</label>
-          <input id="referenceUrl" name="reference_url" type="url" maxlength="400" placeholder="https://...">
-        </fieldset>
-        <fieldset class="formGroup" id="contactPreferenceGroup">
-          <legend>¿Querés que me comunique con vos? *</legend>
-          <div class="contactChoice">
-            <label><input type="radio" name="contact_preference" value="contactame" required><strong>Sí, contactame.</strong></label>
-            <label><input type="radio" name="contact_preference" value="empresa_contacta" required><strong>No, nosotros te devolvemos la llamada.</strong></label>
+        <div id="vacancyField" hidden><label for="jobRole">¿Para qué vacante? *</label>
+          <input id="jobRole" name="position" type="text" maxlength="180" placeholder="Ej.: Coordinador de Marketing">
+        </div>
+      </div>
+      <div id="inhouseFields" hidden>
+        <fieldset class="fieldChoice">
+          <legend>¿Qué dedicación necesitás? *</legend>
+          <div class="chipRow">
+            <label class="chip"><input name="dedication" type="radio" value="full_time">Full Time</label>
+            <label class="chip"><input name="dedication" type="radio" value="part_time">Part Time</label>
+            <label class="chip"><input name="dedication" type="radio" value="por_horas">Por horas</label>
           </div>
         </fieldset>
-        <div id="contactExtra" class="conditional" hidden>
-          <div class="fields">
-            <div><label for="contactMethod">¿Por qué medio preferís que te contacte? *</label>
-              <select id="contactMethod" name="contact_method">
-                <option value="">Seleccionar</option><option value="whatsapp">WhatsApp</option>
-                <option value="llamada">Llamada</option><option value="email">E-mail</option>
-              </select>
-            </div>
-            <div><label for="contactTime">¿En qué horario puedo contactarte? (opcional)</label>
-              <select id="contactTime" name="contact_time">
-                <option value="">Sin preferencia</option><option value="manana">Mañana</option>
-                <option value="tarde">Tarde</option><option value="indistinto">Indistinto</option>
-              </select>
-            </div>
+        <fieldset class="fieldChoice">
+          <legend>¿Cómo sería el trabajo? *</legend>
+          <div class="chipRow">
+            <label class="chip"><input name="work_mode" type="radio" value="remoto">Remoto</label>
+            <label class="chip"><input name="work_mode" type="radio" value="hibrido">Híbrido</label>
+            <label class="chip"><input name="work_mode" type="radio" value="presencial">Presencial</label>
           </div>
-          <p id="phoneHint" class="helper" hidden>Para WhatsApp o llamada, ingresá un teléfono de contacto en el paso anterior.</p>
+        </fieldset>
+      </div>
+      <div id="projectFields" hidden>
+        <fieldset class="fieldChoice">
+          <legend>¿Qué necesitás resolver? *</legend>
+          <div class="chipRow">
+            <label class="chip"><input name="project_need" type="radio" value="mas_clientes">Conseguir más clientes</label>
+            <label class="chip"><input name="project_need" type="radio" value="marketing_contenido">Mejorar marketing y contenido</label>
+            <label class="chip"><input name="project_need" type="radio" value="automatizacion_ia">Automatización e IA</label>
+            <label class="chip"><input name="project_need" type="radio" value="solucion_digital">Crear una solución digital</label>
+            <label class="chip"><input name="project_need" type="radio" value="otro">Otro / Necesito asesoramiento</label>
+          </div>
+        </fieldset>
+        <fieldset class="fieldChoice">
+          <legend>¿Para cuándo lo necesitás? *</legend>
+          <div class="chipRow">
+            <label class="chip"><input name="project_timing" type="radio" value="urgente">Urgente</label>
+            <label class="chip"><input name="project_timing" type="radio" value="este_mes">Este mes</label>
+            <label class="chip"><input name="project_timing" type="radio" value="mas_adelante">Más adelante</label>
+            <label class="chip"><input name="project_timing" type="radio" value="a_definir">A definir</label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="formGrid" style="margin-top:14px">
+        <div>
+          <label for="email">Correo corporativo *</label>
+          <input id="email" name="email" type="email" required maxlength="200" autocomplete="email" placeholder="nombre@empresa.com">
         </div>
-        <label for="observations">Observaciones adicionales (opcional)</label>
-        <textarea id="observations" name="observations" maxlength="1000" placeholder="¿Hay algún detalle, condición o información importante que debería conocer?"></textarea>
-        <p class="closingSmall">Los datos de este formulario se utilizarán para gestionar la propuesta y, si lo autorizás, contactarte según tu preferencia.</p>
-        <div class="formActions">
-          <button id="prevStep" class="secondary" type="button">← Volver</button>
-          <button id="submitLead" type="submit" class="action">Enviar propuesta</button>
+      </div>
+      <fieldset class="fieldChoice">
+        <legend>¿Querés que me comunique con vos? *</legend>
+        <div class="chipRow">
+          <label class="chip"><input name="contact_preference" type="radio" value="contactame">Sí, contactame.</label>
+          <label class="chip"><input name="contact_preference" type="radio" value="empresa_contacta">No, nosotros te devolvemos la llamada.</label>
         </div>
-      </section>
+      </fieldset>
+      <div id="contactExtra" class="contactMethods" hidden>
+        <fieldset class="fieldChoice">
+          <legend>¿Por dónde preferís que te contacte?</legend>
+          <div class="chipRow">
+            <label class="chip"><input type="radio" name="contact_method" value="email" checked>Por e-mail</label>
+            <label class="chip"><input type="radio" name="contact_method" value="whatsapp">Por WhatsApp</label>
+            <label class="chip"><input type="radio" name="contact_method" value="llamada">Por llamada</label>
+          </div>
+        </fieldset>
+        <div id="phoneField" hidden>
+          <label for="phone">Teléfono de contacto *</label>
+          <input id="phone" name="phone" type="tel" maxlength="65" autocomplete="tel" placeholder="Ej.: +51 999 999 999">
+        </div>
+      </div>
+      <details class="moreInfo" id="moreInfo">
+        <summary>Agregar una observación o dato adicional (opcional)</summary>
+        <label for="observations">Observaciones</label>
+        <textarea id="observations" name="observations" maxlength="1000" placeholder="¿Hay algún detalle importante que debería conocer?"></textarea>
+        <label for="contactName">Nombre de la persona de contacto (opcional)</label>
+        <input id="contactName" name="contact_name" maxlength="140" placeholder="Tu nombre">
+      </details>
+      <div class="quickSubmit">
+        <button id="submitLead" type="submit" class="action">Enviar invitación</button>
+        <p class="privacyNote">Tus datos se utilizan únicamente para gestionar la propuesta y respetar la preferencia de contacto que elijas.</p>
+      </div>
       <div id="formError" class="errorBox" role="alert" aria-live="polite"></div>
       <div id="leadMessage" class="message" role="status" aria-live="polite"></div>
     </form>
@@ -296,5 +252,5 @@
     <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
   </div>
 </main>
-<script src="./empresa.js?v=20261123-formularios3" defer></script>
+<script src="./empresa.js?v=20261123-formularios-rapidos1" defer></script>
 </body></html>
