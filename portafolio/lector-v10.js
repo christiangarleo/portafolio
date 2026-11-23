@@ -384,7 +384,10 @@
   });
   document.addEventListener("fullscreenchange", () => {
     // Keep the controls accessible: request fullscreen on the whole application.
-    fullscreenButton.textContent = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa ⛶";
+    const label = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa";
+    fullscreenButton.setAttribute("aria-label", label);
+    fullscreenButton.setAttribute("title", label);
+    fullscreenButton.setAttribute("aria-pressed", String(Boolean(document.fullscreenElement)));
   });
 
   window.addEventListener("popstate", () => {
