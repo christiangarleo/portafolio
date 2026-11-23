@@ -38,8 +38,9 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <p class="note">Si ya confirmaste tu correo, ingresá directamente con tu contraseña. Si el enlace de confirmación venció, usá «Reenviar confirmación» y abrí el mensaje más reciente. Solo las cuentas autorizadas pueden administrar los documentos.</p>
 </section>
 <section class="panel" id="pendingPanel" hidden>
-<h2>Cuenta autenticada, pendiente de autorización</h2>
-<p>El usuario inició sesión, pero todavía no figura en la lista de administradores. Autorizalo desde Supabase y luego presioná «Comprobar acceso».</p>
+<h2 id="pendingTitle">Cuenta autenticada, pendiente de autorización</h2>
+<p id="pendingMessage">El usuario inició sesión, pero todavía no figura en la lista de administradores. Revisá los permisos y presioná «Comprobar acceso».</p>
+<p id="serviceHint" class="note" hidden>Supabase no tiene activa su API de datos. Entrá a <a href="https://supabase.com/dashboard/project/gprhevdotoykofrxbufv/integrations/data_api/overview" target="_blank" rel="noopener noreferrer">Integrations → Data API</a>, habilitá <strong>Enable Data API</strong> y verificá que figure el esquema <code>public</code>. Después volvé y pulsá «Comprobar acceso».</p>
 <div class="row"><button id="recheck" type="button">Comprobar acceso</button><button class="logout" type="button">Cerrar sesión</button></div>
 </section>
 <div id="app" hidden>
@@ -62,5 +63,5 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=2"></script>
+<script type="module" src="./panel.js?v=3"></script>
 </body></html>
