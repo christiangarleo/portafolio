@@ -21,6 +21,8 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 .item{border-top:1px solid #eee;padding:14px 0}.item:first-child{border-top:0}
 .item strong{display:block;font-size:14px}.item small{display:block;margin-top:6px;color:#555;font-size:12px;line-height:1.4}
 .itemActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.itemActions button{padding:7px 9px}
+.itemStatus{margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.itemStatus label{margin:0;font-size:12px}.itemStatus select{width:auto;min-width:160px;max-width:100%;padding:7px}
 #status{position:sticky;bottom:12px;z-index:5;background:#242424;color:#fff;border-radius:5px;padding:11px 15px;font-size:13px;margin-top:12px}
 #status[data-error=true]{background:#9b2525}
 @media(max-width:600px){.grid{grid-template-columns:1fr}header strong{font-size:15px}h1{font-size:21px}}
@@ -45,7 +47,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </section>
 <div id="app" hidden>
 <section class="panel">
-<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>Archivos privados; el reclutador solo necesita ingresar el RUC para obtener el CV principal vigente.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
+<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el RUC: si hay un CV vigente, se descarga; si hay varios, elige la vacante desde su panel. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
 <h2>Subir nuevo CV</h2>
 <form id="uploadForm">
 <div class="grid">
@@ -53,8 +55,15 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <div><label for="ruc">RUC (11 dígitos)</label><input id="ruc" inputmode="numeric" pattern="[0-9]{11}" minlength="11" maxlength="11" placeholder="20123456789" required></div>
 <div><label for="position">Puesto o vacante</label><input id="position" maxlength="180" placeholder="Ej.: Especialista en Marketing" required></div>
 <div><label for="expires">Fecha de vencimiento (opcional)</label><input id="expires" type="datetime-local"></div>
+<div><label for="applicationStatus">Estado de la postulación (solo administración)</label>
+<select id="applicationStatus">
+  <option value="preparado">Preparado</option>
+  <option value="postulado">Postulado</option>
+  <option value="en_proceso">En proceso</option>
+  <option value="finalizado">Finalizado</option>
+</select></div>
 <div><label for="pdf">Archivo PDF (máximo 30 MB)</label><input id="pdf" type="file" accept="application/pdf,.pdf" required></div>
-<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>Usar como CV principal de este RUC</label></div>
+<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>Destacar primero este CV si hay varios del mismo RUC</label></div>
 </div><p><button class="primary" type="submit" id="uploadButton">Subir CV</button></p>
 </form>
 </section>
@@ -63,5 +72,5 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=3"></script>
+<script type="module" src="./panel.js?v=4"></script>
 </body></html>
