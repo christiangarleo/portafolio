@@ -103,9 +103,10 @@
     sectionJumpLinks.forEach(link => {
       const sectionStart = Number(link.dataset.page);
       const selected = sectionStart === 3 ? activePage === 3
-        : sectionStart === 4 ? activePage >= 4 && activePage < 6
+        : sectionStart === 4 ? activePage === 4
+        : sectionStart === 5 ? activePage === 5
         : sectionStart === 6 ? activePage >= 6 && activePage < 23
-        : sectionStart === 23 ? activePage >= 23 && activePage < 55 : false;
+        : sectionStart === 23 ? activePage >= 23 && activePage <= totalPages : false;
       if (selected) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     });
