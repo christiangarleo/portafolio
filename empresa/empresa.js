@@ -81,157 +81,116 @@
     if(button)downloadCv(button);
   });
   const form=by("leadForm");
-  const headingByKind={in_house:"Contratación In-house",proyecto:"Contratación por proyecto"};
-  function setMessageForForm(text,isError=false){
-    const status=by("formError");
-    status.textContent=isError?text:"";
-    status.dataset.error=String(isError);
-    setMessage(by("leadMessage"),isError?"":text);
+  const titles={
+    in_house:["Invitar a una entrevista","Dejame la vacante y tus datos de contacto."],
+    proyecto:["Conversemos sobre tu proyecto","Contame qué necesitás con un par de clics."]
+  };
+  function formError(text){
+    by("formError").textContent=text;
+    if(text)by("formError").scrollIntoView({block:"nearest"});
   }
-  function sectionVisible(id,visible){
-    const block=by(id);block.hidden=!visible;
-    // Los campos condicionales no se envían ni validan mientras están ocultos.
-    for(const control of block.querySelectorAll("input,select,textarea"))control.disabled=!visible;
-  }
-  function require(id,required){by(id).required=required;}
-  function updateHours(){
-    const show=["part_time","por_horas"].includes(by("dedication").value);
-    sectionVisible("hoursFields",show);require("hours",show);
-  }
-  function updateLocation(prefix){
-    const mode=by(prefix==="ih"?"ihWorkMode":"pjWorkMode").value;
-    const loc=mode==="presencial"||mode==="hibrido";
-    sectionVisible(prefix+"Location",loc);
-    for(const id of prefix==="ih"?["ihCountry","ihCity","ihDistrict"]:["pjCountry","pjCity","pjDistrict"])require(id,loc);
-    if(prefix==="ih")sectionVisible("ihHybridDays",mode==="hibrido");
-  }
-  function updateSchedule(){
-    const specified=!by("scheduleTbd").checked;
-    sectionVisible("scheduleFields",specified);
-    require("dailyStart",specified);require("dailyEnd",specified);
-  }
-  function updateDeadline(){
-    const specified=!by("deadlineTbd").checked;
-    by("dueDate").disabled=!specified;
-    by("dueDate").required=specified;
-    if(!specified)by("dueDate").value="";
-  }
-  function updateContact(){
-    const preference=form.querySelector('input[name="contact_preference"]:checked')?.value;
-    const shouldContact=preference==="contactame";
-    sectionVisible("contactExtra",shouldContact);
-    require("contactMethod",shouldContact);
-    const phoneNeeded=shouldContact&&["whatsapp","llamada"].includes(by("contactMethod").value);
-    by("phoneHint").hidden=!phoneNeeded;
-    require("phone",phoneNeeded);
-  }
-  function stage(stageIndex){
-    by("stepContact").hidden=stageIndex!==1;
-    by("stepDetails").hidden=stageIndex!==2;
-    by("stageLabel1").classList.toggle("active",stageIndex===1);
-    by("stageLabel2").classList.toggle("active",stageIndex===2);
-    by("formError").textContent="";
+  function contactVisibility(){
+    const pref=form.querySelector('input[name="contact_preference"]:checked')?.value;
+    const showMethod=pref==="contactame";
+    by("contactExtra").hidden=!showMethod;
+    const method=form.querySelector('input[name="contact_method"]:checked')?.value;
+    const showPhone=showMethod && ["whatsapp","llamada"].includes(method);
+    by("phoneField").hidden=!showPhone;
+    by("phone").required=showPhone;
+    if(!showPhone)by("phone").value="";
   }
   by("choices").addEventListener("click",event=>{
     const button=event.target.closest("button[data-kind]");
-    if(!button)return;
+    if(!button||!titles[button.dataset.kind])return;
     const kind=button.dataset.kind;
-    if(!headingByKind[kind])return;
     form.reset();
+    by("leadKind").value=kind;
     by("rucField").value=ruc;
     by("companyName").value=companyOnFile;
-    by("leadKind").value=kind;
-    by("leadTitle").textContent=headingByKind[kind];
     by("inhouseFields").hidden=kind!=="in_house";
     by("projectFields").hidden=kind!=="proyecto";
-    by("inhouseFields").disabled=kind!=="in_house";
-    by("projectFields").disabled=kind!=="proyecto";
-    updateHours();updateLocation("ih");updateLocation("pj");
-    updateSchedule();updateDeadline();updateContact();
-    for(const choice of by("choices").querySelectorAll("button"))choice.setAttribute("aria-pressed",String(choice===button));
+    by("vacancyField").hidden=kind!=="in_house";
+    by("jobRole").required=kind==="in_house";
+    by("leadTitle").textContent=titles[kind][0];
+    by("leadSubtitle").textContent=titles[kind][1];
+    by("submitLead").textContent=kind==="in_house"?"Enviar invitación":"Proponer proyecto";
+    by("moreInfo").open=false;
+    for(const item of by("choices").querySelectorAll("button")){
+      item.setAttribute("aria-pressed",String(item===button));
+    }
+    formError("");
+    by("leadMessage").textContent="";
+    contactVisibility();
     form.hidden=false;
-    stage(1);
-    by("companyName").focus();
+    by("companyName").focus({preventScroll:true});
+    form.scrollIntoView({block:"start",behavior:"smooth"});
   });
-  by("dedication").addEventListener("change",updateHours);
-  by("ihWorkMode").addEventListener("change",()=>updateLocation("ih"));
-  by("pjWorkMode").addEventListener("change",()=>updateLocation("pj"));
-  by("scheduleTbd").addEventListener("change",updateSchedule);
-  by("deadlineTbd").addEventListener("change",updateDeadline);
-  form.querySelectorAll('input[name="contact_preference"]').forEach(x=>x.addEventListener("change",updateContact));
-  by("contactMethod").addEventListener("change",updateContact);
-  by("nextStep").addEventListener("click",()=>{
-    const fields=[...by("stepContact").querySelectorAll("input,select,textarea")];
-    for(const field of fields)if(!field.checkValidity()){field.reportValidity();field.focus();return;}
-    stage(2);by("stepDetails").scrollIntoView({block:"nearest",behavior:"instant"});
-  });
-  by("prevStep").addEventListener("click",()=>{stage(1);by("stepContact").scrollIntoView({block:"nearest",behavior:"instant"});});
-  function collect(){
-    const fd=new FormData(form),get=k=>String(fd.get(k)||"").trim(),multi=k=>fd.getAll(k).map(String);
-    const kind=get("kind");
-    const payload={
-      action:"lead_v2",
-      kind,website:get("website"),
-      company_name:get("company_name"),ruc,contact_name:get("contact_name"),
-      email:get("email"),phone:get("phone"),
-      position_or_project:kind==="in_house"?get("position_or_project"):get("project_name"),
-      contact_preference:get("contact_preference"),
-      contact_method:get("contact_method"),contact_time:get("contact_time"),
-      observations:get("observations"),
-      intake:kind==="in_house"?{
-        position:get("position_or_project"),dedication:get("dedication"),
-        hours:get("hours")?Number(get("hours")):null,hours_period:get("hours_period"),
-        work_mode:get("work_mode"),work_country:get("work_country"),
-        work_city:get("work_city"),work_district:get("work_district"),
-        work_days:multi("work_days"),office_days:multi("office_days"),
-        timezone:get("timezone"),schedule_tbd:get("schedule_tbd")==="true",
-        daily_start:get("daily_start"),daily_end:get("daily_end"),
-        start_date:get("start_date"),salary:get("salary"),responsibilities:get("responsibilities")
-      }:{
-        project_name:get("project_name"),project_area:get("project_area"),
-        problem:get("problem"),outcome:get("outcome"),deliverables:get("deliverables"),
-        start_date:get("start_date"),due_date:get("due_date"),
-        deadline_tbd:get("deadline_tbd")==="true",budget:get("budget"),
-        work_mode:get("work_mode"),work_country:get("work_country"),
-        work_city:get("work_city"),work_district:get("work_district"),
-        reference_url:get("reference_url")
-      }
-    };
-    return payload;
-  }
+  form.querySelectorAll('input[name="contact_preference"],input[name="contact_method"]').forEach(
+    radio=>radio.addEventListener("change",contactVisibility)
+  );
   form.addEventListener("submit",async event=>{
     event.preventDefault();
-    if(by("stepDetails").hidden){stage(2);return;}
-    const payload=collect();
-    if(payload.kind==="in_house"){
-      if(!payload.intake.work_days.length){setMessageForForm("Seleccioná al menos un día de trabajo.",true);by("workDays").scrollIntoView({block:"nearest"});return;}
-      if(payload.intake.work_mode==="hibrido"&&!payload.intake.office_days.length){
-        setMessageForForm("Seleccioná los días en que se requiere presencialidad.",true);
-        by("officeDays").scrollIntoView({block:"nearest"});return;
-      }
-    }
-    if(payload.contact_preference==="contactame" && ["whatsapp","llamada"].includes(payload.contact_method) && !payload.phone){
-      setMessageForForm("Para recibir una llamada o WhatsApp, completá tu teléfono en el primer paso.",true);
-      stage(1);by("phone").required=true;by("phone").focus();return;
-    }
-    // La preferencia es si desea que Christian contacte; la segunda opción
-    // indica que la empresa tomará la iniciativa. No se presupone autorización.
+    formError("");
+    const values=new FormData(form);
+    const get=key=>String(values.get(key)||"").trim();
+    const kind=get("kind");
+    if(!titles[kind]){formError("Elegí el tipo de contratación.");return;}
     if(!form.reportValidity())return;
-    const btn=by("submitLead");btn.disabled=true;
-    setMessageForForm("Enviando propuesta…");
+    let position="", intake={};
+    if(kind==="in_house"){
+      position=get("position");
+      const dedication=get("dedication"), workMode=get("work_mode");
+      if(!position || !dedication || !workMode){
+        formError("Completá la vacante, la dedicación y la modalidad de trabajo.");
+        return;
+      }
+      intake={position,dedication,work_mode:workMode};
+    }else{
+      const need=get("project_need"),timing=get("project_timing");
+      if(!need || !timing){
+        formError("Seleccioná qué necesitás resolver y para cuándo.");
+        return;
+      }
+      intake={project_need:need,project_timing:timing};
+    }
+    const preference=get("contact_preference");
+    if(!preference){formError("Elegí cómo preferís continuar el contacto.");return;}
+    const method=preference==="contactame"?get("contact_method"):"";
+    const phone=method==="whatsapp"||method==="llamada"?get("phone"):"";
+    if(preference==="contactame" && (!method || ((method==="whatsapp"||method==="llamada")&&phone.length<6))){
+      formError("Seleccioná cómo contactarte y completá el teléfono si corresponde.");return;
+    }
+    const payload={
+      action:"lead_v3",kind,
+      website:get("website"),company_name:get("company_name"),ruc,
+      contact_name:get("contact_name"),email:get("email"),phone,
+      contact_preference:preference,contact_method:method,
+      observations:get("observations"),intake
+    };
+    const submit=by("submitLead");submit.disabled=true;
+    setMessage(by("leadMessage"),"Registrando propuesta…");
     try{
-      const response=await api(payload);
-      if(response.status!=="received")throw Error("No se pudo registrar tu propuesta.");
-      form.hidden=true;by("choices").hidden=true;
+      const reply=await api(payload);
+      if(reply.status!=="received")throw Error("No se pudo registrar la propuesta.");
+      form.hidden=true;
+      by("choices").hidden=true;
       by("requestHeading").textContent="Propuesta recibida";
-      by("requestIntro").textContent="Gracias por tu interés. Tu propuesta quedó registrada correctamente.";
-      const responseText=payload.contact_preference==="contactame"
-        ?"Tomaré en cuenta el medio de contacto y el horario que elegiste."
-        :"Queda registrado que la empresa prefiere comunicarse conmigo por su cuenta.";
-      const success=element("p",responseText,"sub");
-      by("emptySection").append(success);
-    }catch(error){setMessageForForm(error.message||"No se pudo enviar la propuesta.",true);}
-    finally{btn.disabled=false;}
+      by("requestIntro").textContent="Gracias. Tu propuesta quedó registrada correctamente.";
+      const contactMessage=preference==="contactame"
+        ?"Voy a tener en cuenta el medio de contacto que seleccionaste."
+        :"Quedó registrado que la empresa se comunicará por su cuenta.";
+      const existing=by("requestSuccess");
+      if(existing)existing.remove();
+      const note=element("p",contactMessage,"sub");
+      note.id="requestSuccess";
+      by("emptySection").append(note);
+      by("emptySection").scrollIntoView({block:"nearest",behavior:"smooth"});
+    }catch(error){
+      setMessage(by("leadMessage"),"",false);
+      formError(error.message||"No se pudo enviar la propuesta. Intentá nuevamente.");
+    }finally{
+      submit.disabled=false;
+    }
   });
   async function init(){
     if(!/^\d{11}$/.test(ruc)){show("invalidSection");return;}
