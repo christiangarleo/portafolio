@@ -54,11 +54,12 @@
       card.append(top,title,expiry,button);wrap.append(card);
     }
     show("companySection");
-    if (count === 0) {
-      // Conservar el historial de vacantes vencidas, y ofrecer contacto sin abandonar el portal.
-      by("emptySection").hidden = false;
-      by("emptySection").querySelector("h2").textContent = "Los CV de esta empresa están vencidos";
-    }
+    // El contacto comercial es accesible siempre, incluso si la empresa tiene CV vigentes.
+    by("emptySection").hidden=false;
+    by("requestHeading").textContent=count===0
+      ? "¿Te interesa proponer una contratación?"
+      : "¿Querés contratarme o conversar sobre un proyecto?";
+    by("requestIntro").textContent="Elegí una opción y dejame los datos esenciales. Los detalles los conversamos después.";
   }
   async function downloadCv(button) {
     if(button.disabled)return;
