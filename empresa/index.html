@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Portal de postulaciones | Christian Gabriel Arleo</title>
+  <style>
+    :root { color-scheme:light; font-family:Arial,Helvetica,sans-serif; color:#191919; background:#f5f5f5; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100dvh; }
+    button,input,select,textarea { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    header { background:#fff; border-bottom:1px solid #e7e7e7; padding:18px clamp(16px,4vw,54px); display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    header strong { font-size:14px; }
+    header small { font-weight:400; font-size:12px; color:#666; }
+    header a { color:#222; font-size:12px; text-decoration:none; border:1px solid #d7d7d7; padding:10px 12px; border-radius:4px; white-space:nowrap; }
+    main { width:min(980px,calc(100% - 32px)); margin:42px auto 70px; }
+    .eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:#555; margin:0 0 9px; font-weight:700; }
+    h1 { font-size:clamp(25px,4vw,39px); line-height:1.15; letter-spacing:-.035em; margin:0 0 12px; overflow-wrap:anywhere; }
+    h2 { font-size:21px; margin:0 0 12px; }
+    h3 { font-size:17px; margin:0; line-height:1.35; overflow-wrap:anywhere; }
+    p { line-height:1.55; }
+    .sub { color:#5d5d5d; font-size:14px; margin:0; }
+    .divider { height:3px; width:100%; margin:29px 0; background:linear-gradient(90deg,#DF3E89,#E24A72,#E35F5F,#EE8B3A,#F9C300,#FCD200); }
+    .panel { background:#fff; border:1px solid #e4e4e4; border-radius:8px; padding:clamp(17px,3vw,26px); }
+    .summary { display:flex; gap:16px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:17px; }
+    .count { background:#ededed; border-radius:20px; padding:7px 11px; font-size:12px; }
+    .list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .card { padding:18px; border:1px solid #e4e4e4; background:#fff; border-radius:7px; display:flex; flex-direction:column; gap:12px; min-height:184px; }
+    .card.expired { background:#fafafa; }
+    .card-top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .tag { font-size:11px; padding:5px 9px; border-radius:30px; background:#eee; }
+    .tag.current { background:#e9e9e9; color:#111; }
+    .tag.expired { color:#666; background:#e9e9e9; }
+    .card small { color:#666; font-size:12px; }
+    .card .action { margin-top:auto; align-self:flex-start; min-height:39px; }
+    button.action,.actionLink { background:#191919; color:#fff; border:1px solid #191919; border-radius:4px; cursor:pointer; font-size:12px; padding:11px 15px; text-decoration:none; font-weight:700; }
+    button.action:disabled { cursor:not-allowed; background:#eee; border-color:#eee; color:#777; }
+    button.action:hover:not(:disabled) { background:#333; }
+    button.secondary { border:1px solid #d7d7d7; color:#222; background:#fff; padding:10px 13px; border-radius:4px; cursor:pointer; font-size:12px; }
+    .message { font-size:13px; color:#444; padding:10px 0; line-height:1.5; overflow-wrap:anywhere; }
+    .message[data-error="true"] { color:#b02236; }
+    .empty { max-width:650px; }
+    .empty p { font-size:13px; color:#555; }
+    .choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:19px 0; }
+    .choices button { text-align:left; min-height:78px; padding:13px; border:1px solid #ddd; background:#fafafa; border-radius:5px; font-size:13px; cursor:pointer; }
+    .choices button[aria-pressed="true"] { border-color:#222; box-shadow:0 0 0 1px #222 inset; }
+    label { font-size:12px; font-weight:700; display:block; margin:13px 0 6px; }
+    input,select,textarea { width:100%; min-height:42px; border:1px solid #bfbfbf; border-radius:4px; padding:10px; font-size:14px; background:white; }
+    textarea { min-height:93px; resize:vertical; }
+    .fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:15px; }
+    .hp { position:absolute!important; width:1px!important; height:1px!important; overflow:hidden!important; left:-10000px!important; }
+    .closing { margin-top:30px; padding-top:16px; border-top:1px solid #e4e4e4; font-size:12px; color:#666; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .closing a { color:#222; text-decoration:underline; }
+    [hidden] { display:none!important; }
+    @media (max-width:660px) { main { margin:29px auto 55px; } .list { grid-template-columns:1fr; } .choices { grid-template-columns:1fr; } .choices button { min-height:50px; } .fields { grid-template-columns:1fr; } header { padding:12px 16px; } }
+  </style>
+</head>
+<body>
+<header>
+  <div><strong>Christian Gabriel Arleo</strong><small> · Portafolio</small></div>
+  <a href="/portafolio/">← Volver al portafolio</a>
+</header>
+<main>
+  <section id="head">
+    <p class="eyebrow">Acceso por empresa</p>
+    <h1 id="companyTitle">Portal de postulaciones</h1>
+    <p class="sub" id="companyDescription">Consultá los CV que preparé para las vacantes de tu organización.</p>
+  </section>
+  <div class="divider" aria-hidden="true"></div>
+  <div id="loading" class="panel" role="status" aria-live="polite">Buscando las postulaciones asociadas al RUC…</div>
+  <section id="companySection" hidden aria-labelledby="vacanciesHeading">
+    <div class="summary">
+      <h2 id="vacanciesHeading">Vacantes y CV</h2>
+      <span class="count" id="count"></span>
+    </div>
+    <div id="vacancies" class="list"></div>
+    <div class="message" id="downloadMessage" role="status" aria-live="polite"></div>
+    <p class="sub" style="margin-top:20px;font-size:12px">Cada CV corresponde a una vacante específica. Los documentos vencidos permanecen visibles, pero no se pueden descargar.</p>
+  </section>
+  <section id="emptySection" class="panel empty" hidden>
+    <h2>No encontramos CV disponibles para ese RUC</h2>
+    <p>Si representás a una empresa interesada en mi perfil, elegí cómo querés contactarme. Podés solicitar un CV específico, contratar servicios in-house o proponer un proyecto.</p>
+    <div class="choices" id="choices">
+      <button type="button" data-kind="solicitud_cv" aria-pressed="false">Solicitar CV personalizado</button>
+      <button type="button" data-kind="in_house" aria-pressed="false">Contratación in-house</button>
+      <button type="button" data-kind="proyecto" aria-pressed="false">Contratación por proyecto</button>
+    </div>
+    <form id="leadForm" hidden>
+      <h3 id="leadTitle">Solicitud</h3>
+      <input type="hidden" id="leadKind" name="kind" value="solicitud_cv">
+      <div class="hp" aria-hidden="true"><label for="website">No completar</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <div class="fields">
+        <div><label for="companyName">Empresa</label><input id="companyName" name="company_name" required maxlength="160"></div>
+        <div><label for="rucField">RUC</label><input id="rucField" name="ruc" readonly maxlength="11"></div>
+        <div><label for="contactName">Contacto</label><input id="contactName" name="contact_name" required maxlength="140"></div>
+        <div><label for="email">Correo corporativo</label><input id="email" name="email" required type="email" maxlength="200"></div>
+        <div><label for="phone">Teléfono (opcional)</label><input id="phone" name="phone" type="tel" maxlength="65"></div>
+        <div><label for="position">Vacante o proyecto</label><input id="position" name="position_or_project" maxlength="180"></div>
+      </div>
+      <div id="inhouseFields" hidden><label for="modality">Modalidad</label>
+        <select id="modality" name="modalidad"><option value="">A definir</option><option value="Tiempo completo">Tiempo completo</option><option value="Tiempo parcial">Tiempo parcial</option><option value="Servicios recurrentes (contrato mensual)">Servicios recurrentes (contrato mensual)</option></select>
+      </div>
+      <div id="projectFields" hidden>
+        <div class="fields"><div><label for="budget">Presupuesto estimado</label><input id="budget" name="presupuesto" maxlength="90"></div>
+        <div><label for="deadline">Plazo aproximado</label><input id="deadline" name="plazo" maxlength="100"></div></div>
+      </div>
+      <label for="details">Contame qué necesitás</label><textarea id="details" name="details" maxlength="1600"></textarea>
+      <p><button type="submit" class="action">Enviar solicitud</button></p>
+      <div id="leadMessage" class="message" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+  <section id="invalidSection" class="panel" hidden>
+    <h2>RUC no válido</h2><p class="sub">Volvé al portafolio e ingresá los 11 dígitos del RUC de tu empresa.</p>
+    <p><a class="actionLink" href="/portafolio/">Volver al portafolio</a></p>
+  </section>
+  <div class="closing">
+    <span>Christian Gabriel Arleo · Postulaciones profesionales</span>
+    <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
+  </div>
+</main>
+<script src="./empresa.js?v=20261123-portal1" defer></script>
+</body></html>
