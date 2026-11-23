@@ -3,7 +3,17 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Administración de CV | Christian Gabriel Arleo</title>
-<style>
+  <script>
+    (() => {
+      try {
+        const mode=localStorage.getItem("cga-appearance");
+        const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme=dark?"dark":"light";
+        document.documentElement.style.colorScheme=dark?"dark":"light";
+      }catch{}
+    })();
+  </script>
+  <style>
 :root{font-family:Arial,Helvetica,sans-serif;color:#191919;background:#f4f4f4}*{box-sizing:border-box}body{margin:0}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px clamp(16px,4vw,50px);background:#171717;color:white}
 header a{color:white;text-decoration:none;font-size:13px}header strong{font-size:18px}
@@ -34,7 +44,9 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 #status[data-error=true]{background:#9b2525}
 @media(max-width:600px){.grid{grid-template-columns:1fr}header strong{font-size:15px}h1{font-size:21px}}
 [hidden]{display:none!important}
-</style></head><body>
+</style>
+  <link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
+</head><body>
 <header><strong>Administración de CV</strong><a href="/portafolio/">Volver al portafolio ↗</a></header>
 <main>
 <section class="panel" id="loginPanel">
@@ -80,4 +92,5 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
 <script type="module" src="./panel.js?v=7"></script>
+  <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body></html>
