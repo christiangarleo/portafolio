@@ -6,6 +6,7 @@
   const loading = by("loading");
   const message = by("downloadMessage");
   let items = [];
+  let companyOnFile = "";
   function show(section) {
     for (const id of ["loading","companySection","emptySection","invalidSection"]) by(id).hidden = id !== section;
   }
@@ -30,6 +31,7 @@
   }
   function displayCompany(data) {
     by("companyTitle").textContent=data.company;
+    companyOnFile=data.company;
     by("companyDescription").textContent=
       "Postulaciones de Christian Gabriel Arleo vinculadas al RUC " + ruc + ". Consultá cada vacante y su CV correspondiente.";
     document.title=data.company+" | Portal de postulaciones";
@@ -121,6 +123,7 @@
     require("contactMethod",shouldContact);
     const phoneNeeded=shouldContact&&["whatsapp","llamada"].includes(by("contactMethod").value);
     by("phoneHint").hidden=!phoneNeeded;
+    require("phone",phoneNeeded);
   }
   function stage(stageIndex){
     by("stepContact").hidden=stageIndex!==1;
@@ -136,6 +139,7 @@
     if(!headingByKind[kind])return;
     form.reset();
     by("rucField").value=ruc;
+    by("companyName").value=companyOnFile;
     by("leadKind").value=kind;
     by("leadTitle").textContent=headingByKind[kind];
     by("inhouseFields").hidden=kind!=="in_house";
