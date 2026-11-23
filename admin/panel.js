@@ -4,6 +4,15 @@ const el=id=>document.getElementById(id);
 const status=el("status");
 function notice(msg,error=false){status.textContent=msg;status.dataset.error=String(error);status.hidden=false;}
 const bucket="cv-personalizados";
+const authRedirect="https://christianarleo.com/admin/";
+const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+if (hashParams.get("error_code")) {
+  const code=hashParams.get("error_code");
+  notice(code === "otp_expired"
+    ? "El enlace de confirmación venció o ya fue utilizado. Si tu cuenta ya está confirmada, ingresá con tu correo y contraseña; si no, solicitá un correo nuevo."
+    : "No se completó la confirmación. Intentá ingresar o reenviar el correo.", true);
+  window.history.replaceState({}, "", window.location.pathname + window.location.search);
+}
 let currentUser=null, isAdmin=false, documents=[];
 function show(screen){
   el("loginPanel").hidden=screen!=="login";
@@ -29,8 +38,23 @@ el("authForm").addEventListener("submit",async e=>{
 el("signUp").addEventListener("click",async()=>{
   const email=el("email").value.trim(),password=el("password").value;
   if(!email||password.length<8){notice("Completá correo y contraseña (mínimo 8 caracteres).",true);return;}
-  const {error}=await sb.auth.signUp({email,password});
+  const {error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:authRedirect}});
   notice(error?error.message:"Cuenta solicitada. Verificá tu correo y luego autorizá la cuenta en Supabase.",Boolean(error));
+});
+el("resendConfirmation").addEventListener("click", async () => {
+  const email=el("email").value.trim();
+  if(!email || !el("email").checkValidity()){
+    notice("Escribí un correo válido para reenviar la confirmación.",true);
+    el("email").focus();
+    return;
+  }
+  const btn=el("resendConfirmation");
+  btn.disabled=true;
+  try {
+    const {error}=await sb.auth.resend({type:"signup",email,options:{emailRedirectTo:authRedirect}});
+    notice(error?error.message:"Si el correo todavía necesita confirmación, recibirás un enlace nuevo. Revisá el mensaje más reciente.",Boolean(error));
+  } catch(e) { notice(e.message || "No se pudo enviar el correo.",true); }
+  finally {btn.disabled=false;}
 });
 el("recheck").addEventListener("click",verifyAdmin);
 document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{await sb.auth.signOut();notice("Sesión cerrada.");show("login");}));
