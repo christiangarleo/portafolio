@@ -1,4 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
+import { createLeadCRM } from "./solicitudes.js?v=1";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -276,99 +277,7 @@ el("documents").addEventListener("click",async e=>{
     }
   }catch(err){notice(err.message,true);}finally{btn.disabled=false;}
 });
-const leadFieldLabels = {
-  position:"Puesto o cargo",dedication:"Dedicación",hours:"Cantidad de horas",
-  hours_period:"Período",work_mode:"Modalidad de trabajo",
-  work_country:"País",work_city:"Ciudad",work_district:"Distrito o zona",
-  work_days:"Días de trabajo",office_days:"Días presenciales",
-  timezone:"Zona horaria",schedule_tbd:"Horario por definir",daily_start:"Hora de inicio",
-  daily_end:"Hora de finalización",start_date:"Fecha de inicio",salary:"Remuneración",
-  responsibilities:"Responsabilidades",
-  project_name:"Proyecto",project_area:"Área de proyecto",problem:"Necesidad o problema",
-  outcome:"Resultado esperado",deliverables:"Entregables",
-  due_date:"Fecha objetivo",deadline_tbd:"Fecha por definir",
-  budget:"Presupuesto",reference_url:"Enlace al brief",
-  project_need:"Qué necesita resolver",project_timing:"Cuándo lo necesita"
-};
-const leadFieldValues = {
-  full_time:"Full Time",part_time:"Part Time",por_horas:"Por horas",
-  remoto:"Remoto",presencial:"Presencial",hibrido:"Híbrido",
-  semana:"Por semana",mes:"Por mes",total:"En total",
-  marketing:"Marketing",tecnologia_ia:"Tecnología e IA",datos:"Datos",
-  diseno:"Diseño",otro:"Otro / Necesita asesoramiento",
-  mas_clientes:"Conseguir más clientes",marketing_contenido:"Mejorar marketing y contenido",
-  automatizacion_ia:"Automatización e IA",solucion_digital:"Crear una solución digital",
-  urgente:"Urgente",este_mes:"Este mes",mas_adelante:"Más adelante",a_definir:"A definir"
-};
-function leadValue(v){
-  if(Array.isArray(v))return v.length?v.map(x=>leadFieldValues[x]||x).join(", "):"";
-  if(v===true)return "Sí";if(v===false)return "No";
-  if(v===null||v===undefined||v==="")return "";
-  return leadFieldValues[v]||String(v);
-}
-async function loadLeads(){
-  const {data,error}=await sb.from("portfolio_cv_leads").select("*").order("created_at",{ascending:false}).limit(150);
-  const target=el("leads");target.replaceChildren();
-  if(error){target.textContent=error.message;return;}
-  if(!data?.length){target.textContent="Todavía no hay solicitudes.";return;}
-  for(const x of data){
-    const box=node("article",undefined,"item");
-    const kind={solicitud_cv:"Solicitud anterior de CV",in_house:"Contratación In-house",proyecto:"Contratación por proyecto"}[x.kind]||x.kind;
-    box.append(node("strong",kind+" · "+x.company_name),node("small",
-      (x.contact_name||"")+" · "+x.email+" · "+(x.phone||"Sin teléfono")+
-      " · RUC "+(x.ruc||"Sin RUC")+" · "+new Date(x.created_at).toLocaleString("es-PE")));
-    if(x.position_or_project)box.append(node("small","Vacante/proyecto: "+x.position_or_project));
-
-    if(x.intake_version>=2){
-      const pref=x.contact_preference==="contactame"
-        ? "Solicita contacto de Christian"
-        : x.contact_preference==="empresa_contacta"
-          ? "La empresa se comunicará por su cuenta"
-          : "Sin preferencia registrada";
-      const methods={whatsapp:"WhatsApp",llamada:"Llamada",email:"E-mail"};
-      const times={manana:"Mañana",tarde:"Tarde",indistinto:"Indistinto"};
-      const when=x.contact_method
-        ? " · Medio: "+(methods[x.contact_method]||x.contact_method)
-          +(x.contact_time?" · Horario: "+(times[x.contact_time]||x.contact_time):"") : "";
-      box.append(node("small","Contacto: "+pref+when));
-      if(x.observations)box.append(node("p","Observaciones: "+x.observations));
-      const detail=node("details");
-      const summary=node("summary","Ver condiciones de la propuesta");
-      summary.style.cssText="font-size:13px;cursor:pointer;padding:9px 0;font-weight:700";
-      detail.append(summary);
-      const dl=node("dl",undefined,"leadData");
-      const intake=x.intake_data&&typeof x.intake_data==="object"?x.intake_data:{};
-      for(const [key,value] of Object.entries(intake)){
-        const label=leadFieldLabels[key],formatted=leadValue(value);
-        if(!label||!formatted)continue;
-        const item=node("div",undefined,"leadDataRow");
-        item.append(node("dt",label),node("dd",formatted));
-        dl.append(item);
-      }
-      detail.append(dl);box.append(detail);
-    }else if(x.details){
-      box.append(node("p",x.details));
-    }
-
-    const row=node("div",undefined,"row");
-    const stateLabel=node("label","Seguimiento:");
-    stateLabel.style.margin="0";
-    const state=node("select");
-    state.setAttribute("aria-label","Estado de seguimiento de la solicitud de "+x.company_name);
-    const states=[["nuevo","Nueva"],["contactado","Contactada"],["en_evaluacion","En evaluación"],["cerrado","Cerrada"]];
-    for(const [value,label] of states){
-      const option=node("option",label);option.value=value;state.append(option);
-    }
-    state.value=x.status||"nuevo";
-    state.style.width="auto";state.style.minWidth="160px";
-    state.addEventListener("change",async()=>{
-      state.disabled=true;
-      const {error}=await sb.from("portfolio_cv_leads").update({status:state.value}).eq("id",x.id);
-      if(error){notice("No se pudo actualizar: "+error.message,true);await loadLeads();}
-      else{notice("Seguimiento actualizado.");await loadLeads();}
-    });
-    row.append(stateLabel,state);box.append(row);target.append(box);
-  }
-}
+const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDocuments,bucket});
+async function loadLeads(){await leadCRM.load();}
 el("reloadLeads").addEventListener("click",loadLeads);
 verifyAdmin().catch(e=>notice(e.message,true));
