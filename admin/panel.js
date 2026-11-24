@@ -101,7 +101,10 @@ el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
   if(!button)return;
   if(button.dataset.adminView)navigateAdmin(button.dataset.adminView);
-  if(button.dataset.goView)navigateAdmin(button.dataset.goView);
+  if(button.dataset.goView){
+    navigateAdmin(button.dataset.goView);
+    document.querySelector('button[data-admin-view="'+button.dataset.goView+'"]')?.focus();
+  }
 });
 el("app").querySelector(".adminNavigation").addEventListener("keydown",event=>{
   if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
