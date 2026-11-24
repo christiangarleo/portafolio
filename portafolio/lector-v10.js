@@ -274,15 +274,14 @@
       const slots=spreads.spreadSlots(activePage,totalPages);
       const [ratio,pdfPages]=await Promise.all([getRatio(),Promise.all(slots.map(p=>p?pdfDocument.getPage(p):null))]);
       if(id!==ticket||group.cancelled)return;
-      const geometry=spreads.layout(viewportBox,ratio,zoomMode,manualZoom);
-      pageStage.style.padding=geometry.padY+"px "+geometry.padX+"px";
+      const geometry=spreads.applyViewportLayout(viewportBox,pageStage,ratio,zoomMode,manualZoom);
       updateZoom(geometry.factor);
       group.promise=Promise.all(pdfPages.map(p=>renderSheet(p,geometry,group)));
       const sheets=await group.promise;
       if(id!==ticket||group.cancelled)return;
       pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
-      viewportBox.scrollTop=previous===activePage?priorY:0;
-      viewportBox.scrollLeft=previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2);
+      viewportBox.scrollTop=geometry.scrollY&&previous===activePage?priorY:0;
+      viewportBox.scrollLeft=geometry.scrollX?(previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2)):0;
       if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(page===1?"":"&pagina="+page));
     }catch(error){
       if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
@@ -395,8 +394,8 @@
       const fy=(viewportBox.scrollTop+viewportBox.clientHeight/2)/Math.max(1,oldHeight);
       const geometry=magazine.resize(zoomMode,manualZoom);
       if(geometry)updateZoom(geometry.factor);
-      viewportBox.scrollLeft=Math.max(0,fx*viewportBox.scrollWidth-viewportBox.clientWidth/2);
-      viewportBox.scrollTop=Math.max(0,fy*viewportBox.scrollHeight-viewportBox.clientHeight/2);
+      viewportBox.scrollLeft=geometry?.scrollX?Math.max(0,fx*viewportBox.scrollWidth-viewportBox.clientWidth/2):0;
+      viewportBox.scrollTop=geometry?.scrollY?Math.max(0,fy*viewportBox.scrollHeight-viewportBox.clientHeight/2):0;
     }else void navigate(activePage,false);
   }
   function adjustZoom(factor){
@@ -536,6 +535,7 @@
       sideNext.disabled = true;
       if (verifiedPdfBlobUrl) {
         nativeMode=true;
+        viewportBox.style.overflowX="hidden";viewportBox.style.overflowY="hidden";
         setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.");
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";

@@ -30,12 +30,39 @@
   function layout(viewport,ratio,mode="page",manual=1){
     const narrow=viewport.clientWidth<=820;
     const padX=narrow?4:42,padY=4;
-    const aw=Math.max(80,viewport.clientWidth-2*padX),ah=Math.max(80,viewport.clientHeight-2*padY);
+    const aw=Math.max(2,viewport.clientWidth-2*padX),ah=Math.max(2,viewport.clientHeight-2*padY);
     const widthFit=aw/2,heightFit=ah*ratio;
     const fit=Math.min(widthFit,heightFit);
     const factor=mode==="width"?widthFit/fit:mode==="manual"?clamp(manual,MIN_ZOOM,MAX_ZOOM):1;
-    const width=Math.max(1,Math.floor(fit*factor)),height=Math.max(1,Math.round(width/ratio));
+    const width=Math.max(1,Math.floor(fit*factor)),height=Math.max(1,Math.floor(width/ratio));
     return {width,height,factor,padX,padY};
+  }
+  // Measure the scrollport without existing scrollbars, then reserve only the axes
+  // genuinely required by the spread. A vertical scrollbar reduces width in width-fit.
+  function applyViewportLayout(viewport,stage,ratio,mode="page",manual=1){
+    const setAxes=(x,y)=>{viewport.style.overflowX=x?"scroll":"hidden";viewport.style.overflowY=y?"scroll":"hidden";};
+    setAxes(false,false);
+    const full={clientWidth:viewport.clientWidth,clientHeight:viewport.clientHeight};
+    const base=layout(full,ratio,mode,manual);
+    let g=base,x=false,y=false;
+    for(let i=0;i<4;i++){
+      const w=viewport.clientWidth,h=viewport.clientHeight;
+      if(mode==="width"){
+        const width=Math.max(1,Math.floor((w-2*base.padX)/2));
+        g={...base,width,height:Math.max(1,Math.floor(width/ratio)),factor:base.factor*width/base.width};
+      }
+      const nextX=x||2*g.width+2*g.padX>w;
+      const nextY=y||g.height+2*g.padY>h;
+      if(nextX===x&&nextY===y)break;
+      x=nextX;y=nextY;setAxes(x,y);
+    }
+    // Explicit border-box dimensions isolate animated StPageFlip overflow from scroll size.
+    stage.style.width=Math.max(viewport.clientWidth,2*g.width+2*g.padX)+"px";
+    stage.style.height=Math.max(viewport.clientHeight,g.height+2*g.padY)+"px";
+    stage.style.padding=g.padY+"px "+g.padX+"px";
+    if(!x)viewport.scrollLeft=0;
+    if(!y)viewport.scrollTop=0;
+    return {...g,scrollX:x,scrollY:y};
   }
   async function pageRatio(pdf){
     const samples=await Promise.all([1,Math.min(2,pdf.numPages),Math.min(3,pdf.numPages)].map(n=>pdf.getPage(n)));
@@ -55,9 +82,8 @@
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
     function spreadSize(){return 2;}
     function applySize(){
-      geometry=layout(viewport,ratio,zoomMode,manualZoom);
+      geometry=applyViewportLayout(viewport,host.parentElement,ratio,zoomMode,manualZoom);
       host.style.width=geometry.width*2+"px";host.style.height=geometry.height+"px";
-      const stage=host.parentElement;stage.style.padding=geometry.padY+"px "+geometry.padX+"px";
       const px=Math.max(geometry.width,geometry.height)*Math.min(window.devicePixelRatio||1,2);
       quality=px>2200?2600:px>1500?2200:1500;
       return geometry;
@@ -210,5 +236,5 @@
     function dispose(){disposed=true;close();for(const entry of cache.values())URL.revokeObjectURL(entry.url);cache.clear();if(book)try{book.destroy();}catch{}}
     return {open,close,go,step,resize,dispose};
   }
-  window.CGAMagazine={create,layout,pageRatio,spreadStart,spreadSlots,spreadStep,MIN_ZOOM,MAX_ZOOM};
+  window.CGAMagazine={create,layout,applyViewportLayout,pageRatio,spreadStart,spreadSlots,spreadStep,MIN_ZOOM,MAX_ZOOM};
 })();
