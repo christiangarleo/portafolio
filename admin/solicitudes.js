@@ -2,7 +2,7 @@
    WhatsApp requiere confirmación en su app. No se afirma envío automático. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary");
- let leads=[],events=[],activeFilter="pendiente",firstLoad=true;
+ let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false;
  const expanded=new Set(), meetingExpanded=new Set(), editExpanded=new Set(), historyExpanded=new Set();
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
  const kinds={in_house:"Contratación In-house",proyecto:"Contratación por proyecto",solicitud_cv:"Solicitud histórica"};
@@ -344,7 +344,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
      .order("created_at",{ascending:false}).limit(2000);
    if(!activityError)events=activities||[];
   }
+  loaded=true;
   render();
  }
- return {load};
+ function getSummary(){
+   return {loaded,pending:leads.filter(x=>x.decision_status==="pendiente").length,
+     active:leads.filter(x=>x.decision_status==="avanzar").length,
+     rejected:leads.filter(x=>x.decision_status==="rechazada").length,
+     total:leads.length};
+ }
+ return {load,getSummary};
 }
