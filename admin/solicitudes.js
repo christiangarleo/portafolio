@@ -261,18 +261,22 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   section.append(labeled("Asunto",subject),labeled("Mensaje (editable)",body));
   section.append(n("h4","Elegí cómo preparar el envío"));
   const actions=row("crmDeliveryButtons");
-  const zoho=btn("Zoho Mail","crmAccept");zoho.dataset.cgaIcon="mail";
-  zoho.title="Abrir Zoho Mail en otra pestaña o ventana";
+  // Enlace directo y verificable: NO usa mailto ni el cliente predeterminado.
+  const zoho=n("a","Zoho Mail ↗","crmAccept");
+  zoho.href="https://mail.zoho.com/zm/#mail/folder/inbox";
+  zoho.target="_blank";zoho.rel="noopener noreferrer";
+  zoho.dataset.cgaIcon="mail";
+  zoho.title="Abrir mail.zoho.com en una pestaña nueva";
   const gmail=btn("Gmail","crmAccent");gmail.dataset.cgaIcon="mail";
   const whatsapp=btn("WhatsApp","crmAccent");whatsapp.dataset.cgaIcon="chat";
   const number=waNumber(lead),email=String(lead.email||"").trim();
   const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  zoho.disabled=gmail.disabled=!validEmail;
+  gmail.disabled=!validEmail;
   whatsapp.disabled=!number;
   const zohoHelp=n("div",undefined,"crmZohoHelp");
   zohoHelp.hidden=true;
   const helpTitle=n("strong","Prepará el correo en Zoho Mail");
-  const helpText=small("Zoho se abre aparte. Copiá los datos desde acá para pegarlos en el correo. El envío sigue siendo manual.");
+  const helpText=small("Se abre la bandeja de Zoho Mail en otra pestaña. Usá Nuevo mensaje y copiá los datos desde acá. Todavía no hay conexión con la API de Zoho.");
   const copyActions=row("crmCopyActions");
   async function copyValue(value,label){
     try{
@@ -294,12 +298,9 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   }
   zohoHelp.append(helpTitle,helpText,copyActions);
   zoho.addEventListener("click",()=>{
-   // mailto: usa el cliente predeterminado (en este navegador Gmail).
-   // Zoho debe abrirse expresamente mediante su webmail.
-   window.open("https://mail.zoho.com/zm/#compose","_blank",
-     "noopener,noreferrer,width=1100,height=760");
+   // Se navega por el href real del <a>, no por mailto ni window.open.
    zohoHelp.hidden=false;
-   notice("Zoho Mail se abrió aparte. Copiá destinatario, asunto y mensaje desde este panel antes de enviarlo.");
+   notice("Se abrió mail.zoho.com en otra pestaña. Desde Zoho, creá un correo y pegá los datos preparados.");
    void audit(lead,"zoho_abierto",{cv_id:current?.id||null});
   });
   gmail.addEventListener("click",()=>{
