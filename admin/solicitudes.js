@@ -3,7 +3,7 @@
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
  let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false,selectedLeadId=null,page=0,mobileDetail=false;
- const expanded=new Set(), meetingExpanded=new Set(), editExpanded=new Set(), historyExpanded=new Set();
+ const meetingExpanded=new Set(), historyExpanded=new Set();
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
  const kinds={in_house:"Contratación In-house",proyecto:"Contratación por proyecto",solicitud_cv:"Solicitud histórica"};
  const fieldNames={position:"Puesto",dedication:"Dedicación",work_mode:"Modalidad",work_days:"Días de trabajo",
@@ -445,7 +445,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   if(lead.email_sent_at)signals.push("Correo ✓");
   if(lead.whatsapp_sent_at)signals.push("WA ✓");
   if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
-  item.append(top,position,bottom);
+  const openLabel=n("span","Ver detalle →","crmQueueOpen");
+  item.append(top,position,bottom,openLabel);
   item.addEventListener("click",()=>{
    selectedLeadId=lead.id;
    mobileDetail=true;
