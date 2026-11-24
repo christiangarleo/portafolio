@@ -190,12 +190,12 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <div id="publicPortfolioStatus" role="status" aria-live="polite"></div>
 </section>
 <section class="panel">
-<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el RUC y accede siempre a su portal por empresa, con todos los CV activos por vacante. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
+<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el identificador de su empresa y accede a su portal con todos los CV activos por vacante. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
 <h2>Subir nuevo CV</h2>
 <form id="uploadForm">
 <div class="grid">
 <div><label for="company">Empresa</label><input id="company" minlength="2" maxlength="140" placeholder="Ej.: Movistar" required></div>
-<div><label for="ruc">RUC (11 dígitos)</label><input id="ruc" inputmode="numeric" pattern="[0-9]{11}" minlength="11" maxlength="11" placeholder="20123456789" required></div>
+<div><label for="ruc">Identificador de la empresa (RUC, RFC, NIT, CUIT, CNPJ, EIN, VAT ID…)</label><input id="ruc" maxlength="64" placeholder="Ej.: 20564321657 / DE123456789" autocapitalize="characters" spellcheck="false" required></div>
 <div><label for="position">Puesto o vacante</label><input id="position" maxlength="180" placeholder="Ej.: Especialista en Marketing" required></div>
 <div><label for="expires">Fecha de vencimiento (opcional)</label><input id="expires" type="datetime-local"></div>
 <div><label for="applicationStatus">Estado de la postulación (solo administración)</label>
@@ -206,7 +206,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <option value="finalizado">Finalizado</option>
 </select></div>
 <div><label for="pdf">Archivo PDF (máximo 30 MB)</label><input id="pdf" type="file" accept="application/pdf,.pdf" required></div>
-<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>Destacar primero este CV si hay varios del mismo RUC</label></div>
+<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>Destacar primero este CV si hay varios de la misma empresa</label></div>
 </div><p><button class="primary" type="submit" id="uploadButton">Subir CV</button></p>
 </form>
 </section>
@@ -223,6 +223,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=14"></script>
+<script type="module" src="./panel.js?v=15"></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body></html>
