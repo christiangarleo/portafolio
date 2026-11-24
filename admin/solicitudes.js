@@ -70,7 +70,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function mailto(lead,subject,body){
   const to=String(lead.email||"").trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Error("El contacto no tiene un correo válido.");
-  const a=n("a");a.href="mailto:"+to+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  const a=n("a");a.href="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
   document.body.append(a);a.click();a.remove();
   notice("Se abrió un borrador en tu correo predeterminado (Zoho, si está configurado). Revisá y enviá desde allí; todavía no consta como enviado.");
   void audit(lead,"correo_abierto",{cv_id:doc(lead)?.id||null});
