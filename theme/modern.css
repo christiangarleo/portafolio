@@ -499,3 +499,46 @@ html.cgaModern body:has(#loginPanel) .crmInlineCompose button{
 html.cgaModern body:has(#loginPanel) .crmDeliveryButtons{
  margin:7px 0 11px;
 }
+
+/* Rechazos: editor integrado, canales explícitos y confirmación independiente. */
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer{
+ display:grid;gap:11px;margin:15px 0 0;padding:17px;
+ border:1px solid var(--cga-border-strong);border-radius:11px;
+ background:var(--cga-surface-2);
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer[hidden]{display:none!important}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer h4{
+ margin:0 0 2px;color:var(--cga-text);font-size:15px;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmField{margin:0}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer textarea{
+ width:100%;min-height:140px;resize:vertical;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer input[readonly]{
+ opacity:.85;cursor:default;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmInlineCompose{
+ margin:1px 0 0;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmDeliveryButtons{
+ margin:0;display:flex;gap:9px;flex-wrap:wrap;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmDeliveryButtons :is(a.crmAccept,a.crmAccent){
+ display:inline-flex;align-items:center;gap:8px;padding:11px 15px;min-height:44px;
+ font-weight:700;text-decoration:none;border-radius:8px;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer a.crmAccent{
+ background:var(--cga-surface);color:var(--cga-text);
+ border:1px solid var(--cga-border-strong);
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmDeliveryButtons a[aria-disabled="true"]{
+ opacity:.45;cursor:not-allowed;pointer-events:none;
+}
+html.cgaModern body:has(#loginPanel) .crmRejectionSwitch{
+ width:max-content;max-width:100%;margin:2px 0;
+}
+@media(max-width:520px){
+ html.cgaModern body:has(#loginPanel) .crmRejectionComposer{padding:14px 11px}
+ html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmDeliveryButtons a{flex:1 1 120px;justify-content:center}
+ html.cgaModern body:has(#loginPanel) .crmRejectionSwitch{width:100%}
+}
