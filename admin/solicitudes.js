@@ -169,6 +169,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  }
  function decision(lead,card){
   const box=n("section",undefined,"crmStep"),r=row();
+  let rejectDraftPanel=null;
   if(lead.decision_status==="pendiente"){
    box.append(n("h4","¿Qué querés hacer?"));
    const accept=btn("Avanzar","crmAccept"),decline=btn("Rechazar","crmReject");
@@ -194,18 +195,21 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     const respond=btn("Preparar correo de rechazo");respond.dataset.cgaIcon="mail";
     respond.disabled=!allowed(lead);
     const draftPanel=rejectionComposer(lead);draftPanel.hidden=true;
+    rejectDraftPanel=draftPanel;
     respond.setAttribute("aria-expanded","false");
     respond.addEventListener("click",()=>{
       draftPanel.hidden=!draftPanel.hidden;
       respond.setAttribute("aria-expanded",String(!draftPanel.hidden));
       respond.textContent=draftPanel.hidden?"Preparar correo de rechazo":"Ocultar respuesta";
+      window.CGAIcons?.decorate(respond);
       if(!draftPanel.hidden)draftPanel.querySelector("input:not([readonly])")?.focus();
     });
     r.prepend(respond);
-    box.append(draftPanel);
    }
   }
-  box.append(r);card.append(box);
+  box.append(r);
+  if(rejectDraftPanel)box.append(rejectDraftPanel);
+  card.append(box);
  }
  function cvSection(lead,parent){
   const section=n("section",undefined,"crmStep crmCompact");
