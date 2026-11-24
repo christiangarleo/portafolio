@@ -79,58 +79,84 @@ el("resendConfirmation").addEventListener("click", async () => {
 });
 el("recheck").addEventListener("click",verifyAdmin);
 document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{await sb.auth.signOut();notice("Sesión cerrada.");show("login");}));
+const publicPortfolioDisplay={
+  es:{label:"español",state:"publicPortfolioStateEs",link:"publicPortfolioLinkEs",button:"publicPortfolioButtonEs",file:"publicPortfolioFileEs"},
+  en:{label:"inglés",state:"publicPortfolioStateEn",link:"publicPortfolioLinkEn",button:"publicPortfolioButtonEn",file:"publicPortfolioFileEn"}
+};
+function setPublicPortfolioState(lang,exists){
+  const display=publicPortfolioDisplay[lang];
+  if(!display)return;
+  const badge=el(display.state);
+  badge.textContent=exists?"PDF publicado":"Pendiente de publicar";
+  const link=el(display.link);
+  link.hidden=!exists;
+  if(exists){
+    const url=sb.storage.from(publicPortfolioBucket).getPublicUrl(publicPortfolioFiles[lang]).data.publicUrl;
+    link.href=url+"?v="+Date.now();
+  }else{
+    link.removeAttribute("href");
+  }
+  const button=el(display.button);
+  button.textContent=exists?"Reemplazar PDF en "+display.label:"Publicar PDF en "+display.label;
+}
 async function loadPublicPortfolios(){
   if(!isAdmin)return;
-  const target=el("publicPortfolioStatus");target.replaceChildren();
-  target.textContent="Consultando archivos publicados…";
+  const message=el("publicPortfolioStatus");
+  message.textContent="Consultando archivos publicados…";
   const {data,error}=await sb.storage.from(publicPortfolioBucket).list("",{limit:100});
-  target.replaceChildren();
-  if(error){target.textContent="No se pudo consultar el estado: "+error.message;return;}
+  if(error){
+    message.textContent="No se pudo comprobar qué archivos hay publicados: "+error.message;
+    for(const lang of Object.keys(publicPortfolioDisplay))el(publicPortfolioDisplay[lang].state).textContent="Estado no disponible";
+    return;
+  }
   publishedPortfolios=new Set((data||[]).map(x=>x.name));
   for(const [lang,filename] of Object.entries(publicPortfolioFiles)){
-    const exists=publishedPortfolios.has(filename);
-    const row=node("div",undefined,"row");
-    row.style.cssText="border:1px solid var(--cga-border,#ddd);border-radius:5px;padding:10px 13px;gap:12px;flex:1 1 270px;";
-    const name=node("strong",lang==="en"?"🇬🇧 English":"🇪🇸 Español");
-    const state=node("span",exists?"PDF publicado":"Pendiente de publicar","pill");
-    row.append(name,state);
-    if(exists){
-      const url=sb.storage.from(publicPortfolioBucket).getPublicUrl(filename).data.publicUrl;
-      const link=node("a","Ver PDF ↗");
-      link.href=url+"?v="+Date.now();link.target="_blank";link.rel="noopener noreferrer";
-      link.style.cssText="color:inherit;font-size:12px;";
-      row.append(link);
-    }
-    target.append(row);
+    setPublicPortfolioState(lang,publishedPortfolios.has(filename));
   }
+  message.textContent="";
 }
 el("refreshPublicPortfolios").addEventListener("click",loadPublicPortfolios);
-el("publicPortfolioForm").addEventListener("submit",async event=>{
-  event.preventDefault();
-  if(!isAdmin){notice("No autorizado.",true);return;}
-  const lang=el("publicPortfolioLanguage").value;
-  const path=publicPortfolioFiles[lang];
-  const file=el("publicPortfolioPDF").files[0];
-  if(!path||!file||file.size>45*1024*1024||file.size<1024||!file.name.toLowerCase().endsWith(".pdf")){
-    notice("Elegí un PDF válido de hasta 45 MB.",true);return;
-  }
-  const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
-  if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
-  const had=publishedPortfolios.has(path);
-  if(had&&!confirm("Ya existe un portafolio publicado en "+(lang==="en"?"English":"Español")+". ¿Reemplazarlo? Conservá una copia local para revertirlo."))return;
-  const submit=el("publicPortfolioUploadButton");submit.disabled=true;
-  notice("Publicando portafolio "+(lang==="en"?"English":"Español")+"…");
-  try {
-    const {error}=await sb.storage.from(publicPortfolioBucket).upload(path,file,{
-      upsert:true,contentType:"application/pdf",cacheControl:"0"
-    });
-    if(error)throw error;
-    el("publicPortfolioForm").reset();
-    notice("PDF "+(lang==="en"?"English":"Español")+" publicado. La web usará esta versión automáticamente.");
-    await loadPublicPortfolios();
-  } catch(err){notice("Error al publicar el PDF: "+err.message,true);}
-  finally{submit.disabled=false;}
-});
+for(const lang of Object.keys(publicPortfolioDisplay)){
+  const display=publicPortfolioDisplay[lang];
+  const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();
+    if(!isAdmin){notice("No autorizado.",true);return;}
+    const file=el(display.file).files[0];
+    const path=publicPortfolioFiles[lang];
+    if(!file||!path||file.size>45*1024*1024||file.size<1024||!file.name.toLowerCase().endsWith(".pdf")){
+      notice("Elegí un PDF válido de hasta 45 MB para el portafolio en "+display.label+".",true);return;
+    }
+    const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
+    if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
+    const exists=publishedPortfolios.has(path);
+    if(exists&&!confirm("Vas a REEMPLAZAR el PDF en "+display.label+". Esta acción NO modifica el otro idioma. ¿Guardaste una copia del PDF anterior?")){
+      return;
+    }
+    const button=el(display.button);
+    button.disabled=true;
+    const previousText=button.textContent;
+    button.textContent="Subiendo PDF…";
+    notice((exists?"Reemplazando":"Publicando")+" únicamente el PDF en "+display.label+"…");
+    try{
+      const {error}=await sb.storage.from(publicPortfolioBucket).upload(path,file,{
+        upsert:true,contentType:"application/pdf",cacheControl:"0"
+      });
+      if(error)throw error;
+      publishedPortfolios.add(path);
+      setPublicPortfolioState(lang,true);
+      form.reset();
+      notice("PDF en "+display.label+" actualizado correctamente. El otro idioma no fue modificado.");
+      await loadPublicPortfolios();
+    }catch(error){
+      notice("No se pudo actualizar el PDF en "+display.label+": "+(error.message||"Error desconocido"),true);
+    }finally{
+      button.disabled=false;
+      if(!publishedPortfolios.has(path))button.textContent=previousText;
+      else setPublicPortfolioState(lang,true);
+    }
+  });
+}
 function node(tag,text,className){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;}
 async function loadDocuments(){
  const {data,error}=await sb.from("portfolio_cv_documents").select("*").order("created_at",{ascending:false}).limit(200);
