@@ -1,16 +1,21 @@
 (() => {
   "use strict";
 
-  const SOURCE_PDF = "https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio/Christian_Arleo_Portafolio.pdf";
+  const locale=window.CGALang?.current === "es" ? "es" : "en";
+  const manifest=window.CGAPortfolioFiles?.[locale];
+  if (!manifest) throw Error("Portfolio language manifest missing");
+  const t=value=>window.CGALang?.t(value) ?? value;
+  const SOURCE_PDF=manifest.url;
   // Cache-busting per visit prevents older PDFs being reused after a replacement.
   // Keep the nonce constant within the current visit, allowing page-to-page reuse.
   const CACHE_NONCE = String(Date.now());
   // The reader and the download must consume the exact same response.
   // Download is retrieved with no-store, then passed directly to PDF.js.
-  const DOWNLOAD_URL = SOURCE_PDF + "?download=Christian_Arleo_Portafolio.pdf&cacheNonce=" + CACHE_NONCE;
+  const DOWNLOAD_URL = SOURCE_PDF + "?download=" + encodeURIComponent(manifest.filename) + "&cacheNonce=" + CACHE_NONCE;
   let verifiedPdfBlobUrl = null;
   const BASE_URL = "https://christianarleo.com/portafolio/";
-  const TITLE = "Portafolio profesional de Christian Gabriel Arleo";
+  const TITLE=manifest.title;
+  const SHARE_URL=BASE_URL+"?lang="+locale;
   const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
   const byId = id => document.getElementById(id);
   const input = byId("pageNumber");
@@ -27,22 +32,39 @@
   const previousButton = byId("previousPage");
   const nextButton = byId("nextPage");
   const sectionJumpLinks = Array.from(document.querySelectorAll(".sectionJump[data-page]"));
+  const sections=manifest.sections;
+  sectionJumpLinks.forEach(link => {
+    const page=sections?.[link.dataset.section];
+    if(!Number.isInteger(page) || page < 1){link.hidden=true;return;}
+    link.dataset.page=String(page);
+    link.href="?lang="+locale+"&pagina="+page;
+  });
   const sidePrevious = byId("sidePrevious");
   const sideNext = byId("sideNext");
   const printButton = byId("printPdf");
   const downloadLink = byId("downloadPortfolio");
-  if (downloadLink) downloadLink.href = DOWNLOAD_URL;
+  if(downloadLink) {
+    // EN download stays disabled until the correct PDF is successfully fetched.
+    downloadLink.href=locale==="es"?DOWNLOAD_URL:"#";
+    if(locale==="en")downloadLink.setAttribute("aria-disabled","true");
+    downloadLink.addEventListener("click",event=>{
+      if(locale==="en"&&!verifiedPdfBlobUrl){
+        event.preventDefault();
+        showMessage("English portfolio not published yet. Please check back soon or switch to Español.");
+      }
+    });
+  }
   const shareMenu = byId("actionsMenu");
   const shareButton = byId("actionsToggle");
-  let pdfDocument = null, activeRender = null, activePage = 1, totalPages = 55, ticket = 0, resizeTimer, toastTimer;
+  let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
   let zoomMode = "page", manualZoom = 1, currentScale = 1, nativeMode = false;
   const MIN_ZOOM = 0.25, MAX_ZOOM = 3.0;
-  const pageLink = page => BASE_URL + "?pagina=" + page;
+  const pageLink = page => SHARE_URL + "&pagina=" + page;
   const validPage = value => /^\d+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= totalPages;
 
   function showMessage(message) {
     const toast = byId("toast");
-    toast.textContent = message;
+    toast.textContent = t(message);
     toast.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { toast.hidden = true; }, 3200);
@@ -82,18 +104,18 @@
 
   const nativeShare = byId("deviceSend");
   nativeShare.hidden = typeof navigator.share !== "function";
-  byId("sendWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(TITLE + "\n" + BASE_URL);
-  byId("sendLinkedIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(BASE_URL);
-  byId("sendEmail").href = "mailto:?subject=" + encodeURIComponent(TITLE) + "&body=" + encodeURIComponent("Te comparto este portafolio: " + BASE_URL);
-  byId("copyLink").addEventListener("click", () => { menuOpen(false); copyText(BASE_URL); });
+  byId("sendWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(TITLE + "\n" + SHARE_URL);
+  byId("sendLinkedIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(SHARE_URL);
+  byId("sendEmail").href = "mailto:?subject=" + encodeURIComponent(TITLE) + "&body=" + encodeURIComponent((locale==="en"?"I'm sharing this portfolio: ":"Te comparto este portafolio: ") + SHARE_URL);
+  byId("copyLink").addEventListener("click", () => { menuOpen(false); copyText(SHARE_URL); });
   nativeShare.addEventListener("click", async () => {
     menuOpen(false);
-    try { await navigator.share({title: TITLE, url: BASE_URL}); }
-    catch (error) { if (error.name !== "AbortError") copyText(BASE_URL); }
+    try { await navigator.share({title: TITLE, url: SHARE_URL}); }
+    catch (error) { if (error.name !== "AbortError") copyText(SHARE_URL); }
   });
 
   function updateToolbar() {
-    totalPagesText.textContent = String(totalPages);
+    totalPagesText.textContent = totalPages>0?String(totalPages):"—";
     previousButton.disabled = activePage <= 1;
     nextButton.disabled = activePage >= totalPages;
     sidePrevious.disabled = activePage <= 1;
@@ -102,18 +124,17 @@
     input.value = String(activePage);
     sectionJumpLinks.forEach(link => {
       const sectionStart = Number(link.dataset.page);
-      const selected = sectionStart === 3 ? activePage === 3
-        : sectionStart === 4 ? activePage === 4
-        : sectionStart === 5 ? activePage === 5
-        : sectionStart === 6 ? activePage >= 6 && activePage < 23
-        : sectionStart === 23 ? activePage >= 23 && activePage <= totalPages : false;
+      // Section boundaries are language-specific; never reuse Spanish page numbers for English.
+      const starts=Object.values(sections||{}).filter(Number.isInteger).sort((a,b)=>a-b);
+      const current=starts.filter(page=>page<=activePage).pop();
+      const selected=Number.isInteger(current) && current===sectionStart;
       if (selected) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     });
   }
 
   function setLoading(text) {
-    pageStatus.textContent = text;
+    pageStatus.textContent = t(text);
     pageStatus.hidden = false;
   }
 
@@ -136,7 +157,7 @@
       if (width <= 1 || height <= 1) continue;
       const anchor = document.createElement("a");
       anchor.style.cssText = "left:"+x+"px;top:"+y+"px;width:"+width+"px;height:"+height+"px;";
-      anchor.setAttribute("aria-label", "Abrir enlace del portafolio");
+      anchor.setAttribute("aria-label", t("Abrir enlace del portafolio"));
       if (item.url) {
         anchor.href = item.url;
         anchor.target = "_blank";
@@ -170,7 +191,7 @@
         nativeMode = false;
         nativeFallback.hidden = true;
         pageStage.hidden = false;
-        viewerModeButton.textContent = "Visor PDF clásico";
+        viewerModeButton.textContent = t("Visor PDF clásico");
       }
       const pdfPage = await pdfDocument.getPage(Number(page));
       if (id !== ticket) return;
@@ -219,7 +240,7 @@
       pageStatus.hidden = true;
       viewportBox.scrollTop = 0;
       viewportBox.scrollLeft = 0;
-      if (updateURL) history.replaceState(null, "", page === 1 ? "/portafolio/" : "/portafolio/?pagina="+page);
+      if (updateURL) history.replaceState(null, "", "/portafolio/?lang="+locale+(page===1?"":"&pagina="+page));
     } catch (error) {
       if (id !== ticket || error.name === "RenderingCancelledException") return;
       console.error("Falló renderizado de página", error);
@@ -279,7 +300,7 @@
     if (printGuard) { clearTimeout(printGuard); printGuard = null; }
     if (printFrame) { printFrame.remove(); printFrame = null; }
     printButton.disabled = false;
-    printButton.title = "Imprimir portafolio";
+    printButton.title = t("Imprimir portafolio");
   }
   printButton.addEventListener("click", () => {
     if (!verifiedPdfBlobUrl) {
@@ -292,7 +313,7 @@
       return;
     }
     printButton.disabled = true;
-    printButton.title = "Preparando impresión…";
+    printButton.title = t("Preparando impresión…");
     const frame = document.createElement("iframe");
     printFrame = frame;
     frame.title = "Impresión del portafolio PDF";
@@ -310,7 +331,7 @@
         showMessage("Brave bloqueó la impresión directa. Usá «Visor PDF clásico» y Ctrl + P");
       } finally {
         printButton.disabled = false;
-        printButton.title = "Imprimir portafolio";
+        printButton.title = t("Imprimir portafolio");
       }
     }, {once:true});
     frame.addEventListener("error", () => {
@@ -352,13 +373,13 @@
         return;
       }
       nativeFallback.src = verifiedPdfBlobUrl + "#page=" + activePage + "&view=FitH";
-      viewerModeButton.textContent = "Volver al lector";
+      viewerModeButton.textContent = t("Volver al lector");
       showMessage("Visor clásico: zoom, impresión, descarga y selección de texto desde el PDF");
     } else {
       nativeMode = false;
       nativeFallback.hidden = true;
       pageStage.hidden = false;
-      viewerModeButton.textContent = "Visor PDF clásico";
+      viewerModeButton.textContent = t("Visor PDF clásico");
       navigate(activePage, false);
     }
   });
@@ -385,8 +406,8 @@
   document.addEventListener("fullscreenchange", () => {
     // Keep the controls accessible: request fullscreen on the whole application.
     const label = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa";
-    fullscreenButton.setAttribute("aria-label", label);
-    fullscreenButton.setAttribute("title", label);
+    fullscreenButton.setAttribute("aria-label", t(label));
+    fullscreenButton.setAttribute("title", t(label));
     fullscreenButton.setAttribute("aria-pressed", String(Boolean(document.fullscreenElement)));
   });
 
@@ -421,6 +442,10 @@
       setLoading("Preparando la última versión…");
       pdfDocument = await library.getDocument({ data: new Uint8Array(pdfBytes) }).promise;
       totalPages = pdfDocument.numPages;
+      if(locale==="en" && downloadLink){
+        downloadLink.href=DOWNLOAD_URL;
+        downloadLink.removeAttribute("aria-disabled");
+      }
       const requested = new URLSearchParams(location.search).get("pagina");
       nativeFallback.hidden = true;
       await navigate(validPage(requested) ? Number(requested) : 1, false);
@@ -435,9 +460,12 @@
         setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.");
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";
-        viewerModeButton.textContent = "Visor PDF clásico";
+        viewerModeButton.textContent = t("Visor PDF clásico");
       } else {
-        setLoading("No se pudo obtener la versión actual del PDF. Probá «Actualizar PDF» o «Descargar PDF».");
+        const missingEnglish=locale==="en" && /(?:HTTP 404|HTTP 400)/.test(String(error.message));
+        setLoading(missingEnglish
+          ? "English portfolio not published yet. Please check back soon or switch to Español."
+          : "No se pudo obtener la versión actual del PDF. Probá «Actualizar PDF» o «Descargar PDF».");
         nativeFallback.hidden = true;
         viewerModeButton.disabled = true;
       }
