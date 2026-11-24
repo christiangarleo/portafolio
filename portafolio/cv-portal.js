@@ -37,8 +37,8 @@
   dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
   form.addEventListener("submit",event=>{
     event.preventDefault();
-    const value=ruc.value.replace(/\D/g,"");
-    if(!/^\d{11}$/.test(value)){status.textContent=t("Ingresá un RUC de 11 dígitos.");return;}
+    const value=ruc.value.trim().replace(/\s+/g," ").toUpperCase();
+    if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(value)){status.textContent=t("Ingresá un identificador de empresa válido (hasta 64 caracteres).");return;}
     status.textContent=t("Abriendo el portal de la empresa…");
     window.location.assign("/empresa/?ruc="+encodeURIComponent(value)+"&lang="+locale);
   });
