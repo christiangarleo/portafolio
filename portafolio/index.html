@@ -1,13 +1,15 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portafolio profesional | Christian Gabriel Arleo</title>
   <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo: proyectos, experiencia y resultados en marketing, tecnología y negocios.">
-  <link rel="canonical" href="https://christianarleo.com/portafolio/">
+  <link rel="canonical" href="https://christianarleo.com/portafolio/?lang=en">
+  <link rel="alternate" hreflang="en" href="https://christianarleo.com/portafolio/?lang=en">
+  <link rel="alternate" hreflang="es" href="https://christianarleo.com/portafolio/?lang=es">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="es_PE">
+  <meta property="og:locale" content="en_GB">
   <meta property="og:site_name" content="Christian Gabriel Arleo">
   <meta property="og:title" content="Portafolio profesional | Christian Gabriel Arleo">
   <meta property="og:description" content="El trabajo detrás de los resultados. Conocé mi experiencia y proyectos profesionales.">
@@ -17,6 +19,9 @@
     <script>
     (() => {
       try {
+        const q=new URLSearchParams(location.search).get("lang");
+        const saved=localStorage.getItem("cga-site-language");
+        document.documentElement.lang=q==="es"?"es":q==="en"?"en":saved==="es"?"es":"en";
         const mode=localStorage.getItem("cga-appearance");
         const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme=dark?"dark":"light";
@@ -289,6 +294,8 @@
     .cvHP { position:absolute!important; left:-10000px!important; width:1px!important; height:1px!important; overflow:hidden!important; }
   </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
+  <script src="/lang/i18n.js?v=20261123-01" defer></script>
+  <script src="/lang/portfolio-files.js?v=20261123-01" defer></script>
 
 </head>
 <body>
@@ -366,9 +373,9 @@
     </div>
     <footer class="bottomBar" aria-label="Navegación del portafolio">
       <nav class="sectionLinks sectionLinks--before" aria-label="Índice, presentación y resumen">
-        <a class="sectionJump" href="?pagina=3" data-page="3" title="Ver el índice del portafolio">Volver al índice</a>
-        <a class="sectionJump" href="?pagina=4" data-page="4" title="Ir a la presentación">Presentación</a>
-        <a class="sectionJump" href="?pagina=5" data-page="5" title="Ir al resumen">Resumen</a>
+        <a class="sectionJump" href="?pagina=3" data-page="3" data-section="index" title="Ver el índice del portafolio">Volver al índice</a>
+        <a class="sectionJump" href="?pagina=4" data-page="4" data-section="intro" title="Ir a la presentación">Presentación</a>
+        <a class="sectionJump" href="?pagina=5" data-page="5" data-section="summary" title="Ir al resumen">Resumen</a>
       </nav>
       <form class="pageTools" id="gotoForm">
         <button id="previousPage" type="button">← Anterior</button>
@@ -378,8 +385,8 @@
         <button id="nextPage" type="button">Siguiente →</button>
       </form>
       <nav class="sectionLinks sectionLinks--after" aria-label="Secciones del portafolio">
-        <a class="sectionJump" href="?pagina=6" data-page="6" title="Ir a los proyectos de autor">Proyectos de autor</a>
-        <a class="sectionJump" href="?pagina=23" data-page="23" title="Ir a experiencias profesionales">Experiencias profesionales</a>
+        <a class="sectionJump" href="?pagina=6" data-page="6" data-section="projects" title="Ir a los proyectos de autor">Proyectos de autor</a>
+        <a class="sectionJump" href="?pagina=23" data-page="23" data-section="experience" title="Ir a experiencias profesionales">Experiencias profesionales</a>
       </nav>
     </footer>
   </main>
@@ -422,8 +429,8 @@
       else compact.addListener(() => showMenu(false));
     })();
   </script>
-  <script src="./lector-v10.js?v=20261123-cv1" defer></script>
-  <script src="./cv-portal.js?v=20261123-portal-individual1" defer></script>
+  <script src="./lector-v10.js?v=20261123-bilingual1" defer></script>
+  <script src="./cv-portal.js?v=20261123-bilingual1" defer></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body>
 </html>
