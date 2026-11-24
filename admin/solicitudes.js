@@ -1,7 +1,7 @@
 /* CRM 2: gestión simple por solicitud. El correo se prepara en el cliente configurado;
    WhatsApp requiere confirmación en su app. No se afirma envío automático. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
- const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary");
+ const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
  let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false;
  const expanded=new Set(), meetingExpanded=new Set(), editExpanded=new Set(), historyExpanded=new Set();
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
@@ -17,6 +17,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   marketing_contenido:"Marketing y contenido",automatizacion_ia:"Automatización e IA",
   solucion_digital:"Solución digital",urgente:"Urgente",este_mes:"Este mes",mas_adelante:"Más adelante",a_definir:"A definir"};
  const n=(tag,text,cls)=>node(tag,text,cls);
+ searchInput.addEventListener("input",()=>render());
  function btn(text,cls){const x=n("button",text,cls);x.type="button";return x;}
  function row(cls="crmActions"){return n("div",undefined,cls);}
  function small(text,cls="crmHint"){return n("p",text,cls);}
@@ -90,8 +91,9 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function decision(lead,card){
   const box=n("section",undefined,"crmStep"),r=row();
   if(lead.decision_status==="pendiente"){
-   box.append(n("h4","¿Querés avanzar con esta solicitud?"));
-   const accept=btn("✓ Avanzar","crmAccept"),decline=btn("✕ Rechazar","crmReject");
+   box.append(n("h4","¿Qué querés hacer?"));
+   const accept=btn("Avanzar","crmAccept"),decline=btn("Rechazar","crmReject");
+   accept.dataset.cgaIcon="check";decline.dataset.cgaIcon="close";
    action(accept,async()=>{expanded.add(lead.id);activeFilter="avanzar";await persist(lead,{decision_status:"avanzar",decision_at:new Date().toISOString(),decision_reason:null,status:"en_evaluacion"},"decision_avanzar");notice("Solicitud habilitada para seguimiento.");});
    decline.addEventListener("click",()=>{
     const note=n("textarea");note.placeholder="Motivo interno (opcional)";note.maxLength=500;note.rows=2;
@@ -104,7 +106,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    r.append(accept,decline);
   }else{
    box.append(small("Decisión: "+(labels[lead.decision_status]||lead.decision_status)+(lead.decision_at?" · "+when(lead.decision_at):"")));
-   const reconsider=btn("Reconsiderar decisión");
+   const reconsider=btn("Reconsiderar");reconsider.dataset.cgaIcon="refresh";
    action(reconsider,async()=>{if(!confirm("¿Volver esta solicitud a Por decidir?"))return;activeFilter="pendiente";
     await persist(lead,{decision_status:"pendiente",decision_at:null,decision_reason:null,status:"nuevo"},"decision_reconsiderada");});
    r.append(reconsider);
@@ -119,7 +121,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  }
  function cvSection(lead,parent){
   const section=n("section",undefined,"crmStep crmCompact");
-  section.append(n("h4","1 · CV para esta oportunidad"));
+  section.append(n("h4","1 · CV"));
   if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(lead.ruc||"")){section.append(small("Esta empresa no tiene un identificador válido. No es posible asociar documentos automáticamente."));parent.append(section);return;}
   const docs=validDocs(lead),current=doc(lead);
   const r=row("crmLine");
@@ -134,7 +136,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    catch(error){notice(error.message,true);await load();}
   });
   const inp=n("input");inp.type="file";inp.accept=".pdf,application/pdf";inp.hidden=true;
-  const upload=btn("+ Subir PDF","crmAccent");
+  const upload=btn("Subir PDF","crmAccent");upload.dataset.cgaIcon="upload";
   upload.addEventListener("click",()=>inp.click());
   inp.addEventListener("change",async()=>{
    const file=inp.files?.[0];if(!file)return;
@@ -163,22 +165,22 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   section.append(r);
   if(current){
    const links=row("crmInlineLinks");
-   const portalLink=n("a","Ver CV en el portal ↗");portalLink.href=companyURL(lead);portalLink.target="_blank";portalLink.rel="noopener noreferrer";
-   const download=btn("Descargar PDF para adjuntar");
+   const portalLink=n("a","Ver portal");portalLink.dataset.cgaIcon="external";portalLink.href=companyURL(lead);portalLink.target="_blank";portalLink.rel="noopener noreferrer";
+   const download=btn("Descargar PDF");download.dataset.cgaIcon="download";
    action(download,async()=>{
     const {data,error}=await sb.storage.from(bucket).createSignedUrl(current.storage_path,90,{download:current.original_filename});
     if(error||!data?.signedUrl)throw Error(error?.message||"No se pudo generar la descarga.");
     window.open(data.signedUrl,"_blank","noopener,noreferrer");
    });
    links.append(n("span","✓ "+current.role_name,"crmLinked"),portalLink,download);section.append(links);
-  }else section.append(small("Seleccioná un CV o subí uno nuevo. Se asigna automáticamente a esta solicitud."));
+  }else section.append(small("Sin CV asociado."));
   parent.append(section);
  }
  function meetingSection(lead,parent){
   const details=n("details",undefined,"crmMeeting");
   details.open=meetingExpanded.has(lead.id);
   details.addEventListener("toggle",()=>{if(details.open)meetingExpanded.add(lead.id);else meetingExpanded.delete(lead.id);});
-  details.append(n("summary",lead.meeting_at?"✓ Reunión propuesta: "+when(lead.meeting_at)+" (editar)":"+ Proponer reunión (opcional)"));
+  details.append(n("summary",lead.meeting_at?"✓ Reunión: "+when(lead.meeting_at):"Proponer reunión"));
   const form=n("form"),grid=row("crmColumns"),date=n("input"),mode=n("select"),link=n("input");
   date.type="datetime-local";if(lead.meeting_at){const dt=new Date(lead.meeting_at);date.value=new Date(dt.getTime()-dt.getTimezoneOffset()*60000).toISOString().slice(0,16);}
   for(const [key,label] of [["a_definir","A definir"],["virtual","Virtual"],["presencial","Presencial"]])mode.append(new Option(label,key));
@@ -201,7 +203,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  }
  function messageSection(lead,parent){
   const section=n("section",undefined,"crmStep crmCompact");
-  section.append(n("h4","2 · Responder al interesado"));
+  section.append(n("h4","2 · Responder"));
   if(!allowed(lead)){
    section.append(n("p","La empresa eligió «Nosotros te devolvemos la llamada». No iniciamos contacto sin autorización posterior.","crmWarning"));
    const authorize=btn("Registrar autorización posterior");
@@ -211,19 +213,19 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     notice("Preferencia de contacto actualizada.");});
    section.append(authorize);parent.append(section);return;
   }
-  const current=doc(lead);if(!current)section.append(small("Podés responder ahora, pero primero asociá un CV si querés incluir su enlace."));
+  const current=doc(lead);if(!current)section.append(small("Asociá un CV para incluirlo en el mensaje."));
   const draftText=draft(lead);
   const subject=n("input");subject.type="text";subject.value=draftText.subject;subject.maxLength=180;
   const body=n("textarea");body.value=draftText.body;body.rows=6;body.maxLength=5000;
   const edit=n("details",undefined,"crmEdit");
   edit.open=editExpanded.has(lead.id);
   edit.addEventListener("toggle",()=>{if(edit.open)editExpanded.add(lead.id);else editExpanded.delete(lead.id);});
-  edit.append(n("summary","✎ Ver o editar el mensaje"),labeled("Asunto",subject),labeled("Mensaje",body));
+  edit.append(n("summary","Editar mensaje"),labeled("Asunto",subject),labeled("Mensaje",body));
   const actions=row();
-  const email=btn("✉ Abrir correo (Zoho)","crmAccept");
+  const email=btn("Correo (Zoho)","crmAccept");email.dataset.cgaIcon="mail";email.title="Abre un borrador en tu aplicación de correo predeterminada";
   email.disabled=!lead.email;
   email.addEventListener("click",()=>mailto(lead,subject.value,body.value));
-  const whatsapp=btn("WhatsApp","crmAccent");
+  const whatsapp=btn("WhatsApp","crmAccent");whatsapp.dataset.cgaIcon="chat";
   const number=waNumber(lead);whatsapp.disabled=!number;
   whatsapp.addEventListener("click",()=>{
    const target="https://wa.me/"+number+"?text="+encodeURIComponent(body.value);
@@ -287,13 +289,13 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   head.append(title,badge);card.append(head);
   original(lead,card);decision(lead,card);
   if(lead.decision_status==="avanzar"){
-   const toggle=btn(expanded.has(lead.id)?"Ocultar gestión":"Gestionar respuesta","crmManage");
+   const toggle=btn(expanded.has(lead.id)?"Ocultar":"Gestionar","crmManage");toggle.dataset.cgaIcon="arrow";
    const area=n("div",undefined,"crmWorkflow");area.hidden=!expanded.has(lead.id);
    toggle.setAttribute("aria-expanded",String(!area.hidden));
    toggle.addEventListener("click",()=>{
     area.hidden=!area.hidden;
     if(area.hidden)expanded.delete(lead.id);else expanded.add(lead.id);
-    toggle.textContent=area.hidden?"Gestionar respuesta":"Ocultar gestión";
+    toggle.textContent=area.hidden?"Gestionar":"Ocultar";
     toggle.setAttribute("aria-expanded",String(!area.hidden));
    });
    cvSection(lead,area);meetingSection(lead,area);messageSection(lead,area);
@@ -321,8 +323,19 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   }
   summary.textContent=count.pendiente+" pendientes · "+count.avanzar+" en seguimiento · "+count.rechazada+" rechazadas";
   root.replaceChildren();
-  const selected=leads.filter(x=>activeFilter==="todas"||x.decision_status===activeFilter);
-  if(!selected.length){root.append(small("No hay solicitudes en esta bandeja."));return;}
+  const query=searchInput.value.trim().toLocaleLowerCase();
+  const subset=leads.filter(x=>activeFilter==="todas"||x.decision_status===activeFilter);
+  const selected=subset.filter(x=>!query||[
+    x.company_name,x.contact_name,x.email,x.position_or_project,x.ruc,x.phone,x.kind
+  ].some(text=>String(text||"").toLocaleLowerCase().includes(query)));
+  if(!selected.length){
+    const empty=small(query?"No se encontraron solicitudes con esa búsqueda.":"No hay solicitudes en esta bandeja.");
+    root.append(empty);
+    if(query){const reset=btn("Limpiar búsqueda");reset.dataset.cgaIcon="refresh";
+      reset.addEventListener("click",()=>{searchInput.value="";render();searchInput.focus();});root.append(reset);}
+    window.CGAIcons?.decorate(root);
+    return;
+  }
   for(const lead of selected)root.append(leadCard(lead));
  }
  async function load(){
