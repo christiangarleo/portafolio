@@ -3,7 +3,16 @@ import { createLeadCRM } from "./solicitudes.js?v=7";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
-function notice(msg,error=false){status.textContent=msg;status.dataset.error=String(error);status.hidden=false;}
+function notice(msg,error=false){
+  status.replaceChildren(document.createTextNode(msg));
+  const close=document.createElement("button");
+  close.type="button";close.textContent="×";
+  close.setAttribute("aria-label","Cerrar mensaje");
+  close.style.cssText="float:right;margin:-6px -7px -6px 10px;padding:3px 8px;font-size:21px;background:transparent;border:0;color:inherit;cursor:pointer;";
+  close.addEventListener("click",()=>status.hidden=true);
+  status.append(close);
+  status.dataset.error=String(error);status.hidden=false;
+}
 const bucket="cv-personalizados";
 const publicPortfolioBucket="portafolio";
 const publicPortfolioFiles={
@@ -103,7 +112,8 @@ el("app").addEventListener("click",event=>{
   if(button.dataset.adminView)navigateAdmin(button.dataset.adminView);
   if(button.dataset.goView){
     navigateAdmin(button.dataset.goView);
-    document.querySelector('button[data-admin-view="'+button.dataset.goView+'"]')?.focus();
+    if(button.id==="quickUploadCV"||button.dataset.goUpload==="true")setCVFormOpen(true);
+    else document.querySelector('button[data-admin-view="'+button.dataset.goView+'"]')?.focus();
   }
 });
 el("app").querySelector(".adminNavigation").addEventListener("keydown",event=>{
@@ -129,24 +139,25 @@ function refreshOverview(){
     const item=node("div",undefined,"adminPriorityItem");
     const text=node("p",message);
     const button=node("button",label);
-    button.type="button";button.dataset.goView=view;
+    button.type="button";button.dataset.goView=view;button.dataset.cgaIcon="arrow";
+    if(label==="Nuevo CV")button.dataset.goUpload="true";
     item.append(text,button);target.append(item);
   }
   if(totals.loaded&&totals.pending>0)suggestion(
-    (totals.pending===1?"Tenés 1 propuesta sin decidir.":"Tenés "+totals.pending+" propuestas pendientes de decisión."),
-    "Revisar ahora","leads"
+    (totals.pending===1?"1 solicitud por decidir.":totals.pending+" solicitudes por decidir."),
+    "Revisar","leads"
   );
   if(totals.loaded&&totals.active>0)suggestion(
-    (totals.active===1?"Hay una oportunidad en seguimiento.":"Hay "+totals.active+" oportunidades en seguimiento."),
-    "Gestionar","leads"
+    (totals.active===1?"1 solicitud en seguimiento.":totals.active+" solicitudes en seguimiento."),
+    "Ver","leads"
   );
   if(documentsLoaded&&documents.length===0)suggestion(
-    "Todavía no hay CV personalizados asociados a empresas.",
-    "Subir un CV","cv"
+    "No hay CV cargados.",
+    "Nuevo CV","cv"
   );
   if(portfoliosLoaded&&!publishedPortfolios.has("Christian_Arleo_Portfolio_EN.pdf"))suggestion(
-    "Falta publicar el PDF inglés del portafolio, idioma principal del sitio.",
-    "Publicar inglés","portfolio"
+    "Falta el PDF en inglés.",
+    "Publicar","portfolio"
   );
   if(!target.children.length){
     const p=node("p",totals.loaded?"No hay tareas urgentes pendientes en el panel.":"Consultando datos de la oficina…");
@@ -170,6 +181,45 @@ function applyDocumentFilter(){
 }
 el("documentsFilter").addEventListener("input",applyDocumentFilter);
 
+/* Formularios por demanda: nunca se abre una carga sin decisión del titular. */
+function setCVFormOpen(open){
+  const panel=el("cvUploadForm");
+  panel.hidden=!open;
+  el("newCVToggle").setAttribute("aria-expanded",String(open));
+  if(open){
+    el("company").focus();
+    panel.scrollIntoView({block:"nearest",behavior:"smooth"});
+  }else{
+    el("uploadForm").reset();
+    el("newCVToggle").focus();
+  }
+}
+el("newCVToggle").addEventListener("click",()=>setCVFormOpen(el("cvUploadForm").hidden));
+el("cancelCVUpload").addEventListener("click",()=>setCVFormOpen(false));
+function togglePortfolioForm(lang,open){
+  const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
+  const toggle=el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn");
+  form.hidden=!open;
+  toggle.setAttribute("aria-expanded",String(open));
+  if(open){
+    el(lang==="es"?"publicPortfolioFileEs":"publicPortfolioFileEn").focus();
+  }else{
+    form.reset();
+    toggle.focus();
+  }
+}
+for(const lang of ["es","en"]){
+  el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn")
+    .addEventListener("click",()=>{
+      const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
+      togglePortfolioForm(lang,form.hidden);
+    });
+}
+el("publicPortfolios").addEventListener("click",event=>{
+  const cancel=event.target.closest("button[data-cancel-portfolio]");
+  if(cancel)togglePortfolioForm(cancel.dataset.cancelPortfolio,false);
+});
+
 const publicPortfolioDisplay={
   es:{label:"español",state:"publicPortfolioStateEs",link:"publicPortfolioLinkEs",button:"publicPortfolioButtonEs",file:"publicPortfolioFileEs"},
   en:{label:"inglés",state:"publicPortfolioStateEn",link:"publicPortfolioLinkEn",button:"publicPortfolioButtonEn",file:"publicPortfolioFileEn"}
@@ -187,8 +237,10 @@ function setPublicPortfolioState(lang,exists){
   }else{
     link.removeAttribute("href");
   }
-  const button=el(display.button);
-  button.textContent=exists?"Reemplazar PDF en "+display.label:"Publicar PDF en "+display.label;
+  const toggle=el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn");
+  const text=exists?"Reemplazar PDF":"Publicar PDF";
+  toggle.replaceChildren(document.createTextNode(text));
+  window.CGAIcons?.decorate(toggle);
 }
 async function loadPublicPortfolios(){
   if(!isAdmin)return;
@@ -223,7 +275,7 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
     const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
     if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
     const exists=publishedPortfolios.has(path);
-    if(exists&&!confirm("Vas a REEMPLAZAR el PDF en "+display.label+". Esta acción NO modifica el otro idioma. ¿Guardaste una copia del PDF anterior?")){
+    if(exists&&!confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará este idioma. Guardá una copia del anterior.")){
       return;
     }
     const button=el(display.button);
@@ -238,15 +290,16 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
       if(error)throw error;
       publishedPortfolios.add(path);
       setPublicPortfolioState(lang,true);
-      form.reset();
-      notice("PDF en "+display.label+" actualizado correctamente. El otro idioma no fue modificado.");
+      togglePortfolioForm(lang,false);
+      notice("PDF en "+display.label+" actualizado. El otro idioma no cambió.");
       await loadPublicPortfolios();
     }catch(error){
       notice("No se pudo actualizar el PDF en "+display.label+": "+(error.message||"Error desconocido"),true);
     }finally{
       button.disabled=false;
-      if(!publishedPortfolios.has(path))button.textContent=previousText;
-      else setPublicPortfolioState(lang,true);
+      button.textContent=previousText;
+      window.CGAIcons?.decorate(button);
+      if(publishedPortfolios.has(path))setPublicPortfolioState(lang,true);
     }
   });
 }
@@ -258,7 +311,18 @@ async function loadDocuments(){
  documents=data||[];
  documentsLoaded=true;
  refreshOverview();
- if(!documents.length){target.textContent="Todavía no hay CV cargados. Usá el formulario anterior para agregar el primero.";applyDocumentFilter();return;}
+ if(!documents.length){
+   target.textContent="";
+   const empty=node("div",undefined,"adminEmptyState");
+   const title=node("h3","Tu biblioteca está vacía");
+   const subtitle=node("p","Agregá el primer CV personalizado.");
+   const button=node("button","Nuevo CV");
+   button.type="button";button.dataset.cgaIcon="plus";
+   button.addEventListener("click",()=>setCVFormOpen(true));
+   empty.append(title,subtitle,button);target.append(empty);
+   window.CGAIcons?.decorate(empty);
+   applyDocumentFilter();return;
+ }
  for(const x of documents){
    const box=node("article",undefined,"item");const title=node("strong",x.company_name+" · "+x.ruc+" · "+x.role_name);
    const tags=node("div");
@@ -285,12 +349,15 @@ async function loadDocuments(){
    portal.href="/empresa/?ruc="+encodeURIComponent(x.ruc);
    portal.target="_blank";
    portal.rel="noopener noreferrer";
-   portal.style.cssText="display:inline-flex;align-items:center;border:1px solid #d3d3d3;padding:7px 9px;border-radius:4px;color:#191919;text-decoration:none;font-size:13px";
+   portal.dataset.cgaIcon="external";
    actions.append(portal);
-   const availableActions=[["download","Ver CV"],["edit","Editar vacante"],["toggle",x.is_active?"Desactivar":"Activar"],["delete","Eliminar"]];
+   const availableActions=[["download","Ver PDF"],["edit","Editar"],["toggle",x.is_active?"Desactivar":"Activar"],["delete","Eliminar"]];
    if(!x.is_main) availableActions.splice(2,0,["main","Marcar principal"]);
    for(const [action,label] of availableActions){
-     const b=node("button",label);b.type="button";b.dataset.id=x.id;b.dataset.action=action;actions.append(b);
+     const b=node("button",label);b.type="button";b.dataset.id=x.id;b.dataset.action=action;
+     b.dataset.cgaIcon={download:"eye",edit:"edit",main:"check",toggle:x.is_active?"close":"check",delete:"trash"}[action];
+     if(action==="delete")b.title="Eliminar definitivamente este CV";
+     actions.append(b);
    }
    box.append(actions);target.append(box);
  }
@@ -335,7 +402,9 @@ el("uploadForm").addEventListener("submit",async e=>{
     });
     if(added.error){await sb.storage.from(bucket).remove([path]);throw added.error;}
     e.target.reset();el("principal").checked=true;el("applicationStatus").value="preparado";
-    notice("CV guardado. Ya estará disponible con el identificador de la empresa si está activo y vigente.");await loadDocuments();
+    notice("CV guardado y disponible para esta empresa.");
+    setCVFormOpen(false);
+    await loadDocuments();
   } catch(err){notice("No se pudo subir: "+err.message,true);}
   finally{btn.disabled=false;}
 });
