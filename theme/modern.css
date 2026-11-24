@@ -284,7 +284,9 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]:focu
 
 /* Comunicación: primero editar, luego elegir canal, después confirmar envío. */
 html.cgaModern .crmDeliveryButtons{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:14px 0 16px}
-html.cgaModern .crmDeliveryButtons button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 15px;font-weight:700}
+html.cgaModern .crmDeliveryButtons :is(button,a){min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 15px;font-weight:700;border-radius:8px;text-decoration:none;font-size:13px}
+html.cgaModern .crmDeliveryButtons a.crmAccept{color:var(--cga-primary-text);background:var(--cga-primary);border:1px solid var(--cga-primary)}
+html.cgaModern .crmDeliveryButtons a.crmAccept:hover{filter:brightness(.94);text-decoration:none}
 html.cgaModern .crmDeliveryStatuses{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
 html.cgaModern .crmSwitchRow{display:inline-flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--cga-border);border-radius:10px;background:var(--cga-surface-2);font-size:13px;cursor:pointer;flex-wrap:wrap;min-height:54px}
 html.cgaModern .crmSwitchRow input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px}
@@ -300,7 +302,7 @@ html.cgaModern .crmFiveMinute{display:flex;gap:9px;align-items:end;flex-wrap:wra
 html.cgaModern .crmFiveMinute>.crmField{flex:1 1 90px;min-width:90px}
 html.cgaModern .crmFiveMinute select{min-height:43px;width:100%}
 html.cgaModern .crmMeeting .crmColumns{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-@media(max-width:530px){html.cgaModern .crmDeliveryButtons button{flex:1 1 125px}html.cgaModern .crmSwitchRow{width:100%}}
+@media(max-width:530px){html.cgaModern .crmDeliveryButtons :is(button,a){flex:1 1 125px}html.cgaModern .crmSwitchRow{width:100%}}
 
 /* Correo Zoho: preparación visible, sin delegar en el handler mailto de Gmail. */
 html.cgaModern .crmZohoHelp{border:1px solid var(--cga-border-strong);border-left:4px solid var(--brand-cyan);border-radius:10px;background:var(--cga-surface-2);padding:14px 16px;margin:9px 0 15px}
