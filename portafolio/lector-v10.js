@@ -28,6 +28,10 @@
   const zoomText = byId("zoomReadout");
   const viewerModeButton = byId("viewerMode");
   const nativeFallback = byId("nativeFallback");
+  const magazineButton=byId("magazineMode"), magazineStage=byId("magazineStage");
+  let magazine=null, magazineActive=false, magazineOpening=false, magazineNav=null;
+  const magazineLabel=active=>locale==="en"?(active?"Exit magazine":"Magazine view"):(active?"Salir de revista":"Vista revista");
+  magazineButton.textContent=magazineLabel(false); magazineStage.setAttribute("aria-label",locale==="en"?"Magazine view":"Vista revista");
   const totalPagesText = byId("totalPages");
   const previousButton = byId("previousPage");
   const nextButton = byId("nextPage");
@@ -170,10 +174,10 @@
 
   function updateToolbar() {
     totalPagesText.textContent = totalPages>0?String(totalPages):"—";
-    previousButton.disabled = activePage <= 1;
-    nextButton.disabled = activePage >= totalPages;
-    sidePrevious.disabled = activePage <= 1;
-    sideNext.disabled = activePage >= totalPages;
+    const back=magazineActive&&magazineNav?!magazineNav.previous:activePage<=1;
+    const forward=magazineActive&&magazineNav?!magazineNav.next:activePage>=totalPages;
+    previousButton.disabled=sidePrevious.disabled=back;
+    nextButton.disabled=sideNext.disabled=forward;
     input.max = String(totalPages);
     input.value = String(activePage);
     sectionJumpLinks.forEach(link => {
@@ -233,6 +237,7 @@
   }
 
   async function navigate(page, updateURL=true) {
+    if(magazineActive&&magazine){if(validPage(page))magazine.go(Number(page));else showMessage("Elegí una página entre 1 y "+totalPages);return;}
     if (!validPage(page)) { showMessage("Elegí una página entre 1 y "+totalPages); return; }
     const id = ++ticket;
     activePage = Number(page);
@@ -319,10 +324,11 @@
   });
   // Allow selecting a page without the redundant “Ir a página” button.
   input.addEventListener("change", jumpToSelectedPage);
-  previousButton.addEventListener("click", () => navigate(activePage-1));
-  nextButton.addEventListener("click", () => navigate(activePage+1));
-  sidePrevious.addEventListener("click", () => navigate(activePage-1));
-  sideNext.addEventListener("click", () => navigate(activePage+1));
+  function stepPage(delta){if(magazineActive&&magazine)magazine.step(delta);else navigate(activePage+delta);}
+  previousButton.addEventListener("click", () => stepPage(-1));
+  nextButton.addEventListener("click", () => stepPage(1));
+  sidePrevious.addEventListener("click", () => stepPage(-1));
+  sideNext.addEventListener("click", () => stepPage(1));
   // Section anchors retain working deep links when JavaScript is disabled.
   sectionJumpLinks.forEach(link => link.addEventListener("click", event => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || !pdfDocument) return;
@@ -340,10 +346,10 @@
                     focused.closest("[role='textbox']"))) return;
     if (event.key === "ArrowLeft" && activePage > 1) {
       event.preventDefault();
-      navigate(activePage - 1);
-    } else if (event.key === "ArrowRight" && activePage < totalPages) {
+      stepPage(-1);
+    } else if (event.key === "ArrowRight" && !nextButton.disabled) {
       event.preventDefault();
-      navigate(activePage + 1);
+      stepPage(1);
     }
   });
 
@@ -399,6 +405,7 @@
     frame.src = verifiedPdfBlobUrl + "#toolbar=0&navpanes=0";
   });
   function adjustZoom(factor) {
+    if(magazineActive)closeMagazine(false);
     zoomMode = "manual";
     manualZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentScale * factor));
     if (pdfDocument) navigate(activePage, false);
@@ -406,12 +413,15 @@
   byId("zoomOut").addEventListener("click", () => adjustZoom(0.8));
   byId("zoomIn").addEventListener("click", () => adjustZoom(1.25));
   byId("fitPage").addEventListener("click", () => {
+    if(magazineActive)closeMagazine(false);
     zoomMode = "page"; if (pdfDocument) navigate(activePage, false);
   });
   byId("fitWidth").addEventListener("click", () => {
+    if(magazineActive)closeMagazine(false);
     zoomMode = "width"; if (pdfDocument) navigate(activePage, false);
   });
   viewerModeButton.addEventListener("click", () => {
+    if(magazineActive)closeMagazine(false);
     if (!nativeMode) {
       nativeMode = true;
       ticket++;
@@ -453,6 +463,7 @@
   });
 
   window.addEventListener("resize", () => {
+    if(magazineActive){magazine?.resize();return;}
     if (!pdfDocument || nativeMode) return;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => navigate(activePage,false), 320);
@@ -470,6 +481,44 @@
     navigate(validPage(fromURL) ? Number(fromURL) : 1, false);
   });
 
+  function syncMagazineURL(){
+    const params=new URLSearchParams(location.search);params.set("lang",locale);params.set("pagina",String(activePage));
+    if(magazineActive)params.set("vista","revista");else params.delete("vista");
+    history.replaceState(null,"","/portafolio/?"+params.toString());
+  }
+  function setMagazineControls(active){
+    magazineButton.setAttribute("aria-pressed",String(active));magazineButton.textContent=magazineLabel(active);
+    for(const id of ["zoomOut","zoomIn","fitPage","fitWidth"]){
+      const b=byId(id);b.title=active?(locale==="en"?"Returns to PDF reader":"Regresa al lector PDF"):"";
+      if(active)b.disabled=false;
+    }
+    if(active)zoomText.textContent=locale==="en"?"Fit":"Ajuste";
+  }
+  function closeMagazine(render=true){
+    magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
+    pageStage.hidden=false;setMagazineControls(false);syncMagazineURL();updateToolbar();
+    if(render&&pdfDocument)void navigate(activePage,false);
+  }
+  async function openMagazine(){
+    if(!pdfDocument||magazineOpening||magazineActive)return;
+    if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");return;}
+    magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
+    const initial=activePage;
+    try{
+      if(activeRender){ticket++;const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
+      nativeMode=false;nativeFallback.hidden=true;pageStage.hidden=true;pageStatus.hidden=true;
+      viewerModeButton.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
+      magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),locale,
+        onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
+        onInternal:page=>{if(validPage(page))magazine.go(page);},
+        onError:error=>{console.warn("Magazine page",error);showMessage(locale==="en"?"Page could not load. Exit magazine to retry.":"No se pudo cargar la página. Salí de revista para reintentar.");}
+      });
+      await magazine.open(initial);setMagazineControls(true);
+    }catch(error){
+      console.warn("Magazine unavailable",error);closeMagazine();showMessage(locale==="en"?"Magazine unavailable. PDF reader restored.":"Vista revista no disponible. Se restauró el lector PDF.");
+    }finally{magazineOpening=false;magazineButton.disabled=false;viewerModeButton.disabled=false;}
+  }
+  magazineButton.addEventListener("click",()=>{if(magazineActive)closeMagazine();else void openMagazine();});
   async function start() {
     setLoading("Preparando el portafolio…");
     updateToolbar();
@@ -511,6 +560,8 @@
       const requested = new URLSearchParams(location.search).get("pagina");
       nativeFallback.hidden = true;
       await navigate(validPage(requested) ? Number(requested) : 1, false);
+      magazineButton.disabled=false;
+      if(new URLSearchParams(location.search).get("vista")==="revista")void openMagazine();
     } catch (error) {
       console.error("Error del visor PDF", error);
       pageStage.hidden = true;
@@ -534,7 +585,9 @@
     }
   }
 
-  window.addEventListener("pagehide", () => {
+  window.addEventListener("pagehide", event => {
+    if(event.persisted)return;
+    magazine?.dispose();
     if (verifiedPdfBlobUrl) URL.revokeObjectURL(verifiedPdfBlobUrl);
   });
 
