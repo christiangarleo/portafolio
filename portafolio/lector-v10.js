@@ -59,6 +59,8 @@
       if(!Number.isInteger(page)||page<1||page>totalPages)return;
       const cleaned=String(title||"").toLowerCase().replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
       for(const [key,rule] of Object.entries(rules)){
+        // Nunca confundir entradas del índice (página 3) con el inicio de cada capítulo.
+        if(key!=="index" && page<=3 && locale==="en")continue;
         if(!found[key]&&rule.test(cleaned))found[key]=page;
       }
     }
@@ -90,7 +92,6 @@
     refreshSectionLinks();
     updateToolbar();
   }
-  refreshSectionLinks();
   const sidePrevious = byId("sidePrevious");
   const sideNext = byId("sideNext");
   const printButton = byId("printPdf");
@@ -109,6 +110,7 @@
   const shareMenu = byId("actionsMenu");
   const shareButton = byId("actionsToggle");
   let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
+  refreshSectionLinks();
   let zoomMode = "page", manualZoom = 1, currentScale = 1, nativeMode = false;
   const MIN_ZOOM = 0.25, MAX_ZOOM = 3.0;
   const pageLink = page => SHARE_URL + "&pagina=" + page;
