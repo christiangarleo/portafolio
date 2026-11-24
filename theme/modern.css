@@ -459,6 +459,9 @@ html.cgaModern body:has(#loginPanel) .crmInboxDetail .crmHeader{gap:9px}
  --company-select-bg:color-mix(in srgb,var(--cga-surface) 69%,var(--brand-pink) 31%);
  --company-submit-accent:var(--brand-yellow);
 }
+html.cgaModern body:has(#companySection) #emptySection{
+ border-top-color:var(--company-submit-accent)!important;
+}
 html.cgaModern body:has(#companySection) #emptySection .choices button[aria-pressed="true"],
 html.cgaModern body:has(#companySection) #emptySection .choices button:hover{
  border-color:var(--company-select-accent)!important;
