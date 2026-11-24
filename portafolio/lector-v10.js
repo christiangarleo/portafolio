@@ -32,13 +32,65 @@
   const previousButton = byId("previousPage");
   const nextButton = byId("nextPage");
   const sectionJumpLinks = Array.from(document.querySelectorAll(".sectionJump[data-page]"));
-  const sections=manifest.sections;
-  sectionJumpLinks.forEach(link => {
-    const page=sections?.[link.dataset.section];
-    if(!Number.isInteger(page) || page < 1){link.hidden=true;return;}
-    link.dataset.page=String(page);
-    link.href="?lang="+locale+"&pagina="+page;
-  });
+  // Nunca ocultar los enlaces del inglés. Se actualizan tras leer las secciones del PDF.
+  const sections={...(manifest.sections||{})};
+  function refreshSectionLinks(){
+    sectionJumpLinks.forEach(link=>{
+      const page=sections[link.dataset.section];
+      const valid=Number.isInteger(page)&&page>0&&(!totalPages||page<=totalPages);
+      link.hidden=false;
+      link.dataset.page=valid?String(page):"";
+      link.setAttribute("aria-disabled",String(!valid));
+      link.href=valid?"?lang="+locale+"&pagina="+page:"#";
+      if(!valid)link.title=locale==="en"?"Locating section in the English PDF":"Sección no localizada";
+    });
+  }
+  async function discoverEnglishSections(){
+    if(locale!=="en"||!pdfDocument)return;
+    const rules={
+      index:/^(?:index|contents|content|table of contents)$/,
+      intro:/^(?:presentation|introduction|about me|about|who i am)$/,
+      summary:/^(?:summary|executive summary|professional summary|profile summary)$/,
+      projects:/^(?:projects|my projects|personal projects|author projects|selected projects|featured projects|portfolio projects)$/,
+      experience:/^(?:experience|professional experience|professional experiences|work experience|career history|employment history)$/
+    };
+    const found={};
+    function examine(title,page){
+      if(!Number.isInteger(page)||page<1||page>totalPages)return;
+      const cleaned=String(title||"").toLowerCase().replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
+      for(const [key,rule] of Object.entries(rules)){
+        if(!found[key]&&rule.test(cleaned))found[key]=page;
+      }
+    }
+    try{
+      // Preferir los marcadores estructurados de InDesign/PDF, si existen.
+      const outline=await pdfDocument.getOutline();
+      const queue=[...(outline||[])];
+      while(queue.length){
+        const item=queue.shift();
+        if(item.items?.length)queue.push(...item.items);
+        let dest=typeof item.dest==="string"?await pdfDocument.getDestination(item.dest):item.dest;
+        if(!Array.isArray(dest)||!dest[0])continue;
+        try{examine(item.title,(await pdfDocument.getPageIndex(dest[0]))+1);}catch{}
+      }
+      // Si el PDF no contiene bookmarks, extraer títulos desde sus propias páginas.
+      if(Object.keys(found).length<5){
+        const limit=Math.min(totalPages,35);
+        for(let page=2;page<=limit;page++){
+          const pdfPage=await pdfDocument.getPage(page);
+          const content=await pdfPage.getTextContent();
+          const texts=(content.items||[]).slice(0,42)
+            .map(item=>typeof item.str==="string"?item.str.trim():"").filter(Boolean);
+          for(const label of texts)examine(label,page);
+          if(Object.keys(found).length===5)break;
+        }
+      }
+    }catch(error){console.warn("No se pudieron detectar todos los apartados del PDF inglés:",error);}
+    Object.assign(sections,found);
+    refreshSectionLinks();
+    updateToolbar();
+  }
+  refreshSectionLinks();
   const sidePrevious = byId("sidePrevious");
   const sideNext = byId("sideNext");
   const printButton = byId("printPdf");
@@ -442,6 +494,14 @@
       setLoading("Preparando la última versión…");
       pdfDocument = await library.getDocument({ data: new Uint8Array(pdfBytes) }).promise;
       totalPages = pdfDocument.numPages;
+      if(locale==="en"){
+        // El PDF inglés publicado tiene 55 páginas: mostrar navegación de inmediato.
+        // Los títulos reales detectados en el PDF reemplazan este mapa provisional.
+        if(totalPages===55)Object.assign(sections,manifest.fallback55||{});
+        refreshSectionLinks();
+        // Escaneo posterior al primer render para evitar retrasar la portada.
+        setTimeout(()=>{void discoverEnglishSections();},0);
+      }
       if(locale==="en" && downloadLink){
         downloadLink.href=DOWNLOAD_URL;
         downloadLink.removeAttribute("aria-disabled");
