@@ -77,6 +77,20 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - **No se altera:** el lector de CV privados por RUC, la base de propuestas, la autenticación ni el CSS de la apariencia. En administración se mantiene español como idioma interno.
 - **VERIFICADO en código:** rutas por idioma, fuente única del manifiesto, sintaxis JS, traducciones y RLS. **PENDIENTE de verificación E2E:** carga del PDF inglés real y comprobación de sus secciones, funcionamiento en móvil y revisión visual luego del despliegue.
 
+## CRM de propuestas recibidas — 24/11/2026
+- **Propósito:** gestionar la solicitud recibida como oportunidad sin generar otros agentes ni sistemas paralelos.
+- **Fuente operativa:** `admin/solicitudes.js` (importado desde `admin/panel.js`); la sección «Oportunidades y propuestas» en `admin/index.html` reemplaza la tabla antigua sin borrar registros existentes.
+- **Estados de decisión:** `pendiente → avanzar / rechazada`, con opción «Reconsiderar». Al avanzar se actualiza el seguimiento a `en_evaluacion`; al rechazar a `cerrado`. La nota de rechazo se guarda internamente.
+- **Bandejas:** Por decidir, En seguimiento, Rechazadas, Todas. Cada propuesta conserva los campos recibidos de formularios v1, v2 y v3.
+- **CV del interesado:** permite seleccionar un CV activo/vigente del mismo RUC o subir uno nuevo (PDF máximo 30 MB) al bucket privado `cv-personalizados`. Relación explícita `portfolio_cv_leads.cv_document_id` (FK a `portfolio_cv_documents`). No copia el documento al correo; proporciona descarga administrativa para adjuntar a mano y enlace al portal de la empresa con `?ruc=&cv=<UUID>&lang=`.
+- **Contacto:** prepara texto editable en el idioma original de la propuesta; «Abrir correo» invoca `mailto:`, «Abrir en Gmail» crea un borrador en el navegador y «Abrir WhatsApp» abre `wa.me` con el texto preparado. **Ninguna acción envía mensajes automáticamente ni adjunta binarios al correo.** El administrador debe pulsar enviar en el servicio externo y luego confirmar manualmente el envío; solo en ese momento se registra `email_sent_at` / `whatsapp_sent_at`.
+- **Respeto de preferencia:** si el interesado eligió `empresa_contacta` («nosotros te devolvemos la llamada»), los botones de contacto quedan bloqueados hasta que el administrador registre explícitamente una autorización posterior realmente obtenida (`contact_override_at`).
+- **Reunión:** propuesta de fecha/hora local, modalidad, enlace y notas en `meeting_at`, `meeting_mode`, `meeting_link`, `meeting_notes`; queda incorporada a los textos de correo/WhatsApp al guardar. No crea un evento de Calendar ni confirma una reserva.
+- **Historial auditable:** `public.portfolio_cv_lead_activities` con RLS de administración, solo lectura/inserción para usuarios autenticados autorizados; `anon` no tiene permisos de tabla. Registra decisiones, CV, borradores abiertos, confirmaciones manuales, cambios de etapa y propuestas de reunión; preserva datos existentes.
+- **Idioma:** `portfolio_cv_leads.language` en `es/en`, default `es` para registros anteriores. El endpoint `lead_v3` guarda el idioma real del visitante. La comunicación y el enlace al portal respetan esa preferencia.
+- **Verificaciones:** columnas/constraints/roles/estado de la función y código sintácticamente validado; prueba de interacción E2E real desde el navegador pendiente. No crear propuestas artificiales de prueba en producción.
+- **Pendiente de una integración opcional futura:** un proveedor autorizado de envío SMTP/API y WhatsApp Business permitiría despacho desde el panel con adjuntos reales; no está implementado ni deben insinuarse envíos automáticos.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
