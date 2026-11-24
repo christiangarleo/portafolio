@@ -110,3 +110,45 @@ Login exclusivo, UUID + email aprobado + RLS
 5. **Resiliencia:** rate limiting, auditoría documental, versionado/reversión de PDFs, monitor de errores, pruebas de accesibilidad y carga.
 
 **Regla de gobierno:** una sola fuente vigente (`admin/`, `empresa/`, `portafolio/`, `lang/`, `theme/` y Supabase); no crear agentes ni módulos nuevos para funcionalidades que pertenecen al mismo back office. Toda modificación nueva requiere estado EJECUTADO/VERIFICADO/A_EJECUTAR/NO_VERIFICADO.
+
+## G. Iteración 2 — Diseño Web Aplicado 16.01 (24/11/2026)
+
+**Metodología consultada:** [Skill Diseño Web Aplicado v1.0](https://docs.google.com/document/d/1PVtxQwZaINZb0MuWhBYj2m0_g4aZyyOt/edit). Esta es una copia `MIRROR_PORTABLE / NO_CANONICO`, usada como metodología sin sustituir el maestro `CGA_ADN_PRIVADO/16_ADN_Tecnico_Web/METODOLOGIA/16.01_SKILL_Diseno_Web_Aplicado.txt`. Modos aplicados: C (auditoría), D (UX), E (UI) y F (responsive), con separación entre diseño e implementación.
+
+### Paleta oficial (autoridad: propietario del portafolio)
+
+| Función de marca | Valor oficial |
+|---|---|
+| Blanco | `#D7D7D5` |
+| Negro | `#161616` |
+| Cian | `#09B3DC` |
+| Rosa | `#E5007D` |
+| Amarillo | `#F6DB0E` |
+
+**Regla visual:** `theme/theme.css` define `--brand-white`, `--brand-black`, `--brand-cyan`, `--brand-pink`, `--brand-yellow`, `--brand-gradient` como fuente única de tokens. `theme/modern.css` define superficies neutras y estilos de componentes para claro y oscuro, sin introducir nuevos colores de marca; `theme/icons.svg` contiene 32 símbolos funcionales de líneas; `theme/modern.js` los inserta sin CDN. Degradado cian-rosa-amarillo **solo para acentos finos** (no fondos extensos). No confundir verde/rojo semántico histórico con colores de marca.
+
+**Accesibilidad de color:** contraste observado de rosa `#E5007D` con negro `#161616`: 3,99:1; con blanco oficial `#D7D7D5`: 3,15:1. No usar rosa como color de texto pequeño ni sobre blanco ni sobre negro. Para lectura usar negro/blanco; para acciones de modo oscuro usar cian/negro (7,32:1) y para modo claro negro/blanco (12,56:1).
+
+### Handoff diseño → implementación (mismo repositorio, sin nuevos agentes)
+
+| Área | Antes | Decisión ejecutada | Criterio / pendiente |
+|---|---|---|---|
+| Acceso / | Presentación redundante repetida en dos idiomas | Mantener elección ES/EN en tarjetas; quitar párrafos repetidos; usar gradiente oficial como acento | PRUEBA_PENDIENTE: pantallas móviles |
+| Lector /portafolio | Modal extenso con lista de identificadores en párrafo y label | Título, ayuda corta, label sencillo y CTA `Ver CV y vacantes` con icono | Identificador sigue global, sin fijar 11 dígitos |
+| Portal /empresa | Formularios con explicaciones redundantes | Dos propuestas visibles con iconos; descripción breve; CTA `Enviar propuesta`; búsqueda y filtros conservados | Mantener preferencia de contacto; PRUEBA_PENDIENTE |
+| Administración | Navegación de texto y carga de CV visible antes de la lista | Pestañas con iconos; lista prioritaria; CTA `Nuevo CV` que despliega formulario solo bajo demanda; búsqueda | No alterar autorización de cuenta única ni backend |
+| CV existentes | Lista con múltiples botones ambiguos | Iconos con texto: `Ver PDF`, `Editar`, `Activar/Desactivar`, `Eliminar`; estado vacío con CTA | Validar acciones con CV reales |
+| Portafolios públicos | Dos formularios de carga visibles siempre | Tarjetas ES/EN, `Ver PDF` y `Publicar/Reemplazar PDF` que despliegan carga solo al solicitarla | Confirmación de reemplazo y respaldo permanecen |
+| Solicitudes privadas | Acciones dispersas y listado sin búsqueda | Búsqueda inmediata, títulos de pasos cortos, acciones `Avanzar/Rechazar`, `Correo (Zoho)`, `WhatsApp` con iconos | Confirmación de envío sigue manual; no prometer despacho directo |
+| Temas | Paleta aproximada rosa `#DF3E89` y amarillo `#FCD200` | Paleta exacta oficial compartida y estilos de foco/contraste | Pruebas visuales reales en claro/oscuro pendientes |
+
+**Seguridad preservada:** solo una cuenta admin autorizada por UUID y correo verificado; ninguna ruta se convirtió en registro público; CV continúan con bucket privado y RLS. **No se implementó envío directo Zoho**, ni MFA, ni nuevos usuarios, ni modificaciones en permisos mediante esta iteración.
+
+**Estados:** EJECUTADO = archivos versionados y código editado; VERIFICADO = sintaxis JS e ID/asset estático, no pruebas de producción; NO_VERIFICADO = experiencia real en navegadores, lectores de pantalla, PDF internacional, Outlook/Zoho y flujos E2E. El mirror de skill se dejó intacto.
+
+### Próximas validaciones de usabilidad
+
+1. **Titular:** acceder con única cuenta → cambiar 4 pestañas → `Nuevo CV` abre/cierra correctamente → buscar/gestionar CV → publicar/editar portafolio ES/EN.
+2. **Reclutador:** idioma inglés/español → identificador internacional → encontrar vacante → descargar PDF → propuesta In-house o proyecto con mínimos campos.
+3. **Móvil/contraste:** probar 320, 375, 430, 768, 1440 px; claro/oscuro, teclado, zoom 200%, foco visible; contraste AA de texto e íconos significativos.
+
