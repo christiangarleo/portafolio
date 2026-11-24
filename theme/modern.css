@@ -254,3 +254,30 @@ html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioAction
  html.cgaModern .panel,html.cgaModern .card,html.cgaModern .adminStat{border-color:var(--cga-text)!important}
  html.cgaModern .cgaMeta{color:var(--cga-text)}
 }
+
+/* Selector de idiomas: degradados oficiales independientes por tarjeta. */
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"],
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]{
+  border:2px solid transparent;
+  background:linear-gradient(var(--cga-surface),var(--cga-surface)) padding-box,
+    var(--language-card-gradient) border-box;
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]{
+  --language-card-gradient:linear-gradient(110deg,#f6db0e,#e5007d);
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]{
+  --language-card-gradient:linear-gradient(110deg,#e5007d,#09b3dc);
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]::before,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  background:var(--language-card-gradient);
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]:hover,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]:hover,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]:focus-visible,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]:focus-visible{
+  border-color:transparent;
+  background:linear-gradient(var(--cga-surface-2),var(--cga-surface-2)) padding-box,
+    var(--language-card-gradient) border-box;
+}
