@@ -248,7 +248,7 @@
   function urlFor(lang){
     const url=new URL(location.href);
     url.searchParams.set("lang",lang);
-    if(lang!==locale && url.pathname.startsWith("/portafolio/")) url.searchParams.delete("pagina");
+    // Keep the current PDF page, reading mode and other query parameters.
     return url.pathname+url.search+url.hash;
   }
   function go(lang){

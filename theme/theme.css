@@ -42,10 +42,10 @@
   color:var(--cga-text);
 }
 /* Switch de apariencia: sol/luna, selección visible y foco por teclado. */
-.cgaThemeControl{display:inline-flex;align-items:center;flex:0 0 auto;line-height:1;position:relative}
+.cgaThemeControl{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;position:relative}
 .cgaThemeSwitch{
  --theme-switch-width:58px;--theme-switch-height:30px;
- box-sizing:border-box;display:inline-grid!important;place-items:center;
+ box-sizing:border-box;display:inline-flex!important;align-items:center!important;justify-content:center!important;
  width:var(--theme-switch-width)!important;min-width:var(--theme-switch-width)!important;
  height:44px!important;min-height:44px!important;flex:0 0 auto;
  padding:0!important;margin:0!important;border:0!important;border-radius:999px!important;
@@ -54,7 +54,7 @@
 }
 .cgaThemeTrack{
  box-sizing:border-box;display:block;position:relative;overflow:hidden;
- width:100%;height:var(--theme-switch-height);border-radius:999px;
+ width:calc(var(--theme-switch-width) - 4px);min-width:calc(var(--theme-switch-width) - 4px);height:var(--theme-switch-height);flex:0 0 auto;border-radius:999px;
  border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);
  transition:background-color .2s ease,border-color .2s ease;
 }

@@ -264,6 +264,7 @@
     const id=++ticket,previous=activePage;
     const priorX=viewportBox.scrollLeft,priorY=viewportBox.scrollTop;
     activePage=Number(page);updateToolbar();
+    if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(activePage===1?"":"&pagina="+activePage));
     resetView();setLoading("Cargando página "+page+"…");
     if(activeRender){activeRender.cancel();activeRender=null;}
     const group={tasks:[],cancelled:false,promise:null,cancel(){this.cancelled=true;for(const t of this.tasks)t.cancel();}};
@@ -282,7 +283,6 @@
       pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
       viewportBox.scrollTop=geometry.scrollY&&previous===activePage?priorY:0;
       viewportBox.scrollLeft=geometry.scrollX?(previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2)):0;
-      if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(page===1?"":"&pagina="+page));
     }catch(error){
       if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
       console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
@@ -523,7 +523,10 @@
       }
       const requested = new URLSearchParams(location.search).get("pagina");
       nativeFallback.hidden = true;
-      await navigate(validPage(requested) ? Number(requested) : 1, false);
+      // Shorter editions retain the nearest valid page instead of resetting.
+      const target=requested&&/^\d+$/.test(requested)?Math.max(1,Math.min(totalPages,Number(requested))):1;
+      if(requested&&String(target)!==requested){const url=new URL(location.href);url.searchParams.set("pagina",String(target));history.replaceState(null,"",url.pathname+url.search+url.hash);}
+      await navigate(target,false);
       magazineButton.disabled=false;
       if(new URLSearchParams(location.search).get("vista")==="revista")void openMagazine();
     } catch (error) {
