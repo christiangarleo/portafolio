@@ -170,3 +170,17 @@
 :root[data-theme="dark"] .cvDocCard .cvDocStatus--expired{color:var(--cga-muted)}
 :root[data-theme="dark"] .toast{background:#303944;color:#fff}
 @media(prefers-reduced-motion:reduce){.cgaThemeMenu,.cgaThemeButton{transition:none!important}}
+
+/* Language selection + appearance on narrow screens without clipping reader tools. */
+@media(max-width:430px){
+  .siteActions{gap:1px!important}
+  .siteActions .iconOnly{flex:0 0 29px!important;width:29px!important;height:31px!important;min-width:29px!important;min-height:31px!important;padding:5px!important}
+  .siteActions .cgaThemeButton{width:29px!important;min-width:29px!important;height:31px!important;min-height:31px!important}
+  .siteActions #cgaLangPicker{gap:1px!important}
+  .siteActions #cgaLangPicker button{font-size:10px!important;padding:5px 3px!important;min-height:30px!important}
+  .siteRow{gap:4px!important}
+}
+@media(max-width:650px){
+  body>header:not(.siteHeader){flex-wrap:wrap}
+  body>header:not(.siteHeader) #cgaLangPicker{margin-left:auto}
+}
