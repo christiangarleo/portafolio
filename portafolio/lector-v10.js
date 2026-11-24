@@ -237,6 +237,7 @@
   }
 
   async function navigate(page, updateURL=true) {
+    if(magazineOpening)return;
     if(magazineActive&&magazine){if(validPage(page))magazine.go(Number(page));else showMessage("Elegí una página entre 1 y "+totalPages);return;}
     if (!validPage(page)) { showMessage("Elegí una página entre 1 y "+totalPages); return; }
     const id = ++ticket;
@@ -324,7 +325,7 @@
   });
   // Allow selecting a page without the redundant “Ir a página” button.
   input.addEventListener("change", jumpToSelectedPage);
-  function stepPage(delta){if(magazineActive&&magazine)magazine.step(delta);else navigate(activePage+delta);}
+  function stepPage(delta){if(magazineOpening)return;if(magazineActive&&magazine)magazine.step(delta);else navigate(activePage+delta);}
   previousButton.addEventListener("click", () => stepPage(-1));
   nextButton.addEventListener("click", () => stepPage(1));
   sidePrevious.addEventListener("click", () => stepPage(-1));
@@ -405,6 +406,7 @@
     frame.src = verifiedPdfBlobUrl + "#toolbar=0&navpanes=0";
   });
   function adjustZoom(factor) {
+    if(magazineOpening)return;
     if(magazineActive)closeMagazine(false);
     zoomMode = "manual";
     manualZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentScale * factor));
@@ -413,10 +415,12 @@
   byId("zoomOut").addEventListener("click", () => adjustZoom(0.8));
   byId("zoomIn").addEventListener("click", () => adjustZoom(1.25));
   byId("fitPage").addEventListener("click", () => {
+    if(magazineOpening)return;
     if(magazineActive)closeMagazine(false);
     zoomMode = "page"; if (pdfDocument) navigate(activePage, false);
   });
   byId("fitWidth").addEventListener("click", () => {
+    if(magazineOpening)return;
     if(magazineActive)closeMagazine(false);
     zoomMode = "width"; if (pdfDocument) navigate(activePage, false);
   });
@@ -505,7 +509,8 @@
     magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
     const initial=activePage;
     try{
-      if(activeRender){ticket++;const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
+      ticket++; // Cancel pending getPage/render work before switching modes.
+      if(activeRender){const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
       nativeMode=false;nativeFallback.hidden=true;pageStage.hidden=true;pageStatus.hidden=true;
       viewerModeButton.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
       magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),locale,
@@ -513,8 +518,9 @@
         onInternal:page=>{if(validPage(page))magazine.go(page);},
         onError:error=>{console.warn("Magazine page",error);showMessage(locale==="en"?"Page could not load. Exit magazine to retry.":"No se pudo cargar la página. Salí de revista para reintentar.");}
       });
-      await magazine.open(initial);setMagazineControls(true);
+      await magazine.open(initial);if(magazineActive)setMagazineControls(true);
     }catch(error){
+      magazineOpening=false;
       console.warn("Magazine unavailable",error);closeMagazine();showMessage(locale==="en"?"Magazine unavailable. PDF reader restored.":"Vista revista no disponible. Se restauró el lector PDF.");
     }finally{magazineOpening=false;magazineButton.disabled=false;viewerModeButton.disabled=false;}
   }

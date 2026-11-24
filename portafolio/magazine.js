@@ -138,7 +138,9 @@
       if(!book){
         if(!preparing)preparing=(async()=>{
           const PageFlip=await loadLibrary();
-          const first=await pdf.getPage(1);const unit=first.getViewport({scale:1});ratio=unit.width/unit.height;
+          const samples=await Promise.all([1,Math.min(2,count),Math.min(3,count)].map(n=>pdf.getPage(n)));
+          const ratios=samples.map(p=>{const v=p.getViewport({scale:1});return v.width/v.height;}).sort((a,b)=>a-b);
+          ratio=ratios[1]; // Ignore an atypical cover when selecting the book aspect ratio.
           const wide=ratio>=1.12;
           const minWidth=wide?701:340;
           const width=650,height=Math.round(width/ratio);
