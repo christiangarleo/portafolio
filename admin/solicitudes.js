@@ -176,92 +176,171 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   }else section.append(small("Sin CV asociado."));
   parent.append(section);
  }
+
  function meetingSection(lead,parent){
   const details=n("details",undefined,"crmMeeting");
   details.open=meetingExpanded.has(lead.id);
-  details.addEventListener("toggle",()=>{if(details.open)meetingExpanded.add(lead.id);else meetingExpanded.delete(lead.id);});
+  details.addEventListener("toggle",()=>{
+   if(details.open)meetingExpanded.add(lead.id);else meetingExpanded.delete(lead.id);
+  });
   details.append(n("summary",lead.meeting_at?"✓ Reunión: "+when(lead.meeting_at):"Proponer reunión"));
-  const form=n("form"),grid=row("crmColumns"),date=n("input"),mode=n("select"),link=n("input");
-  date.type="datetime-local";if(lead.meeting_at){const dt=new Date(lead.meeting_at);date.value=new Date(dt.getTime()-dt.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+  const form=n("form"),grid=row("crmColumns"),date=n("input"),hour=n("select"),minute=n("select"),mode=n("select"),link=n("input");
+  date.type="date";date.required=true;
+  for(let h=0;h<24;h++)hour.append(new Option(String(h).padStart(2,"0"),String(h).padStart(2,"0")));
+  // Selector explícito: ningún minuto fuera de múltiplos de cinco.
+  for(let m=0;m<60;m+=5)minute.append(new Option(String(m).padStart(2,"0"),String(m).padStart(2,"0")));
+  const local=lead.meeting_at?new Date(lead.meeting_at):null;
+  if(local){
+   const adjusted=new Date(local.getTime()-local.getTimezoneOffset()*60000);
+   date.value=adjusted.toISOString().slice(0,10);
+   hour.value=String(local.getHours()).padStart(2,"0");
+   minute.value=String(Math.floor(local.getMinutes()/5)*5).padStart(2,"0");
+  }else{
+   const next=new Date(Date.now()+60*60*1000);
+   next.setMinutes(Math.ceil(next.getMinutes()/5)*5,0,0);
+   date.value=new Date(next.getTime()-next.getTimezoneOffset()*60000).toISOString().slice(0,10);
+   hour.value=String(next.getHours()).padStart(2,"0");
+   minute.value=String(next.getMinutes()).padStart(2,"0");
+  }
   for(const [key,label] of [["a_definir","A definir"],["virtual","Virtual"],["presencial","Presencial"]])mode.append(new Option(label,key));
-  mode.value=lead.meeting_mode||"a_definir";link.type="url";link.placeholder="Enlace de reunión (opcional)";link.maxLength=500;link.value=lead.meeting_link||"";
-  grid.append(labeled("Fecha y hora",date),labeled("Modalidad",mode));form.append(grid,labeled("Enlace (opcional)",link));
-  const save=btn("Guardar propuesta de reunión");save.type="submit";
-  form.append(save);
+  mode.value=lead.meeting_mode||"a_definir";
+  link.type="url";link.placeholder="Enlace de reunión (opcional)";link.maxLength=500;link.value=lead.meeting_link||"";
+  const timeChoices=row("crmFiveMinute");
+  timeChoices.append(labeled("Hora",hour),labeled("Minutos (de 5 en 5)",minute));
+  grid.append(labeled("Fecha",date),timeChoices,labeled("Modalidad",mode));
+  form.append(grid,labeled("Enlace (opcional)",link));
+  const buttons=row();
+  const save=btn("Guardar reunión");save.dataset.cgaIcon="calendar";save.type="submit";
+  buttons.append(save);
+  if(lead.meeting_at){
+   const clear=btn("Quitar propuesta");
+   clear.addEventListener("click",async()=>{
+    if(!confirm("¿Quitar la propuesta de reunión?"))return;
+    try{await persist(lead,{meeting_at:null,meeting_mode:null,meeting_link:null},"reunion_propuesta_borrada");notice("Reunión retirada.");}
+    catch(err){notice(err.message,true);}
+   });
+   buttons.append(clear);
+  }
+  form.append(buttons);
   form.addEventListener("submit",async event=>{
    event.preventDefault();
-   if(link.value&&!link.checkValidity()){link.reportValidity();return;}
-   const at=date.value?new Date(date.value):null;
-   if(at&&(!Number.isFinite(at.getTime())||at.getTime()<=Date.now())){notice("Elegí una fecha futura.",true);return;}
+   if(!form.reportValidity())return;
+   const localStr=date.value+"T"+hour.value+":"+minute.value+":00";
+   const at=new Date(localStr);
+   if(!Number.isFinite(at.getTime())||at.getTime()<=Date.now()){notice("Elegí un horario futuro.",true);return;}
+   if(at.getMinutes()%5!==0){notice("Los minutos deben ser múltiplos de cinco.",true);return;}
    save.disabled=true;
-   try{await persist(lead,{meeting_at:at?at.toISOString():null,meeting_mode:at?mode.value:null,meeting_link:at?link.value.trim()||null:null},
-      at?"reunion_propuesta_guardada":"reunion_propuesta_borrada",{date:at?.toISOString()||null});
-    notice("Propuesta guardada. Se incluirá en la respuesta que prepares.");
-   }catch(err){notice(err.message,true);}finally{save.disabled=false;}
+   try{
+    await persist(lead,{meeting_at:at.toISOString(),meeting_mode:mode.value,meeting_link:link.value.trim()||null},
+     "reunion_propuesta_guardada",{date:at.toISOString()});
+    notice("Reunión propuesta. Aparecerá en el mensaje cuando vuelvas a abrirlo.");
+   }catch(err){notice(err.message,true);}
+   finally{save.disabled=false;}
   });
   details.append(form);parent.append(details);
  }
  function messageSection(lead,parent){
   const section=n("section",undefined,"crmStep crmCompact");
-  section.append(n("h4","2 · Responder"));
+  section.append(n("h4","2 · Preparar y enviar respuesta"));
   if(!allowed(lead)){
-   section.append(n("p","La empresa eligió «Nosotros te devolvemos la llamada». No iniciamos contacto sin autorización posterior.","crmWarning"));
+   section.append(n("p","La empresa eligió «Nosotros te devolvemos la llamada». Necesitás autorización posterior para iniciar contacto.","crmWarning"));
    const authorize=btn("Registrar autorización posterior");
    action(authorize,async()=>{
     if(!confirm("¿La empresa te autorizó después a contactarla? Registralo solo si ocurrió."))return;
     await persist(lead,{contact_override_at:new Date().toISOString()},"autorizacion_contacto_posterior");
-    notice("Preferencia de contacto actualizada.");});
+    notice("Autorización registrada.");
+   });
    section.append(authorize);parent.append(section);return;
   }
-  const current=doc(lead);if(!current)section.append(small("Asociá un CV para incluirlo en el mensaje."));
-  const draftText=draft(lead);
-  const subject=n("input");subject.type="text";subject.value=draftText.subject;subject.maxLength=180;
-  const body=n("textarea");body.value=draftText.body;body.rows=6;body.maxLength=5000;
-  const edit=n("details",undefined,"crmEdit");
-  edit.open=editExpanded.has(lead.id);
-  edit.addEventListener("toggle",()=>{if(edit.open)editExpanded.add(lead.id);else editExpanded.delete(lead.id);});
-  edit.append(n("summary","Editar mensaje"),labeled("Asunto",subject),labeled("Mensaje",body));
-  const actions=row();
-  const email=btn("Correo (Zoho)","crmAccept");email.dataset.cgaIcon="mail";email.title="Abre un borrador en tu aplicación de correo predeterminada";
-  email.disabled=!lead.email;
-  email.addEventListener("click",()=>mailto(lead,subject.value,body.value));
+  const current=doc(lead);
+  if(!current)section.append(small("Asociá un CV antes de responder si querés incluirlo en el enlace."));
+  const data=draft(lead);
+  const subject=n("input");subject.type="text";subject.maxLength=180;subject.value=data.subject;
+  const body=n("textarea");body.rows=7;body.maxLength=5000;body.value=data.body;
+  // Primero el editor, siempre visible; luego los proveedores de envío.
+  section.append(labeled("Asunto",subject),labeled("Mensaje (editable)",body));
+  section.append(n("h4","Elegí cómo preparar el envío"));
+  const actions=row("crmDeliveryButtons");
+  const zoho=btn("Zoho Mail","crmAccept");zoho.dataset.cgaIcon="mail";
+  zoho.title="Abre un borrador en Zoho si es tu aplicación de correo predeterminada";
+  const gmail=btn("Gmail","crmAccent");gmail.dataset.cgaIcon="mail";
   const whatsapp=btn("WhatsApp","crmAccent");whatsapp.dataset.cgaIcon="chat";
-  const number=waNumber(lead);whatsapp.disabled=!number;
-  whatsapp.addEventListener("click",()=>{
-   const target="https://wa.me/"+number+"?text="+encodeURIComponent(body.value);
-   window.open(target,"_blank","noopener,noreferrer");
-   notice("Se abrió WhatsApp con el mensaje listo; pulsá Enviar allí para terminar.");
-   void audit(lead,"whatsapp_abierto",{cv_id:current?.id||null});
+  const number=waNumber(lead),email=String(lead.email||"").trim();
+  const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  zoho.disabled=gmail.disabled=!validEmail;
+  whatsapp.disabled=!number;
+  zoho.addEventListener("click",()=>{
+   mailto(lead,subject.value,body.value);
+   reveal("email");
   });
-  actions.append(email,whatsapp);
-  section.append(actions,edit);
+  gmail.addEventListener("click",()=>{
+   const url="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(email)+
+     "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
+   window.open(url,"_blank","noopener,noreferrer");
+   notice("Gmail se abrió con el borrador preparado. Confirmá el envío desde Gmail.");
+   void audit(lead,"gmail_abierto",{cv_id:current?.id||null});
+   reveal("email");
+  });
+  whatsapp.addEventListener("click",()=>{
+   window.open("https://wa.me/"+number+"?text="+encodeURIComponent(body.value),"_blank","noopener,noreferrer");
+   notice("WhatsApp se abrió con el mensaje preparado. Enviá allí y luego confirmá con el interruptor.");
+   void audit(lead,"whatsapp_abierto",{cv_id:current?.id||null});
+   reveal("wa");
+  });
+  actions.append(zoho,gmail,whatsapp);
+  section.append(actions);
   if(!number){
-   const add=n("details",undefined,"crmPhone");
-   add.append(n("summary","+ Agregar teléfono para WhatsApp"));
-   const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";phone.placeholder="+51 999 999 999";
+   const add=n("details",undefined,"crmPhone");add.append(n("summary","Agregar teléfono para WhatsApp"));
+   const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";
+   phone.placeholder="+51 999 999 999";
    const save=btn("Guardar teléfono");
    action(save,async()=>{
     let digits=phone.value.replace(/\D/g,"");if(digits.length===9&&digits.startsWith("9"))digits="51"+digits;
-    if(digits.length<10||digits.length>15)throw Error("Ingresá un número internacional válido, por ejemplo +51 999 999 999.");
-    await persist(lead,{phone:phone.value.trim()},"telefono_contacto_actualizado");notice("Teléfono registrado.");});
-   add.append(labeled("Número para WhatsApp",phone),save);section.append(add);
+    if(digits.length<10||digits.length>15)throw Error("Ingresá un número internacional válido.");
+    await persist(lead,{phone:phone.value.trim()},"telefono_contacto_actualizado");notice("Teléfono guardado.");
+   });
+   add.append(labeled("Número de WhatsApp",phone),save);section.append(add);
   }
-  const confirmations=row("crmConfirm");
-  if(lead.email_sent_at)confirmations.append(n("span","✓ Correo enviado · "+when(lead.email_sent_at),"crmLinked"));
-  else{
-   const confirmEmail=btn("✓ Ya envié el correo");
-   action(confirmEmail,async()=>{if(!confirm("¿Ya enviaste realmente el correo desde Zoho u otra aplicación?"))return;
-    await persist(lead,{email_sent_at:new Date().toISOString(),status:"contactado"},"correo_confirmado_enviado");notice("Envío de correo registrado.");});
-   confirmations.append(confirmEmail);
+  const confirmations=row("crmDeliveryStatuses");
+  function deliverySwitch(kind,text,field,initial,confirmedEvent,undoEvent){
+   const wrap=n("label",undefined,"crmSwitchRow");
+   const control=n("input");control.type="checkbox";control.setAttribute("role","switch");
+   control.checked=Boolean(initial);
+   control.setAttribute("aria-label",text);
+   const slider=n("span",undefined,"crmSwitchTrack");
+   const content=n("span",text,"crmSwitchText");
+   const status=n("small",initial?"Confirmado · "+when(initial):"Pendiente de confirmación","crmSwitchStatus");
+   wrap.append(control,slider,content,status);
+   control.addEventListener("change",async()=>{
+    const checked=control.checked;
+    const prompt=checked?"¿Confirmás que enviaste realmente "+kind+"?":"¿Quitar la confirmación de envío de "+kind+"?";
+    if(!confirm(prompt)){control.checked=!checked;return;}
+    control.disabled=true;
+    try{
+     await persist(lead,{[field]:checked?new Date().toISOString():null,
+      ...(checked?{status:"contactado"}:{})},
+      checked?confirmedEvent:undoEvent);
+     notice(checked?"Envío confirmado.":"Confirmación retirada.");
+    }catch(err){control.checked=!checked;notice(err.message,true);}
+    finally{control.disabled=false;}
+   });
+   return wrap;
   }
-  if(lead.whatsapp_sent_at)confirmations.append(n("span","✓ WhatsApp enviado · "+when(lead.whatsapp_sent_at),"crmLinked"));
-  else if(number){
-   const confirmWhatsApp=btn("✓ Ya envié WhatsApp");
-   action(confirmWhatsApp,async()=>{if(!confirm("¿Ya enviaste el mensaje por WhatsApp?"))return;
-    await persist(lead,{whatsapp_sent_at:new Date().toISOString(),status:"contactado"},"whatsapp_confirmado_enviado");notice("Envío por WhatsApp registrado.");});
-   confirmations.append(confirmWhatsApp);
+  const mailStatus=deliverySwitch("el correo","Ya envié el correo","email_sent_at",lead.email_sent_at,
+    "correo_confirmado_enviado","correo_confirmacion_retirada");
+  const waStatus=deliverySwitch("el WhatsApp","Ya envié por WhatsApp","whatsapp_sent_at",lead.whatsapp_sent_at,
+    "whatsapp_confirmado_enviado","whatsapp_confirmacion_retirada");
+  if(!validEmail)mailStatus.hidden=true;
+  if(!number)waStatus.hidden=true;
+  if(!lead.email_sent_at)mailStatus.hidden=true;
+  if(!lead.whatsapp_sent_at)waStatus.hidden=true;
+  confirmations.append(mailStatus,waStatus);
+  function reveal(kind){
+   if(kind==="email")mailStatus.hidden=false;
+   if(kind==="wa")waStatus.hidden=false;
   }
-  section.append(confirmations,small("El correo se abre con el texto y enlace al CV. Zoho debe estar configurado como aplicación predeterminada para enlaces «mailto:». Para adjuntar el PDF al correo, descargalo desde el paso 1."));
+  section.append(confirmations);
+  section.append(small("Los botones abren borradores; enviá desde Zoho, Gmail o WhatsApp. Después confirmá con el interruptor. Zoho utiliza la aplicación de correo predeterminada."));
   parent.append(section);
  }
  function archive(lead,card){
