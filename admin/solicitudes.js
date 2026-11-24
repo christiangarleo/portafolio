@@ -26,7 +26,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function action(button,work){button.addEventListener("click",async()=>{button.disabled=true;try{await work();}catch(e){notice(e.message||"No se pudo completar la acción.",true);}finally{button.disabled=false;}});}
  function validDocs(lead){return getDocuments().filter(x=>x.ruc===lead.ruc&&x.is_active&&(!x.expires_at||Date.parse(x.expires_at)>Date.now()));}
  function doc(lead){return validDocs(lead).find(x=>x.id===lead.cv_document_id)||null;}
- function companyURL(lead){if(!/^\d{11}$/.test(lead.ruc||""))return "";const u=new URL("/empresa/",location.origin);u.searchParams.set("ruc",lead.ruc);u.searchParams.set("lang",lead.language==="en"?"en":"es");if(doc(lead))u.searchParams.set("cv",lead.cv_document_id);return u.href;}
+ function companyURL(lead){if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(lead.ruc||""))return "";const u=new URL("/empresa/",location.origin);u.searchParams.set("ruc",lead.ruc);u.searchParams.set("lang",lead.language==="en"?"en":"es");if(doc(lead))u.searchParams.set("cv",lead.cv_document_id);return u.href;}
  function allowed(lead){return lead.contact_preference!=="empresa_contacta"||Boolean(lead.contact_override_at);}
  function waNumber(lead){let number=(lead.phone||"").replace(/\D/g,"");if(number.length===9&&number.startsWith("9"))number="51"+number;return number.length>=10&&number.length<=15?number:"";}
  async function audit(lead,type,detail={}){const {error}=await sb.from("portfolio_cv_lead_activities").insert({lead_id:lead.id,event_type:type,details:detail});if(error)console.warn("Historial:",error.message);}
@@ -120,7 +120,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function cvSection(lead,parent){
   const section=n("section",undefined,"crmStep crmCompact");
   section.append(n("h4","1 · CV para esta oportunidad"));
-  if(!/^\d{11}$/.test(lead.ruc||"")){section.append(small("Esta empresa no tiene un RUC válido. No es posible asociar documentos automáticamente."));parent.append(section);return;}
+  if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(lead.ruc||"")){section.append(small("Esta empresa no tiene un identificador válido. No es posible asociar documentos automáticamente."));parent.append(section);return;}
   const docs=validDocs(lead),current=doc(lead);
   const r=row("crmLine");
   const select=n("select");select.setAttribute("aria-label","CV asociado a la propuesta");
@@ -142,7 +142,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    const magic=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
    if(!magic.startsWith("%PDF-")){notice("El archivo no parece ser un PDF válido.",true);inp.value="";return;}
    upload.disabled=true;upload.textContent="Subiendo…";
-   const path=lead.ruc+"/"+crypto.randomUUID()+".pdf";
+   const path="companies/"+crypto.randomUUID()+".pdf";
    try{
     const stored=await sb.storage.from(bucket).upload(path,file,{contentType:"application/pdf",cacheControl:"0",upsert:false});
     if(stored.error)throw stored.error;
