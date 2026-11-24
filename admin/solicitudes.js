@@ -481,6 +481,25 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   title.append(n("strong",(kinds[lead.kind]||lead.kind)+" · "+lead.company_name));
   title.append(n("small",(lead.contact_name||"")+" · "+lead.email+" · "+(lead.phone||"Sin teléfono")+
     " · "+(lead.position_or_project||"Propuesta")+" · "+when(lead.created_at)));
+  const companyId=String(lead.ruc||"").trim();
+  const identifier=n("div",undefined,"crmCompanyIdentifier");
+  identifier.append(n("span","Identificador de empresa:"),
+    n("code",companyId||"No informado"));
+  if(companyId){
+    const copy=btn("Copiar","crmCopyIdentifier");
+    copy.dataset.cgaIcon="files";
+    copy.title="Copiar identificador de empresa";
+    copy.addEventListener("click",async()=>{
+      try{
+        await navigator.clipboard.writeText(companyId);
+        notice("Identificador copiado.");
+      }catch{
+        window.prompt("Copiá el identificador:",companyId);
+      }
+    });
+    identifier.append(copy);
+  }
+  title.append(identifier);
   const badge=n("span",labels[lead.decision_status]||"Por decidir","crmBadge");
   badge.dataset.state=lead.decision_status;
   head.append(title,badge);card.append(head);
@@ -524,6 +543,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   badge.dataset.state=lead.decision_status;
   top.append(badge);
   const position=n("span",lead.position_or_project||"Sin vacante indicada","crmQueuePosition");
+  const queueId=n("span","ID empresa: "+(String(lead.ruc||"").trim()||"No informado"),"crmQueueIdentifier");
   const bottom=n("span",undefined,"crmQueueBottom");
   bottom.append(n("span",lead.kind==="proyecto"?"Proyecto":lead.kind==="in_house"?"In-house":"Solicitud"));
   const date=new Date(lead.created_at);
@@ -538,7 +558,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   if(lead.whatsapp_sent_at)signals.push("WA ✓");
   if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
   const openLabel=n("span","Ver detalle →","crmQueueOpen");
-  item.append(top,position,bottom,openLabel);
+  item.append(top,position,queueId,bottom,openLabel);
   item.addEventListener("click",()=>{
    selectedLeadId=lead.id;
    mobileDetail=true;
