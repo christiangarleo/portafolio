@@ -4,7 +4,9 @@
   const by = id => document.getElementById(id);
   const locale = window.CGALang?.current==="es"?"es":"en";
   const t = value => window.CGALang?.t(value) ?? value;
-  const ruc = new URLSearchParams(location.search).get("ruc") || "";
+  const params = new URLSearchParams(location.search);
+  const ruc = params.get("ruc") || "";
+  const selectedCV = params.get("cv") || "";
   const loading = by("loading");
   const message = by("downloadMessage");
   let items = [];
@@ -46,7 +48,8 @@
       ? count+" "+(count===1?"active CV":"active CVs")+" · "+items.length+" "+(items.length===1?"position":"positions")
       : count+" "+(count===1?"CV vigente":"CV vigentes")+" · "+items.length+" "+(items.length===1?"vacante":"vacantes");
     for (const x of items) {
-      const card=element("article",undefined,"card"+(x.available?"":" expired"));
+      const card=element("article",undefined,"card"+(x.available?"":" expired")+(selectedCV===x.id?" selectedCV":""));
+      if(selectedCV===x.id)card.id="selected-cv";
       const top=element("div",undefined,"card-top");
       top.append(element("span",x.available?"CV disponible":"CV vencido","tag"+(x.available?" current":" expired")));
       const title=element("h3",x.position||"CV personalizado");
@@ -59,6 +62,7 @@
       card.append(top,title,expiry,button);wrap.append(card);
     }
     show("companySection");
+    if(selectedCV){const featured=by("selected-cv");if(featured)requestAnimationFrame(()=>featured.scrollIntoView({behavior:"smooth",block:"center"}));}
     // El contacto comercial es accesible siempre, incluso si la empresa tiene CV vigentes.
     by("emptySection").hidden=false;
     by("requestHeading").textContent=t(count===0
