@@ -37,7 +37,7 @@
     h3 { font-size:17px; margin:0; line-height:1.35; overflow-wrap:anywhere; }
     p { line-height:1.55; }
     .sub { color:#5d5d5d; font-size:14px; margin:0; }
-    .divider { height:3px; width:100%; margin:29px 0; background:linear-gradient(90deg,#DF3E89,#E24A72,#E35F5F,#EE8B3A,#F9C300,#FCD200); }
+    .divider { height:3px; width:100%; margin:29px 0; background:var(--brand-gradient); }
     .panel { background:#fff; border:1px solid #e4e4e4; border-radius:8px; padding:clamp(17px,3vw,26px); }
     .summary { display:flex; gap:16px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:17px; }
     .count { background:#ededed; border-radius:20px; padding:7px 11px; font-size:12px; }
@@ -50,7 +50,7 @@
     .tag.expired { color:#666; background:#e9e9e9; }
     .card small { color:#666; font-size:12px; }
     .card .action { margin-top:auto; align-self:flex-start; min-height:39px; }
-    .card.selectedCV{border:2px solid #df3e89;box-shadow:0 0 0 3px rgba(223,62,137,.12);scroll-margin-top:110px;}
+    .card.selectedCV{border:2px solid var(--brand-pink);box-shadow:0 0 0 3px rgba(223,62,137,.12);scroll-margin-top:110px;}
     button.action,.actionLink { background:#191919; color:#fff; border:1px solid #191919; border-radius:4px; cursor:pointer; font-size:12px; padding:11px 15px; text-decoration:none; font-weight:700; }
     button.action:disabled { cursor:not-allowed; background:#eee; border-color:#eee; color:#777; }
     button.action:hover:not(:disabled) { background:#333; }
@@ -109,8 +109,8 @@
     .chipRow{display:flex;flex-wrap:wrap;gap:7px;}
     .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #d5d5d5;border-radius:6px;padding:11px 12px;min-height:42px;background:#fff;cursor:pointer;font-size:13px;margin:0;font-weight:500;}
     .chip:has(input:checked){background:#191919;border-color:#191919;color:#fff;}
-    .chip:has(input:focus-visible){outline:2px solid #df3e89;outline-offset:2px;}
-    .chip input{width:15px;min-height:0;height:15px;margin:0;accent-color:#df3e89;cursor:pointer;}
+    .chip:has(input:focus-visible){outline:2px solid var(--brand-pink);outline-offset:2px;}
+    .chip input{width:15px;min-height:0;height:15px;margin:0;accent-color:var(--brand-pink);cursor:pointer;}
     .chip:has(input:checked) input{accent-color:#fff;}
     .contactMethods{margin-top:11px;padding:12px;border-radius:6px;background:#f7f7f7;border:1px solid #e6e6e6;}
     .contactMethods .fieldChoice{margin:0;}
@@ -142,7 +142,8 @@
 .companyFilterEmpty{padding:25px;text-align:center;border:1px dashed var(--cga-border,#ddd);border-radius:6px;background:var(--cga-surface-2,#fafafa);color:var(--cga-muted,#666);font-size:13px}
 @media(max-width:580px){.companyTools{align-items:stretch;flex-direction:column}.companySearch{flex:auto;width:100%}.companyFilters{width:100%}.companyFilters button{flex:1}}
 </style>
-  <link rel="stylesheet" href="/theme/theme.css?v=20261123-bilingual2">
+  <link rel="stylesheet" href="/theme/theme.css?v=20261124-palette1">
+<link rel="stylesheet" href="/theme/modern.css?v=20261124-palette1">
 
 </head>
 <body>
@@ -154,7 +155,7 @@
   <section id="head">
     <p class="eyebrow">Acceso por empresa</p>
     <h1 id="companyTitle">Portal de postulaciones</h1>
-    <p class="sub" id="companyDescription">Consultá los CV que preparé para las vacantes de tu organización.</p>
+    <p class="sub" id="companyDescription">Tus vacantes y CV, en un solo lugar.</p>
   </section>
   <div class="divider" aria-hidden="true"></div>
   <div id="loading" class="panel" role="status" aria-live="polite">Buscando las postulaciones asociadas al identificador de empresa…</div>
@@ -177,18 +178,18 @@
     <div id="vacancies" class="list"></div>
     <p id="emptyCVSearch" class="companyFilterEmpty" hidden>No hay vacantes que coincidan con la búsqueda.</p>
     <div class="message" id="downloadMessage" role="status" aria-live="polite"></div>
-    <p class="sub" style="margin-top:20px;font-size:12px">Cada CV corresponde a una vacante específica. Los documentos vencidos permanecen visibles, pero no se pueden descargar.</p>
+    <p class="sub" style="margin-top:20px;font-size:12px">Los documentos vencidos no están disponibles para descargar.</p>
   </section>
   <section id="emptySection" class="panel empty" hidden>
     <h2 id="requestHeading">¿Te interesa trabajar conmigo?</h2>
-    <p id="requestIntro">Elegí qué necesitás. Es un formulario breve; los detalles los conversamos después.</p>
+    <p id="requestIntro">Elegí el tipo de colaboración.</p>
     <div class="choices" id="choices" role="group" aria-label="Tipo de contratación">
-      <button type="button" data-kind="in_house" aria-pressed="false">Contratación In-house</button>
-      <button type="button" data-kind="proyecto" aria-pressed="false">Contratación por proyecto</button>
+      <button type="button" data-kind="in_house" aria-pressed="false" data-cga-icon="briefcase">Contratación In-house</button>
+      <button type="button" data-kind="proyecto" aria-pressed="false" data-cga-icon="spark">Contratación por proyecto</button>
     </div>
     <form id="leadForm" class="quickForm" hidden>
       <h3 id="leadTitle">Invitar a una entrevista</h3>
-      <p id="leadSubtitle" class="formHint">Solo lo esencial. Podés completar el resto en una conversación.</p>
+      <p id="leadSubtitle" class="formHint"></p>
       <input type="hidden" id="leadKind" name="kind">
       <input type="hidden" id="rucField" name="ruc">
       <div class="hp" aria-hidden="true">
@@ -277,7 +278,7 @@
         <input id="contactName" name="contact_name" maxlength="140" placeholder="Tu nombre">
       </details>
       <div class="quickSubmit">
-        <button id="submitLead" type="submit" class="action">Enviar invitación</button>
+        <button id="submitLead" type="submit" class="action" data-cga-icon="send">Enviar propuesta</button>
         <p class="privacyNote">Tus datos se utilizan únicamente para gestionar la propuesta y respetar la preferencia de contacto que elijas.</p>
       </div>
       <div id="formError" class="errorBox" role="alert" aria-live="polite"></div>
@@ -295,4 +296,5 @@
 </main>
 <script src="./empresa.js?v=20261124-ux-audit1" defer></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
+<script src="/theme/modern.js?v=20261124-01" defer></script>
 </body></html>
