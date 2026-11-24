@@ -9,6 +9,42 @@
   const selectedCV = params.get("cv") || "";
   const loading = by("loading");
   const message = by("downloadMessage");
+  const portfolioBack="/portafolio/?lang="+locale;
+  for(const id of ["returnPortfolio","invalidBackPortfolio","missingCVBack"]){
+    const link=by(id);if(link)link.href=portfolioBack;
+  }
+  const missingDialog=by("missingCVDialog");
+  const missingEdit=by("missingCVEdit");
+  const missingInput=by("missingCVNewId");
+  const companyIdValid=id=>/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(id);
+  by("missingCVContinue").addEventListener("click",()=>{
+    missingDialog.close();
+    by("choices").querySelector("button")?.focus();
+  });
+  by("missingCVModify").addEventListener("click",()=>{
+    missingEdit.hidden=false;
+    missingInput.value=ruc;
+    missingInput.focus();
+    missingInput.select();
+  });
+  by("missingCVEditForm").addEventListener("submit",event=>{
+    event.preventDefault();
+    const proposed=missingInput.value.trim().replace(/\s+/g," ").toUpperCase();
+    if(!companyIdValid(proposed)){
+      by("missingCVError").textContent=t("Ingresá un identificador de empresa válido (hasta 64 caracteres).");return;
+    }
+    const url=new URL("/empresa/",location.origin);
+    url.searchParams.set("ruc",proposed);
+    url.searchParams.set("lang",locale);
+    window.location.assign(url.pathname+url.search);
+  });
+  function showNoCVDialog(){
+    by("missingCVIdentifier").textContent=ruc;
+    missingEdit.hidden=true;
+    by("missingCVError").textContent="";
+    if(!missingDialog.open)missingDialog.showModal();
+  }
+
   let items = [];
   let companyOnFile = "";
   let currentFilter="all";
@@ -227,7 +263,7 @@
     }
   });
   async function init(){
-    if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(ruc)){show("invalidSection");return;}
+    if(!companyIdValid(ruc)){show("invalidSection");return;}
     by("rucField").value=ruc;
     try {
       const data=await api({action:"resolve",ruc});
@@ -235,6 +271,7 @@
       else if(data.status==="not_found") {
         by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
         show("emptySection");
+        showNoCVDialog();
       } else throw Error("Respuesta del servicio no reconocida");
     } catch(error) {
       loading.textContent=locale==="en"?"Could not load the portal. Please try again. ":"No pudimos cargar el portal. "+(error.message||"Volvé a intentarlo.")+" ";
