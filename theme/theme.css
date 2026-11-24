@@ -1,32 +1,42 @@
 /* CGA / Apariencia compartida. No altera el contenido del PDF. */
+/* Paleta oficial · 24/11/2026
+ * Blanco #d7d7d5, Negro #161616, Cian #09b3dc, Rosa #e5007d, Amarillo #f6db0e.
+ * Las superficies adicionales son neutros mezclados, no colores de marca nuevos.
+ */
 :root{
-  --cga-bg:#f5f5f5;
-  --cga-surface:#fff;
-  --cga-surface-2:#fafafa;
-  --cga-text:#181818;
-  --cga-muted:#5b5b5b;
-  --cga-border:#dedede;
-  --cga-border-strong:#bcbcbc;
-  --cga-chip:#eee;
-  --cga-hover:#f0f0f0;
-  --cga-primary:#191919;
-  --cga-primary-text:#fff;
-  --cga-shadow:rgba(0,0,0,.15);
+  --brand-white:#d7d7d5;
+  --brand-black:#161616;
+  --brand-cyan:#09b3dc;
+  --brand-pink:#e5007d;
+  --brand-yellow:#f6db0e;
+  --brand-gradient:linear-gradient(90deg,var(--brand-cyan),var(--brand-pink) 52%,var(--brand-yellow));
+  --cga-bg:var(--brand-white);
+  --cga-surface:color-mix(in srgb,var(--brand-white) 83%,white);
+  --cga-surface-2:color-mix(in srgb,var(--brand-white) 92%,white);
+  --cga-text:var(--brand-black);
+  --cga-muted:#464646;
+  --cga-border:color-mix(in srgb,var(--brand-black) 19%,var(--brand-white));
+  --cga-border-strong:color-mix(in srgb,var(--brand-black) 36%,var(--brand-white));
+  --cga-chip:color-mix(in srgb,var(--brand-white) 82%,white);
+  --cga-hover:color-mix(in srgb,var(--brand-white) 72%,white);
+  --cga-primary:var(--brand-black);
+  --cga-primary-text:var(--brand-white);
+  --cga-shadow:rgba(22,22,22,.13);
   color-scheme:light;
 }
 :root[data-theme="dark"]{
-  --cga-bg:#111317;
-  --cga-surface:#1b1e23;
-  --cga-surface-2:#252932;
-  --cga-text:#f1f2f4;
-  --cga-muted:#b0b6c0;
-  --cga-border:#414750;
-  --cga-border-strong:#656c78;
-  --cga-chip:#343941;
-  --cga-hover:#303640;
-  --cga-primary:#eef0f3;
-  --cga-primary-text:#17191d;
-  --cga-shadow:rgba(0,0,0,.38);
+  --cga-bg:var(--brand-black);
+  --cga-surface:color-mix(in srgb,var(--brand-black) 88%,var(--brand-white));
+  --cga-surface-2:color-mix(in srgb,var(--brand-black) 79%,var(--brand-white));
+  --cga-text:var(--brand-white);
+  --cga-muted:#b9b9b6;
+  --cga-border:color-mix(in srgb,var(--brand-black) 63%,var(--brand-white));
+  --cga-border-strong:color-mix(in srgb,var(--brand-black) 38%,var(--brand-white));
+  --cga-chip:color-mix(in srgb,var(--brand-black) 74%,var(--brand-white));
+  --cga-hover:color-mix(in srgb,var(--brand-black) 72%,var(--brand-white));
+  --cga-primary:var(--brand-cyan);
+  --cga-primary-text:var(--brand-black);
+  --cga-shadow:rgba(0,0,0,.42);
   color-scheme:dark;
   background:var(--cga-bg);
   color:var(--cga-text);
@@ -35,7 +45,7 @@
 .cgaThemeControl{display:inline-flex;align-items:center;flex:0 0 auto;line-height:1;position:relative;z-index:15}
 .cgaThemeButton{font:inherit!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;padding:0!important;border:1px solid var(--cga-border)!important;border-radius:5px!important;color:var(--cga-text)!important;background:var(--cga-surface)!important;cursor:pointer}
 .cgaThemeButton:hover,.cgaThemeButton[aria-expanded="true"]{background:var(--cga-hover)!important}
-.cgaThemeButton:focus-visible,.cgaThemeMenu button:focus-visible{outline:2px solid #df3e89;outline-offset:2px}
+.cgaThemeButton:focus-visible,.cgaThemeMenu button:focus-visible{outline:2px solid var(--brand-pink);outline-offset:2px}
 .cgaThemeIcon{font-size:19px;line-height:1;color:inherit}
 .cgaThemeMenu{position:fixed;z-index:5000;width:170px;max-width:calc(100vw - 16px);padding:6px;border:1px solid var(--cga-border);background:var(--cga-surface);color:var(--cga-text);border-radius:7px;box-shadow:0 12px 32px var(--cga-shadow)}
 .cgaThemeMenu[hidden]{display:none!important}
@@ -90,7 +100,7 @@
 :root[data-theme="dark"] button.action:hover:not(:disabled){background:#c9cdd4}
 :root[data-theme="dark"] button.action:disabled{background:var(--cga-chip);border-color:var(--cga-border);color:var(--cga-muted)}
 :root[data-theme="dark"] button.secondary{background:var(--cga-surface-2);color:var(--cga-text);border-color:var(--cga-border)}
-:root[data-theme="dark"] a:not(.actionLink):focus-visible{outline-color:#df3e89}
+:root[data-theme="dark"] a:not(.actionLink):focus-visible{outline-color:var(--brand-pink)}
 /* Administración privada */
 :root[data-theme="dark"] body:has(#loginPanel)>header{background:var(--cga-surface);color:var(--cga-text)}
 :root[data-theme="dark"] body:has(#loginPanel)>header a{color:var(--cga-text)}
