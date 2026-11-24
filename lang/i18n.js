@@ -287,6 +287,15 @@
   }
   function init(){
     translateDOM();
+    if(location.pathname.startsWith("/portafolio/")){
+      const base="https://christianarleo.com/portafolio/?lang="+locale;
+      const canonical=document.querySelector('link[rel="canonical"]');
+      if(canonical)canonical.href=base;
+      const og=document.querySelector('meta[property="og:url"]');
+      if(og)og.content=base;
+      const ogLocale=document.querySelector('meta[property="og:locale"]');
+      if(ogLocale)ogLocale.content=locale==="en"?"en_GB":"es_PE";
+    }
     insertSwitch();
     for(const button of document.querySelectorAll("[data-lang-choice]")){
       button.addEventListener("click",()=>{
