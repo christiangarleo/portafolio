@@ -4,6 +4,12 @@ const el=id=>document.getElementById(id);
 const status=el("status");
 function notice(msg,error=false){status.textContent=msg;status.dataset.error=String(error);status.hidden=false;}
 const bucket="cv-personalizados";
+const publicPortfolioBucket="portafolio";
+const publicPortfolioFiles={
+  en:"Christian_Arleo_Portfolio_EN.pdf",
+  es:"Christian_Arleo_Portafolio.pdf"
+};
+let publishedPortfolios=new Set();
 const authRedirect="https://christianarleo.com/admin/";
 const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 if (hashParams.get("error_code")) {
@@ -41,7 +47,7 @@ async function verifyAdmin(){
   el("pendingTitle").textContent="Cuenta autenticada, pendiente de autorización";
   el("pendingMessage").textContent="La consulta funciona, pero tu cuenta todavía no aparece habilitada como administradora.";
   show(isAdmin?"app":"pending");
-  if(isAdmin){await loadDocuments();await loadLeads();}
+  if(isAdmin){await loadPublicPortfolios();await loadDocuments();await loadLeads();}
 }
 el("authForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;
@@ -73,6 +79,58 @@ el("resendConfirmation").addEventListener("click", async () => {
 });
 el("recheck").addEventListener("click",verifyAdmin);
 document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{await sb.auth.signOut();notice("Sesión cerrada.");show("login");}));
+async function loadPublicPortfolios(){
+  if(!isAdmin)return;
+  const target=el("publicPortfolioStatus");target.replaceChildren();
+  target.textContent="Consultando archivos publicados…";
+  const {data,error}=await sb.storage.from(publicPortfolioBucket).list("",{limit:100});
+  target.replaceChildren();
+  if(error){target.textContent="No se pudo consultar el estado: "+error.message;return;}
+  publishedPortfolios=new Set((data||[]).map(x=>x.name));
+  for(const [lang,filename] of Object.entries(publicPortfolioFiles)){
+    const exists=publishedPortfolios.has(filename);
+    const row=node("div",undefined,"row");
+    row.style.cssText="border:1px solid var(--cga-border,#ddd);border-radius:5px;padding:10px 13px;gap:12px;flex:1 1 270px;";
+    const name=node("strong",lang==="en"?"🇬🇧 English":"🇪🇸 Español");
+    const state=node("span",exists?"PDF publicado":"Pendiente de publicar","pill");
+    row.append(name,state);
+    if(exists){
+      const url=sb.storage.from(publicPortfolioBucket).getPublicUrl(filename).data.publicUrl;
+      const link=node("a","Ver PDF ↗");
+      link.href=url+"?v="+Date.now();link.target="_blank";link.rel="noopener noreferrer";
+      link.style.cssText="color:inherit;font-size:12px;";
+      row.append(link);
+    }
+    target.append(row);
+  }
+}
+el("refreshPublicPortfolios").addEventListener("click",loadPublicPortfolios);
+el("publicPortfolioForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!isAdmin){notice("No autorizado.",true);return;}
+  const lang=el("publicPortfolioLanguage").value;
+  const path=publicPortfolioFiles[lang];
+  const file=el("publicPortfolioPDF").files[0];
+  if(!path||!file||file.size>45*1024*1024||file.size<1024||!file.name.toLowerCase().endsWith(".pdf")){
+    notice("Elegí un PDF válido de hasta 45 MB.",true);return;
+  }
+  const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
+  if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
+  const had=publishedPortfolios.has(path);
+  if(had&&!confirm("Ya existe un portafolio publicado en "+(lang==="en"?"English":"Español")+". ¿Reemplazarlo? Conservá una copia local para revertirlo."))return;
+  const submit=el("publicPortfolioUploadButton");submit.disabled=true;
+  notice("Publicando portafolio "+(lang==="en"?"English":"Español")+"…");
+  try {
+    const {error}=await sb.storage.from(publicPortfolioBucket).upload(path,file,{
+      upsert:true,contentType:"application/pdf",cacheControl:"0"
+    });
+    if(error)throw error;
+    el("publicPortfolioForm").reset();
+    notice("PDF "+(lang==="en"?"English":"Español")+" publicado. La web usará esta versión automáticamente.");
+    await loadPublicPortfolios();
+  } catch(err){notice("Error al publicar el PDF: "+err.message,true);}
+  finally{submit.disabled=false;}
+});
 function node(tag,text,className){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;}
 async function loadDocuments(){
  const {data,error}=await sb.from("portfolio_cv_documents").select("*").order("created_at",{ascending:false}).limit(200);
