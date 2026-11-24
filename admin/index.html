@@ -44,6 +44,20 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 #status[data-error=true]{background:#9b2525}
 @media(max-width:600px){.grid{grid-template-columns:1fr}header strong{font-size:15px}h1{font-size:21px}}
 [hidden]{display:none!important}
+ 
+.publicPortfolioGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:18px 0 12px;}
+.publicPortfolioCard{border:1px solid var(--cga-border,#ddd);border-radius:7px;padding:clamp(14px,2vw,20px);min-width:0;background:var(--cga-surface,#fff)}
+.publicPortfolioHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.publicPortfolioHead h2{margin:0;font-size:18px}
+.publicPortfolioHead h2 small{font-size:11px;font-weight:400;color:var(--cga-muted,#777)}
+.publicPortfolioHead .pill{white-space:nowrap}
+.publicPortfolioCard p{font-size:12px;line-height:1.5;min-height:36px;margin:12px 0}
+.publicPortfolioCard>a{font-size:12px;color:var(--cga-text,#222);display:inline-block;margin-bottom:11px;text-underline-offset:3px}
+.publicPortfolioCard form{border-top:1px solid var(--cga-border,#ddd);padding-top:10px;margin-top:5px}
+.publicPortfolioCard input[type=file]{display:block;width:100%;max-width:100%;margin:8px 0 14px}
+.publicPortfolioCard button.primary{width:100%;padding:12px 15px;white-space:normal;line-height:1.35}
+#publicPortfolioStatus{font-size:12px;line-height:1.5;color:var(--cga-muted,#555)}
+@media(max-width:690px){.publicPortfolioGrid{grid-template-columns:1fr}.publicPortfolioCard p{min-height:0}}
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261123-bilingual2">
 </head><body>
@@ -66,24 +80,43 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </section>
 <div id="app" hidden>
 <section class="panel" id="publicPortfolios">
-  <div class="row" style="justify-content:space-between"><div><h1>Portafolios públicos · Español / English</h1>
-    <p>Dos PDF independientes. El visitante obtiene la versión que corresponda al idioma seleccionado; el inglés es el principal.</p></div>
+  <div class="row" style="justify-content:space-between;align-items:flex-start;gap:14px">
+    <div>
+      <h1>Portafolios públicos · Español / English</h1>
+      <p>Administrá cada versión por separado. Podés reemplazar el PDF en español sin modificar el inglés, y viceversa.</p>
+    </div>
     <button id="refreshPublicPortfolios" type="button">Actualizar estado</button>
   </div>
-  <div id="publicPortfolioStatus" class="row" aria-live="polite" style="margin:14px 0 18px">Consultando archivos…</div>
-  <h2>Publicar o actualizar un portafolio</h2>
-  <form id="publicPortfolioForm">
-    <div class="grid">
-      <div><label for="publicPortfolioLanguage">Idioma del documento</label>
-        <select id="publicPortfolioLanguage"><option value="en">🇬🇧 English — principal</option><option value="es">🇪🇸 Español</option></select>
+  <div class="publicPortfolioGrid">
+    <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEs">
+      <div class="publicPortfolioHead">
+        <h2 id="publicPortfolioTitleEs">🇪🇸 Español</h2>
+        <span class="pill" id="publicPortfolioStateEs">Consultando…</span>
       </div>
-      <div><label for="publicPortfolioPDF">PDF definitivo (máx. 45 MB)</label>
-        <input id="publicPortfolioPDF" type="file" accept=".pdf,application/pdf" required>
+      <p>Versión que ven quienes eligen <strong>Español</strong> en tu sitio.</p>
+      <a id="publicPortfolioLinkEs" href="#" target="_blank" rel="noopener noreferrer" hidden>Ver / descargar PDF actual ↗</a>
+      <form id="publicPortfolioFormEs" data-public-language="es">
+        <label for="publicPortfolioFileEs">Elegir nuevo PDF en español (máx. 45 MB)</label>
+        <input id="publicPortfolioFileEs" type="file" accept=".pdf,application/pdf" required>
+        <button id="publicPortfolioButtonEs" class="primary" type="submit">Reemplazar PDF en español</button>
+      </form>
+    </article>
+    <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEn">
+      <div class="publicPortfolioHead">
+        <h2 id="publicPortfolioTitleEn">🇬🇧 English <small>· Idioma principal</small></h2>
+        <span class="pill" id="publicPortfolioStateEn">Consultando…</span>
       </div>
-    </div>
-    <p class="note">Solo subí el PDF definitivo del idioma elegido. Si ya existe, el archivo anterior será reemplazado. Conservá una copia local para poder revertir cambios.</p>
-    <p><button id="publicPortfolioUploadButton" class="primary" type="submit">Publicar PDF del portafolio</button></p>
-  </form>
+      <p>Version shown to visitors who choose <strong>English</strong>.</p>
+      <a id="publicPortfolioLinkEn" href="#" target="_blank" rel="noopener noreferrer" hidden>View / download current PDF ↗</a>
+      <form id="publicPortfolioFormEn" data-public-language="en">
+        <label for="publicPortfolioFileEn">Elegir PDF en inglés (máx. 45 MB)</label>
+        <input id="publicPortfolioFileEn" type="file" accept=".pdf,application/pdf" required>
+        <button id="publicPortfolioButtonEn" class="primary" type="submit">Publicar PDF en inglés</button>
+      </form>
+    </article>
+  </div>
+  <p class="note">Antes de reemplazar un documento publicado, conservá una copia del PDF anterior. El cambio afecta únicamente al idioma seleccionado.</p>
+  <div id="publicPortfolioStatus" role="status" aria-live="polite"></div>
 </section>
 <section class="panel">
 <div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el RUC y accede siempre a su portal por empresa, con todos los CV activos por vacante. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
@@ -111,6 +144,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=8"></script>
+<script type="module" src="./panel.js?v=9"></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body></html>
