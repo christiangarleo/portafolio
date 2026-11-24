@@ -2,6 +2,8 @@
   "use strict";
   const endpoint = "https://gprhevdotoykofrxbufv.supabase.co/functions/v1/portfolio-cv-portal";
   const by = id => document.getElementById(id);
+  const locale = window.CGALang?.current==="es"?"es":"en";
+  const t = value => window.CGALang?.t(value) ?? value;
   const ruc = new URLSearchParams(location.search).get("ruc") || "";
   const loading = by("loading");
   const message = by("downloadMessage");
@@ -11,12 +13,12 @@
     for (const id of ["loading","companySection","emptySection","invalidSection"]) by(id).hidden = id !== section;
   }
   function setMessage(where, text, error = false) {
-    where.replaceChildren(document.createTextNode(text));
+    where.replaceChildren(document.createTextNode(t(text)));
     where.dataset.error = String(error);
   }
   function element(tag,text,cls) {
     const el=document.createElement(tag);
-    if(text !== undefined)el.textContent=text;
+    if(text !== undefined)el.textContent=t(text);
     if(cls)el.className=cls;
     return el;
   }
@@ -32,21 +34,24 @@
   function displayCompany(data) {
     by("companyTitle").textContent=data.company;
     companyOnFile=data.company;
-    by("companyDescription").textContent=
-      "Postulaciones de Christian Gabriel Arleo vinculadas al RUC " + ruc + ". Consultá cada vacante y su CV correspondiente.";
-    document.title=data.company+" | Portal de postulaciones";
+    by("companyDescription").textContent=locale==="en"
+      ? "Christian Gabriel Arleo's CVs for positions at your company · Tax ID: "+ruc
+      : "Postulaciones de Christian Gabriel Arleo vinculadas al RUC "+ruc+". Consultá cada vacante y su CV correspondiente.";
+    document.title=data.company+(locale==="en"?" | Applications":" | Portal de postulaciones");
     const wrap=by("vacancies");
     wrap.replaceChildren();
     items=data.items||[];
     const count=items.filter(x=>x.available).length;
-    by("count").textContent=count+" "+(count===1?"CV vigente":"CV vigentes")+" · "+items.length+" "+(items.length===1?"vacante":"vacantes");
+    by("count").textContent=locale==="en"
+      ? count+" "+(count===1?"active CV":"active CVs")+" · "+items.length+" "+(items.length===1?"position":"positions")
+      : count+" "+(count===1?"CV vigente":"CV vigentes")+" · "+items.length+" "+(items.length===1?"vacante":"vacantes");
     for (const x of items) {
       const card=element("article",undefined,"card"+(x.available?"":" expired"));
       const top=element("div",undefined,"card-top");
       top.append(element("span",x.available?"CV disponible":"CV vencido","tag"+(x.available?" current":" expired")));
       const title=element("h3",x.position||"CV personalizado");
       const expiry=element("small",x.expires_at
-        ? "Vigencia: "+new Date(x.expires_at).toLocaleDateString("es-PE",{day:"2-digit",month:"short",year:"numeric"})
+        ? (locale==="en"?"Valid until: ":"Vigencia: ")+new Date(x.expires_at).toLocaleDateString(locale==="en"?"en-GB":"es-PE",{day:"2-digit",month:"short",year:"numeric"})
         : "Sin fecha de vencimiento");
       const button=element("button",x.available?"Descargar CV ↓":"Descarga no disponible","action");
       button.type="button";button.disabled=!x.available;
@@ -56,10 +61,10 @@
     show("companySection");
     // El contacto comercial es accesible siempre, incluso si la empresa tiene CV vigentes.
     by("emptySection").hidden=false;
-    by("requestHeading").textContent=count===0
+    by("requestHeading").textContent=t(count===0
       ? "¿Te interesa proponer una contratación?"
-      : "¿Querés contratarme o conversar sobre un proyecto?";
-    by("requestIntro").textContent="Elegí una opción y dejame los datos esenciales. Los detalles los conversamos después.";
+      : "¿Querés contratarme o conversar sobre un proyecto?");
+    by("requestIntro").textContent=t("Elegí una opción y dejame los datos esenciales. Los detalles los conversamos después.");
   }
   async function downloadCv(button) {
     if(button.disabled)return;
@@ -87,7 +92,7 @@
     proyecto:["Conversemos sobre tu proyecto","Contame qué necesitás con un par de clics."]
   };
   function formError(text){
-    by("formError").textContent=text;
+    by("formError").textContent=t(text);
     if(text)by("formError").scrollIntoView({block:"nearest"});
   }
   function contactVisibility(){
@@ -112,9 +117,9 @@
     by("projectFields").hidden=kind!=="proyecto";
     by("vacancyField").hidden=kind!=="in_house";
     by("jobRole").required=kind==="in_house";
-    by("leadTitle").textContent=titles[kind][0];
-    by("leadSubtitle").textContent=titles[kind][1];
-    by("submitLead").textContent=kind==="in_house"?"Enviar invitación":"Proponer proyecto";
+    by("leadTitle").textContent=t(titles[kind][0]);
+    by("leadSubtitle").textContent=t(titles[kind][1]);
+    by("submitLead").textContent=t(kind==="in_house"?"Enviar invitación":"Proponer proyecto");
     by("moreInfo").open=false;
     for(const item of by("choices").querySelectorAll("button")){
       item.setAttribute("aria-pressed",String(item===button));
@@ -175,8 +180,8 @@
       if(reply.status!=="received")throw Error("No se pudo registrar la propuesta.");
       form.hidden=true;
       by("choices").hidden=true;
-      by("requestHeading").textContent="Propuesta recibida";
-      by("requestIntro").textContent="Gracias. Tu propuesta quedó registrada correctamente.";
+      by("requestHeading").textContent=t("Propuesta recibida");
+      by("requestIntro").textContent=t("Gracias. Tu propuesta quedó registrada correctamente.");
       const contactMessage=preference==="contactame"
         ?"Voy a tener en cuenta el medio de contacto que seleccionaste."
         :"Quedó registrado que la empresa se comunicará por su cuenta.";
@@ -200,13 +205,13 @@
       const data=await api({action:"resolve",ruc});
       if(data.status==="company"&&Array.isArray(data.items)&&data.items.length)displayCompany(data);
       else if(data.status==="not_found") {
-        by("companyDescription").textContent="Todavía no hay CV asociados a ese RUC.";
+        by("companyDescription").textContent=t("Todavía no hay CV asociados a ese RUC.");
         show("emptySection");
       } else throw Error("Respuesta del servicio no reconocida");
     } catch(error) {
-      loading.textContent="No pudimos cargar el portal. "+(error.message||"Volvé a intentarlo.")+" ";
+      loading.textContent=locale==="en"?"Could not load the portal. Please try again. ":"No pudimos cargar el portal. "+(error.message||"Volvé a intentarlo.")+" ";
       const retry=element("button","Reintentar","secondary");
-      retry.type="button";retry.addEventListener("click",()=>{loading.textContent="Consultando…";init();});
+      retry.type="button";retry.addEventListener("click",()=>{loading.textContent=locale==="en"?"Checking…":"Consultando…";init();});
       loading.append(retry);
       show("loading");
     }
