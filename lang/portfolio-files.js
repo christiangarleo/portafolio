@@ -13,13 +13,15 @@
       sections:{index:3,intro:4,summary:5,projects:6,experience:23}
     },
     en:{
-      // Reserved path: the English PDF has NOT been uploaded as of 2026-11-23.
+      // Archivo EN publicado. Marcadores se detectan del PDF real en el navegador.
       file:"Christian_Arleo_Portfolio_EN.pdf",
       url:bucket+"Christian_Arleo_Portfolio_EN.pdf",
       filename:"Christian_Arleo_Portfolio_EN.pdf",
       title:"Professional portfolio of Christian Gabriel Arleo",
-      // English bookmarks/page layout need verification after PDF upload.
-      sections:null
+      sections:null,
+      // Fallback visual SOLO para la edición inglesa de 55 páginas (igual extensión que
+      // la española). El lector busca y reemplaza estos valores a partir del propio PDF.
+      fallback55:{index:3,intro:4,summary:5,projects:6,experience:23}
     }
   };
   window.CGAPortfolioFiles=config;
