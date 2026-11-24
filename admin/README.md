@@ -91,6 +91,17 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - **Verificaciones:** columnas/constraints/roles/estado de la función y código sintácticamente validado; prueba de interacción E2E real desde el navegador pendiente. No crear propuestas artificiales de prueba en producción.
 - **Pendiente de una integración opcional futura:** un proveedor autorizado de envío SMTP/API y WhatsApp Business permitiría despacho desde el panel con adjuntos reales; no está implementado ni deben insinuarse envíos automáticos.
 
+## CRM compacto — 24/11/2026 (vigente)
+- **Necesidad:** reducir la gestión a una pantalla corta; mantener decisión Avanzar/Rechazar como filtro obligatorio de acciones.
+- **CV:** el selector de CV vigentes del mismo RUC se guarda al elegir, sin botón «Asociar». Botón «+ Subir PDF» abre el selector de archivos y, al seleccionar un PDF válido de hasta 30 MB, lo sube y lo asocia automáticamente. El nombre del puesto se toma del asunto/vacante de la solicitud. El CV sigue accesible desde el portal por RUC, con enlace directo a la tarjeta correspondiente.
+- **Respuesta:** botones principales «Abrir correo (Zoho)» y «WhatsApp», sin textareas largas a la vista; «Ver o editar el mensaje» queda desplegable. El correo incluye enlace al CV y puede incluir propuesta de reunión.
+- **Correo:** la implementación usa `mailto:` (aplicación de correo predeterminada; Zoho Mail solo si está configurado como controlador de correo en navegador/sistema). **No se envía directamente desde el sitio y no adjunta PDF automáticamente**. Se conserva «Descargar PDF para adjuntar». Enviar de verdad con Zoho Mail API requerirá autorizar una integración de Zoho Mail; tener el dominio alojado en Zoho no concede permisos de API.
+- **WhatsApp:** se abre `https://wa.me/` con mensaje listo y enlace al CV. Si falta número, «+ Agregar teléfono para WhatsApp» lo permite guardar desde la solicitud. No se marca enviado sin la confirmación manual del administrador.
+- **Reunión:** solo se despliega al elegir «+ Proponer reunión»; guarda fecha/hora, modalidad y enlace opcional. No crea invitación de calendario.
+- **Seguimiento e historial:** permanecen disponibles bajo desplegables. No se reescribieron solicitudes ya existentes ni se automatizaron acciones salientes.
+- **Privacidad:** si la empresa eligió «Nosotros te devolvemos la llamada», se mantiene el bloqueo de contacto salvo autorización posterior real.
+- **Estado:** código actualizado y validado estáticamente; pendiente prueba de interfaz y correo configurado en navegador con la cuenta Zoho del administrador.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
