@@ -99,6 +99,36 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 :root[data-theme=dark] .crmBadge[data-state=avanzar]{background:#254536;color:#c7f4d8}
 :root[data-theme=dark] .crmBadge[data-state=rechazada]{background:#59313a;color:#ffd1d6}
 :root[data-theme=dark] .crmCard button.crmReject{color:#ffadb8;border-color:#8a5461}
+/* CRM rápido: prioriza CV + respuesta; opciones adicionales desplegables. */
+.crmCompact{padding:10px 0 15px}
+.crmCompact h4{margin:0 0 8px}
+.crmCompact .crmLine{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0 0 6px}
+.crmCompact .crmLine select{width:auto;flex:1 1 260px;max-width:100%;min-height:42px}
+.crmCard .crmLine button.crmAccent,.crmCard button.crmAccent{border:1px solid var(--cga-border-strong,#777);background:var(--cga-surface-2,#f5f5f5);color:var(--cga-text,#222);font-weight:700;min-height:41px}
+.crmCard button.crmAccent:hover{background:var(--cga-hover,#eee)}
+.crmInlineLinks{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
+.crmInlineLinks a{padding:8px 0}
+.crmInlineLinks button{padding:7px 10px}
+.crmLinked{font-size:12px;color:var(--cga-text,#222);font-weight:700}
+.crmMeeting{margin:10px 0 7px!important;padding:9px 11px;border:1px solid var(--cga-border,#ddd);background:var(--cga-surface-2,#fafafa);border-radius:5px}
+.crmMeeting summary{padding:4px 0!important;font-size:13px!important}
+.crmMeeting form{padding:10px 0 0}
+.crmMeeting input{min-height:40px}
+.crmMeeting button{margin:9px 0 2px}
+.crmCompact .crmActions{margin:9px 0 6px;gap:9px}
+.crmCompact .crmActions button.crmAccept{font-size:13px;min-height:42px}
+.crmCompact .crmActions button.crmAccent{min-height:42px}
+.crmEdit,.crmPhone,.crmStage{margin:7px 0!important}
+.crmEdit summary,.crmPhone summary,.crmStage summary{font-weight:400!important;font-size:12px!important;color:var(--cga-muted,#777)}
+.crmEdit input,.crmEdit textarea{width:100%;margin:0}
+.crmConfirm{display:flex;gap:8px;flex-wrap:wrap;margin:11px 0 4px}
+.crmConfirm button{font-size:12px;padding:7px 10px}
+.crmCard .crmWorkflow>.crmStep:last-of-type{border-bottom:0;padding-bottom:5px}
+.crmCard .crmStage{margin-top:11px!important}
+@media(max-width:540px){.crmCompact .crmLine{flex-direction:column;align-items:stretch}
+.crmCompact .crmLine select,.crmCompact .crmLine button{width:100%}
+.crmCompact .crmActions button{flex:1 1 130px}
+.crmCompact .crmConfirm button{flex:1 1 130px}}
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261123-bilingual2">
 </head><body>
@@ -193,6 +223,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=12"></script>
+<script type="module" src="./panel.js?v=13"></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body></html>
