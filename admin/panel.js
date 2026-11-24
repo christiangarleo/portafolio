@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=6";
+import { createLeadCRM } from "./solicitudes.js?v=7";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -89,7 +89,7 @@ function navigateAdmin(view){
   if(!adminViews.includes(view))view="overview";
   for(const name of adminViews){
     const selected=name===view;
-    const pane=el("adminPane"+name[0].toUpperCase()+name.slice(1));
+    const pane=el({overview:"adminPaneOverview",leads:"adminPaneLeads",cv:"adminPaneCV",portfolio:"adminPanePortfolio"}[name]);
     const tab=document.querySelector('button[data-admin-view="'+name+'"]');
     pane.hidden=!selected;
     tab.setAttribute("aria-selected",String(selected));
