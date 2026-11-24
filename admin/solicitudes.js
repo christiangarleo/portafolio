@@ -259,7 +259,6 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const body=n("textarea");body.rows=7;body.maxLength=5000;body.value=data.body;
   // Primero el editor, siempre visible; luego los proveedores de envío.
   section.append(labeled("Asunto",subject),labeled("Mensaje (editable)",body));
-  section.append(n("h4","Elegí cómo preparar el envío"));
   const actions=row("crmDeliveryButtons");
   // Enlace directo y verificable: NO usa mailto ni el cliente predeterminado.
   const zoho=n("a","Zoho Mail ↗","crmAccept");
@@ -273,11 +272,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   gmail.disabled=!validEmail;
   whatsapp.disabled=!number;
-  const zohoHelp=n("div",undefined,"crmZohoHelp");
-  zohoHelp.hidden=true;
-  const helpTitle=n("strong","Prepará el correo en Zoho Mail");
-  const helpText=small("Se abre la bandeja de Zoho Mail en otra pestaña. Usá Nuevo mensaje y copiá los datos desde acá. Todavía no hay conexión con la API de Zoho.");
-  const copyActions=row("crmCopyActions");
+  // Controles compactos: copiar y elegir canal sin un panel informativo adicional.
+  const copyActions=row("crmCopyActions crmInlineCompose");
   async function copyValue(value,label){
     try{
       if(!navigator.clipboard?.writeText)throw Error("clipboard-unavailable");
@@ -296,10 +292,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    copy.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
    copyActions.append(copy);
   }
-  zohoHelp.append(helpTitle,helpText,copyActions);
   zoho.addEventListener("click",()=>{
    // Se navega por el href real del <a>, no por mailto ni window.open.
-   zohoHelp.hidden=false;
    notice("Se abrió mail.zoho.com en otra pestaña. Desde Zoho, creá un correo y pegá los datos preparados.");
    void audit(lead,"zoho_abierto",{cv_id:current?.id||null});
   });
@@ -317,7 +311,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
 
   });
   actions.append(zoho,gmail,whatsapp);
-  section.append(actions,zohoHelp);
+  section.append(copyActions,actions);
   if(!number){
    const add=n("details",undefined,"crmPhone");add.append(n("summary","Agregar teléfono para WhatsApp"));
    const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";
@@ -342,8 +336,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    wrap.append(control,slider,content,status);
    control.addEventListener("change",async()=>{
     const checked=control.checked;
-    const prompt=checked?"¿Confirmás que enviaste realmente "+kind+"?":"¿Quitar la confirmación de envío de "+kind+"?";
-    if(!confirm(prompt)){control.checked=!checked;return;}
+    // El switch constituye la confirmación expresa: no abrir un segundo popup nativo.
     control.disabled=true;
     try{
      await persist(lead,{[field]:checked?new Date().toISOString():null,
@@ -364,7 +357,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   confirmations.append(mailStatus,waStatus);
   section.append(confirmations);
   if(!number)section.append(small("No hay un teléfono válido. Podés agregarlo arriba para abrir WhatsApp. Si ya lo enviaste por otra vía, registrá la confirmación manualmente."));
-  section.append(small("Abrir Zoho, Gmail o WhatsApp no envía mensajes automáticamente. Activá cada switch solo cuando hayas enviado el mensaje."));
+  section.append(small("Confirmá el envío con los interruptores después de enviarlo desde el correo o WhatsApp."));
   parent.append(section);
  }
  function archive(lead,card){
