@@ -140,3 +140,12 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - **WhatsApp:** abre `https://wa.me/` en otra pestaña/ventana con texto precargado. Si falta número, el botón de apertura queda desactivado y se ofrece agregarlo, pero **el switch manual de confirmación siempre está visible**. El titular puede registrar un mensaje enviado fuera del panel.
 - **Confirmaciones:** correo y WhatsApp tienen switches independientes siempre visibles. Abrir una aplicación no los activa; cualquier cambio exige confirmación explícita y queda en `portfolio_cv_leads.email_sent_at` / `whatsapp_sent_at` y el historial.
 - **Estado:** EJECUTADO: código y assets actualizados; VERIFICADO: sintaxis JS, referencias de cliente y CSS; NO_VERIFICADO: Zoho compose real, personalización de apertura por navegador, envío auténtico y pruebas E2E.
+
+## Bandeja compacta de solicitudes — 24/11/2026
+- **Problema UX:** cada propuesta construía una tarjeta extensa con CV, reunión, editor de mensajes, canales, switches e historial. Con múltiples registros se volvía imposible escanear la bandeja.
+- **Decisión vigente:** patrón **maestro–detalle** dentro de la misma sección de administración. La columna izquierda lista solicitudes compactas (empresa, vacante, fecha, estado y señales de CV/correo/WhatsApp) y el panel derecho muestra **solo la solicitud seleccionada** con todos los controles actuales.
+- **Escalabilidad de interfaz:** los filtros «Por decidir», «En seguimiento», «Rechazadas», «Todas» y el buscador se conservan. Orden descendente por fecha. Paginación de **15 solicitudes por pantalla** sobre las 200 últimas cargadas del backend; los datos no se duplican ni se modifican.
+- **Móvil ≤820px:** el listado ocupa toda la pantalla. Seleccionar una fila abre la ficha en una vista separada con botón «Volver a solicitudes». En escritorio, el listado y detalle tienen scroll independiente y uno solo conserva el foco visual.
+- **Datos y seguridad:** sin nuevas tablas, endpoints ni roles. Se reutilizan Supabase Auth/RLS existentes, la asociación de CV, los borradores Zoho/Gmail/WhatsApp, los switches de confirmación y el historial. Solo cambia la presentación.
+- **EJECUTADO:** `admin/solicitudes.js`, `theme/modern.css`, versión de caché en `admin/panel.js` y `admin/index.html`.
+- **VERIFICADO:** sintaxis JS, enlaces de recursos y presencia de controles. **NO_VERIFICADO:** QA visual/teclado/táctil y navegación E2E en navegador con muchas solicitudes; las consultas aún están limitadas a las 200 últimas hasta implementar paginación de servidor.
