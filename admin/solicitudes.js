@@ -16,26 +16,42 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function value(v){return Array.isArray(v)?v.map(x=>translations[x]||x).join(", "):v===true?"Sí":v===false?"No":translations[v]||String(v||"");}
  function selectedCV(lead){return getDocuments().find(x=>x.id===lead.cv_document_id)||null;}
  function allCV(lead){return getDocuments().filter(x=>x.ruc===lead.ruc&&x.is_active&&(!x.expires_at||Date.parse(x.expires_at)>Date.now()));}
- function portal(lead){const p=new URL("/empresa/",location.origin);p.searchParams.set("ruc",lead.ruc);p.searchParams.set("lang","es");if(lead.cv_document_id)p.searchParams.set("cv",lead.cv_document_id);return p.href;}
+ function portal(lead){const p=new URL("/empresa/",location.origin);p.searchParams.set("ruc",lead.ruc);p.searchParams.set("lang",lead.language==="en"?"en":"es");if(lead.cv_document_id)p.searchParams.set("cv",lead.cv_document_id);return p.href;}
  function canContact(lead){return lead.contact_preference!=="empresa_contacta"||!!lead.contact_override_at;}
  function waNumber(lead){let v=(lead.phone||"").replace(/\D/g,"");if(v.length===9&&v[0]==="9")v="51"+v;return v.length>=10&&v.length<=15?v:"";}
  function meetingDetails(lead){
   if(!lead.meeting_at)return "";
-  let s="\n\nTe propongo conversar "+stamp(lead.meeting_at)+" ("+({virtual:"virtual",presencial:"presencial",a_definir:"modalidad a definir"}[lead.meeting_mode]||"modalidad a definir")+").";
-  if(lead.meeting_link)s+="\nEnlace: "+lead.meeting_link;
-  if(lead.meeting_notes)s+="\nNotas: "+lead.meeting_notes;
-  return s+"\nEs una propuesta de horario; confirmame si te viene bien.";
+  const en=lead.language==="en";
+  const date=en?new Date(lead.meeting_at).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}):stamp(lead.meeting_at);
+  const modes=en?{virtual:"online",presencial:"in person",a_definir:"to be determined"}:
+    {virtual:"virtual",presencial:"presencial",a_definir:"por definir"};
+  const mode=modes[lead.meeting_mode]||modes.a_definir;
+  let s=en?"\n\nI would like to suggest a "+mode+" meeting on "+date+"."
+    :"\n\nTe propongo conversar "+date+" ("+mode+").";
+  if(lead.meeting_link)s+=(en?"\nMeeting link: ":"\nEnlace: ")+lead.meeting_link;
+  if(lead.meeting_notes)s+=(en?"\nDetails: ":"\nNotas: ")+lead.meeting_notes;
+  return s+(en?"\nThis is only a suggested time; please let me know if it works for you.":"\nEs una propuesta de horario; confirmame si te viene bien.");
  }
  function draft(lead,decline=false){
-  const role=lead.position_or_project||"tu propuesta",contact=lead.contact_name||"";
-  const greeting=contact&&!contact.startsWith("Equipo de")?"Hola "+contact+":":"Hola, equipo de "+lead.company_name+":";
-  const subject=decline?"Respuesta a tu propuesta | Christian Gabriel Arleo":lead.kind==="in_house"?"Seguimiento: "+role+" | Christian Gabriel Arleo":"Propuesta de colaboración | Christian Gabriel Arleo";
-  const intro=decline?"Gracias por considerarme para "+role+". Por el momento, no voy a avanzar con esta oportunidad."
-   :lead.kind==="in_house"?"Gracias por tu interés en mi perfil para "+role+". Me gustaría conversar sobre la oportunidad."
-   :"Gracias por compartir la propuesta sobre "+role+". Me interesa conocer más detalles y próximos pasos.";
-  const cv=!decline&&lead.cv_document_id?"\n\nPreparé un CV relacionado con esta oportunidad, disponible para consultar y descargar desde el portal de tu empresa:\n"+portal(lead):"";
-  const body=greeting+"\n\n"+intro+cv+(decline?"":meetingDetails(lead))+"\n\nQuedo atento.\nChristian Gabriel Arleo";
-  return {subject,body};
+  const en=lead.language==="en",role=lead.position_or_project||(en?"your proposal":"tu propuesta");
+  const contact=lead.contact_name||"";
+  const greeting=contact&&!contact.startsWith("Equipo de")
+    ?(en?"Hello ":"Hola ")+contact+","
+    :en?"Hello "+lead.company_name+" team,":"Hola, equipo de "+lead.company_name+":";
+  const subject=decline?(en?"Regarding your proposal | Christian Gabriel Arleo":"Respuesta a tu propuesta | Christian Gabriel Arleo")
+    :lead.kind==="in_house"?(en?"Following up: ":"Seguimiento: ")+role+" | Christian Gabriel Arleo"
+    :(en?"Project collaboration | Christian Gabriel Arleo":"Propuesta de colaboración | Christian Gabriel Arleo");
+  const intro=decline
+    ?en?"Thank you for considering me for "+role+". After reviewing the opportunity, I won't be moving forward at this time.":"Gracias por considerarme para "+role+". Por el momento, no voy a avanzar con esta oportunidad."
+    :lead.kind==="in_house"
+      ?en?"Thank you for your interest in my profile for "+role+". I'd be glad to discuss the position further.":"Gracias por tu interés en mi perfil para "+role+". Me gustaría conversar sobre la oportunidad."
+      :en?"Thank you for sharing your proposal for "+role+". I'd welcome the chance to discuss the scope and next steps.":"Gracias por compartir la propuesta sobre "+role+". Me interesa conocer más detalles y próximos pasos.";
+  const cv=!decline&&lead.cv_document_id
+    ?en?"\n\nI've prepared a CV for this opportunity. You can view and download it from your company's portal:\n"+portal(lead)
+      :"\n\nPreparé un CV relacionado con esta oportunidad, disponible para consultar y descargar desde el portal de tu empresa:\n"+portal(lead)
+    :"";
+  const closing=en?"\n\nKind regards,\nChristian Gabriel Arleo":"\n\nQuedo atento.\nChristian Gabriel Arleo";
+  return {subject,body:greeting+"\n\n"+intro+cv+(decline?"":meetingDetails(lead))+closing};
  }
  async function audit(lead,event,details={}){
   const {error}=await sb.from("portfolio_cv_lead_activities").insert({lead_id:lead.id,event_type:event,details});
@@ -236,7 +252,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const div=n("article",undefined,"crmCard"),head=n("div",undefined,"crmHeader"),intro=n("div");
   intro.append(n("strong",(names[lead.kind]||lead.kind)+" · "+lead.company_name));
   intro.append(n("small",(lead.contact_name||"")+" · "+lead.email+" · "+(lead.phone||"Sin teléfono")+" · RUC "+(lead.ruc||"sin dato")+
-   (lead.position_or_project?" · "+lead.position_or_project:"")+" · "+stamp(lead.created_at)));
+   (lead.position_or_project?" · "+lead.position_or_project:"")+" · "+(lead.language==="en"?"🇬🇧 English":"🇪🇸 Español")+" · "+stamp(lead.created_at)));
   const badge=n("span",statuses[lead.decision_status]||"Por decidir","crmBadge");badge.dataset.state=lead.decision_status;
   head.append(intro,badge);div.append(head);
   if(lead.contact_preference==="empresa_contacta")div.append(msg("Contacto: la empresa prefirió comunicarse por su cuenta."));
