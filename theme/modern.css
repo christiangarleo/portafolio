@@ -1,0 +1,213 @@
+/* CGA UI · Diseño Web Aplicado 16.01 / primera iteración UX
+   Se carga después de theme.css. Mantiene la interfaz ES/EN y los PDF intactos. */
+:root{
+ --ux-pink:#c01868;--ux-pink-soft:#fcebf3;--ux-yellow:#fcd200;
+ --ux-green:#156346;--ux-green-bg:#e4f6ed;--ux-blue:#1d57a3;
+ --ux-danger:#a82b42;--ux-danger-bg:#fff0f2;
+ --ux-radius:12px;--ux-radius-sm:8px;
+ --ux-transition:background .17s ease,border-color .17s ease,box-shadow .17s ease,transform .17s ease;
+}
+:root[data-theme="dark"]{
+ --ux-pink:#fa72aa;--ux-pink-soft:#442536;
+ --ux-green:#76e3ae;--ux-green-bg:#1d4836;
+ --ux-blue:#9dc6ff;
+ --ux-danger:#ff9eac;--ux-danger-bg:#502732;
+}
+html.cgaModern{scroll-behavior:smooth}
+html.cgaModern body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+html.cgaModern button,html.cgaModern input,html.cgaModern select,html.cgaModern textarea{font-family:inherit}
+html.cgaModern button:not(:disabled),html.cgaModern a{transition:var(--ux-transition)}
+html.cgaModern :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ux-pink)!important;outline-offset:3px}
+html.cgaModern [hidden]{display:none!important}
+html.cgaModern .cgaIcon{height:18px;width:18px;min-width:18px;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+html.cgaModern .cgaWithIcon{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:normal}
+html.cgaModern .cgaWithIcon>.cgaIcon{flex:none}
+html.cgaModern .cgaIconOnly{width:42px;height:42px;min-height:42px;min-width:42px;padding:8px!important;display:inline-grid;place-content:center;border-radius:9px}
+html.cgaModern .cgaIconOnly .cgaIcon{width:19px;height:19px}
+html.cgaModern .cgaSoftButton{background:var(--cga-surface-2)!important;border:1px solid var(--cga-border)!important;color:var(--cga-text)!important;min-height:42px;border-radius:var(--ux-radius-sm);font-weight:650}
+html.cgaModern .cgaSoftButton:hover:not(:disabled){border-color:var(--ux-pink)!important}
+html.cgaModern .cgaActionButton{background:var(--ux-pink-soft)!important;border:1px solid var(--ux-pink)!important;color:var(--cga-text)!important;min-height:42px;border-radius:var(--ux-radius-sm);font-weight:650}
+html.cgaModern .cgaActionButton:hover:not(:disabled){box-shadow:0 3px 12px var(--cga-shadow)}
+html.cgaModern .cgaMeta{color:var(--cga-muted);font-size:12px;line-height:1.5}
+html.cgaModern .cgaAccentLine{width:70px;height:4px;border-radius:3px;background:linear-gradient(90deg,#df3e89,#fcd200)}
+html.cgaModern .cgaThemeButton{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;border-radius:10px!important}
+html.cgaModern .cgaThemeMenu{border-radius:12px;padding:8px}
+
+/* ========== OWNER · Admin ========== */
+html.cgaModern body:has(#loginPanel){
+ --admin-text:var(--cga-text);
+ background:var(--cga-bg);color:var(--cga-text);
+}
+html.cgaModern body:has(#loginPanel) main{max-width:1160px;margin:30px auto;padding:0 clamp(15px,3vw,30px) 80px}
+html.cgaModern body:has(#loginPanel) .adminHeader{background:var(--cga-surface);border-bottom:1px solid var(--cga-border);color:var(--cga-text);min-height:70px;gap:15px}
+html.cgaModern body:has(#loginPanel) .adminHeader strong{font-size:17px;letter-spacing:-.025em}
+html.cgaModern body:has(#loginPanel) .adminHeader strong span{color:var(--cga-muted)}
+html.cgaModern body:has(#loginPanel) .adminHeader a{color:var(--cga-text);font-weight:600;border:1px solid var(--cga-border);border-radius:8px;padding:10px 13px}
+html.cgaModern body:has(#loginPanel) .adminHeader a:hover{background:var(--cga-hover);border-color:var(--cga-border-strong)}
+html.cgaModern body:has(#loginPanel) .adminHeaderLogout{border-radius:8px!important;background:var(--cga-surface-2)!important;border-color:var(--cga-border)!important;color:var(--cga-text)!important}
+html.cgaModern body:has(#loginPanel) .panel{border:1px solid var(--cga-border);border-radius:var(--ux-radius);background:var(--cga-surface);box-shadow:0 5px 18px rgba(0,0,0,.035);padding:clamp(19px,3vw,27px)}
+html.cgaModern body:has(#loginPanel) h1{font-size:clamp(24px,3vw,31px);line-height:1.2;letter-spacing:-.035em}
+html.cgaModern body:has(#loginPanel) h2{font-size:clamp(17px,2vw,19px);letter-spacing:-.02em;line-height:1.3}
+html.cgaModern body:has(#loginPanel) p{color:var(--cga-muted);font-size:13px;line-height:1.55}
+html.cgaModern body:has(#loginPanel) button:not(:disabled){border-radius:8px}
+html.cgaModern body:has(#loginPanel) button:not(:disabled):hover{transform:translateY(-1px)}
+html.cgaModern body:has(#loginPanel) .adminNavigation{background:var(--cga-surface);border:1px solid var(--cga-border);border-radius:12px;padding:6px;gap:5px;margin:0 0 26px;position:sticky;top:12px;z-index:30;box-shadow:0 8px 24px var(--cga-shadow)}
+html.cgaModern body:has(#loginPanel) .adminNavigation button{border:0!important;min-width:0;flex:1 1 auto;font-size:13px;font-weight:650;min-height:45px;display:flex;align-items:center;gap:8px;color:var(--cga-muted);border-radius:8px}
+html.cgaModern body:has(#loginPanel) .adminNavigation button[aria-selected="true"]{background:var(--ux-pink-soft)!important;color:var(--ux-pink)!important;box-shadow:none!important}
+html.cgaModern body:has(#loginPanel) .adminNavigation button:hover{background:var(--cga-hover)}
+html.cgaModern body:has(#loginPanel) .adminNavigation .cgaIcon{width:19px;height:19px}
+html.cgaModern body:has(#loginPanel) .adminWelcome{padding:0 0 22px}
+html.cgaModern body:has(#loginPanel) .adminWelcome h1{margin:0}
+html.cgaModern body:has(#loginPanel) .adminOwnerBadge{background:var(--ux-green-bg);color:var(--ux-green);border:1px solid color-mix(in srgb,var(--ux-green) 33%,transparent);font-weight:700}
+html.cgaModern body:has(#loginPanel) .adminOwnerBadge span{color:inherit}
+html.cgaModern body:has(#loginPanel) .adminStats{gap:14px;margin:0 0 24px}
+html.cgaModern body:has(#loginPanel) .adminStat{padding:21px 19px;border-radius:12px;min-height:151px;position:relative;box-shadow:0 3px 13px rgba(0,0,0,.025)}
+html.cgaModern body:has(#loginPanel) .adminStat:before{content:"";position:absolute;left:19px;top:0;width:36px;height:3px;background:var(--ux-pink);border-radius:0 0 4px 4px}
+html.cgaModern body:has(#loginPanel) .adminStat:nth-child(2):before{background:var(--ux-yellow)}
+html.cgaModern body:has(#loginPanel) .adminStat:nth-child(3):before{background:#219d74}
+html.cgaModern body:has(#loginPanel) .adminStat:nth-child(4):before{background:var(--ux-blue)}
+html.cgaModern body:has(#loginPanel) .adminStat>span{color:var(--cga-muted);font-size:13px;font-weight:650}
+html.cgaModern body:has(#loginPanel) .adminStat strong{color:var(--cga-text);margin:5px 0 9px}
+html.cgaModern body:has(#loginPanel) .adminStat button{color:var(--ux-pink);text-decoration:none;font-size:12px;font-weight:700}
+html.cgaModern body:has(#loginPanel) .adminStat button:hover{color:var(--cga-text)}
+html.cgaModern body:has(#loginPanel) .adminPriority{border:1px solid var(--cga-border);border-top:3px solid var(--ux-pink);padding:22px}
+html.cgaModern body:has(#loginPanel) .adminPriorityItem{background:var(--cga-surface-2);border-color:var(--cga-border);border-radius:9px;padding:13px 15px}
+html.cgaModern body:has(#loginPanel) .adminPriorityItem p{font-size:13px;color:var(--cga-text);font-weight:550}
+html.cgaModern body:has(#loginPanel) .adminPriorityItem button{min-height:37px;font-weight:700;border-color:var(--cga-border-strong);background:var(--cga-surface);color:var(--cga-text)}
+html.cgaModern body:has(#loginPanel) .adminQuickAccess{padding:20px}
+html.cgaModern body:has(#loginPanel) .adminQuickLinks a,html.cgaModern body:has(#loginPanel) .adminQuickLinks button{border-radius:8px;min-height:43px;background:var(--cga-surface);border-color:var(--cga-border);font-weight:650;font-size:13px;color:var(--cga-text);padding:11px 16px}
+html.cgaModern body:has(#loginPanel) .adminQuickLinks :first-child{background:var(--ux-pink-soft);border-color:var(--ux-pink);color:var(--ux-pink)}
+html.cgaModern body:has(#loginPanel) :is(input,select,textarea){background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border-strong);border-radius:8px;min-height:42px}
+html.cgaModern body:has(#loginPanel) :is(input,select,textarea):focus{border-color:var(--ux-pink)}
+html.cgaModern body:has(#loginPanel) :is(input,textarea)::placeholder{color:var(--cga-muted);opacity:.83}
+html.cgaModern body:has(#loginPanel) button.primary,html.cgaModern body:has(#loginPanel) .crmAccept{background:var(--cga-primary);border:1px solid var(--cga-primary);color:var(--cga-primary-text);font-weight:750;min-height:42px}
+html.cgaModern body:has(#loginPanel) button.primary:hover{filter:brightness(.93)}
+html.cgaModern body:has(#loginPanel) .adminSectionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+html.cgaModern body:has(#loginPanel) .adminSectionHeader h1,html.cgaModern body:has(#loginPanel) .adminSectionHeader h2{margin:0}
+html.cgaModern body:has(#loginPanel) .adminSectionActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+html.cgaModern body:has(#loginPanel) .adminSectionHeader .cgaIconOnly{background:var(--cga-surface-2);border-color:var(--cga-border)}
+html.cgaModern body:has(#loginPanel) .adminSectionActions button{min-height:42px}
+html.cgaModern body:has(#loginPanel) .adminFilterLine{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+html.cgaModern body:has(#loginPanel) .adminFilterLine #documentsFilter{width:min(330px,100%);min-width:190px;padding-left:36px}
+html.cgaModern body:has(#loginPanel) .adminSearchWrap{position:relative}
+html.cgaModern body:has(#loginPanel) .adminSearchWrap>.cgaIcon{position:absolute;top:50%;left:11px;transform:translateY(-50%);color:var(--cga-muted)}
+html.cgaModern body:has(#loginPanel) .adminCompactForm[hidden]{display:none!important}
+html.cgaModern body:has(#loginPanel) .adminCompactForm{border:1px solid var(--cga-border);background:var(--cga-surface-2);border-radius:12px;padding:18px;margin-top:15px}
+html.cgaModern body:has(#loginPanel) .adminCompactForm label{font-weight:650;color:var(--cga-text);font-size:12px}
+html.cgaModern body:has(#loginPanel) .adminCompactForm .grid{gap:8px 16px}
+html.cgaModern body:has(#loginPanel) .adminCompactForm button.primary{min-width:148px}
+html.cgaModern body:has(#loginPanel) .adminCompactForm .formDetails{border-top:1px solid var(--cga-border);margin-top:15px;padding-top:8px}
+html.cgaModern body:has(#loginPanel) .adminCompactForm .formDetails summary{font-size:13px;font-weight:650;color:var(--cga-muted);padding:10px 0;cursor:pointer}
+html.cgaModern body:has(#loginPanel) .item{padding:16px 0;border-top:1px solid var(--cga-border)}
+html.cgaModern body:has(#loginPanel) .item strong{font-size:14px}
+html.cgaModern body:has(#loginPanel) .item small{font-size:12px;color:var(--cga-muted)}
+html.cgaModern body:has(#loginPanel) .itemActions{gap:7px}
+html.cgaModern body:has(#loginPanel) .itemActions button,html.cgaModern body:has(#loginPanel) .itemActions a{min-height:38px;border-radius:8px!important;font-weight:600!important;font-size:12px!important;padding:8px 11px!important;border:1px solid var(--cga-border)!important;background:var(--cga-surface-2)!important;color:var(--cga-text)!important}
+html.cgaModern body:has(#loginPanel) .itemActions button[data-action="delete"]{color:var(--ux-danger)!important;border-color:color-mix(in srgb,var(--ux-danger) 35%,var(--cga-border))!important}
+html.cgaModern body:has(#loginPanel) .itemActions button:hover,html.cgaModern body:has(#loginPanel) .itemActions a:hover{border-color:var(--ux-pink)!important;background:var(--cga-hover)!important}
+html.cgaModern body:has(#loginPanel) .pill{background:var(--cga-chip);color:var(--cga-text);border:1px solid var(--cga-border);font-weight:650;padding:5px 9px;margin:4px 4px 4px 0}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard{border-radius:12px;background:var(--cga-surface-2);border-color:var(--cga-border);padding:22px}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard h2{font-size:20px}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioHead{margin-bottom:15px}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard>a{display:inline-flex;align-items:center;gap:7px;padding:9px 0;color:var(--ux-pink);font-weight:700;font-size:13px}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard form{border-top:1px solid var(--cga-border);padding-top:12px}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard button.primary{width:auto;min-width:185px;max-width:100%}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioHelp{font-size:12px}
+html.cgaModern body:has(#loginPanel) .crmFilters{display:flex;gap:6px;overflow-x:auto;padding:4px 0 12px}
+html.cgaModern body:has(#loginPanel) .crmFilters button{min-height:41px;border-radius:9px;padding:9px 14px;white-space:nowrap;color:var(--cga-muted);border:1px solid var(--cga-border);background:var(--cga-surface)}
+html.cgaModern body:has(#loginPanel) .crmFilters button[aria-pressed="true"]{color:var(--ux-pink);border-color:var(--ux-pink);background:var(--ux-pink-soft)}
+html.cgaModern body:has(#loginPanel) .crmCard{background:var(--cga-surface);border:1px solid var(--cga-border);border-radius:12px;padding:20px;margin:12px 0}
+html.cgaModern body:has(#loginPanel) .crmCard h4{font-size:14px}
+html.cgaModern body:has(#loginPanel) .crmBadge[data-state="avanzar"]{background:var(--ux-green-bg);color:var(--ux-green)}
+html.cgaModern body:has(#loginPanel) .crmBadge[data-state="rechazada"]{background:var(--ux-danger-bg);color:var(--ux-danger)}
+html.cgaModern body:has(#loginPanel) .crmCard .crmManage{background:var(--ux-pink-soft);border-color:var(--ux-pink);color:var(--ux-pink);font-weight:700;min-height:42px}
+html.cgaModern body:has(#loginPanel) .crmCard button.crmReject{color:var(--ux-danger);border-color:var(--ux-danger-bg);background:var(--ux-danger-bg);font-weight:650}
+html.cgaModern body:has(#loginPanel) .crmCard :is(.crmMeeting,.crmEdit,.crmStage) summary{font-size:13px!important;color:var(--cga-text)!important}
+html.cgaModern body:has(#loginPanel) .crmCard .crmHint{color:var(--cga-muted);font-size:12px}
+html.cgaModern body:has(#loginPanel) #status{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:min(540px,calc(100% - 30px));z-index:99;box-shadow:0 15px 30px var(--cga-shadow);background:var(--cga-text);color:var(--cga-bg);border-radius:10px;padding:14px 17px}
+html.cgaModern body:has(#loginPanel) #status[data-error="true"]{background:var(--ux-danger-bg);color:var(--ux-danger);border:1px solid var(--ux-danger)}
+html.cgaModern body:has(#loginPanel) .adminSecurityNote{font-size:12px}
+html.cgaModern body:has(#loginPanel) #loginPanel{border-top:4px solid var(--ux-pink)}
+html.cgaModern body:has(#loginPanel) #loginPanel .adminEyebrow{color:var(--ux-pink)}
+/* ========== Company-facing portal ========== */
+html.cgaModern body:has(#companySection){background:var(--cga-bg);color:var(--cga-text)}
+html.cgaModern body:has(#companySection)>header{background:var(--cga-surface);border-bottom:1px solid var(--cga-border)}
+html.cgaModern body:has(#companySection) main{max-width:1040px}
+html.cgaModern body:has(#companySection) #head h1{font-size:clamp(27px,4vw,39px);letter-spacing:-.034em;line-height:1.2;margin:6px 0}
+html.cgaModern body:has(#companySection) #head .sub{font-size:14px;max-width:730px;color:var(--cga-muted)}
+html.cgaModern body:has(#companySection) .panel{border-radius:var(--ux-radius);border-color:var(--cga-border);background:var(--cga-surface);color:var(--cga-text)}
+html.cgaModern body:has(#companySection) .summary{align-items:center}
+html.cgaModern body:has(#companySection) .list .card{border-radius:12px;min-height:180px;border:1px solid var(--cga-border);background:var(--cga-surface);box-shadow:0 3px 15px rgba(0,0,0,.025);transition:var(--ux-transition)}
+html.cgaModern body:has(#companySection) .list .card:hover{border-color:var(--ux-pink);transform:translateY(-2px)}
+html.cgaModern body:has(#companySection) .list .card h3{font-size:clamp(16px,2vw,19px);line-height:1.3}
+html.cgaModern body:has(#companySection) .tag.current{background:var(--ux-green-bg);color:var(--ux-green);font-weight:700}
+html.cgaModern body:has(#companySection) .tag.expired{background:var(--ux-danger-bg);color:var(--ux-danger)}
+html.cgaModern body:has(#companySection) .list .card button.action{border-radius:9px;min-height:44px;font-size:13px;gap:8px}
+html.cgaModern body:has(#companySection) .list .card button.action:not(:disabled){background:var(--cga-primary);color:var(--cga-primary-text)}
+html.cgaModern body:has(#companySection) .choices{gap:12px}
+html.cgaModern body:has(#companySection) .choices button{min-height:70px;border:1px solid var(--cga-border);border-radius:12px;background:var(--cga-surface-2);color:var(--cga-text);font-size:15px;font-weight:750;padding:18px}
+html.cgaModern body:has(#companySection) .choices button:hover{border-color:var(--ux-pink);background:var(--ux-pink-soft)}
+html.cgaModern body:has(#companySection) .choices button[aria-pressed="true"]{border-color:var(--ux-pink);background:var(--ux-pink-soft);color:var(--ux-pink)}
+html.cgaModern body:has(#companySection) :is(.chip,.choiceButton){border-radius:9px!important}
+html.cgaModern body:has(#companySection) .chip:has(input:checked){border-color:var(--ux-pink)!important;background:var(--ux-pink-soft)!important;color:var(--ux-pink)!important}
+html.cgaModern body:has(#companySection) .quickForm{border-color:var(--cga-border)}
+html.cgaModern body:has(#companySection) .quickForm .action{border-radius:9px;min-height:47px;font-weight:750}
+html.cgaModern body:has(#companySection) #companySearchInput{border-radius:9px}
+html.cgaModern body:has(#companySection) .companyFilters button{border-radius:8px;font-weight:650}
+html.cgaModern body:has(#companySection) .companyFilters button[aria-pressed="true"]{background:var(--cga-primary);color:var(--cga-primary-text);border-color:var(--cga-primary)}
+html.cgaModern body:has(#companySection) #emptySection{border-top:4px solid var(--ux-pink)}
+html.cgaModern body:has(#companySection) #emptySection h2{font-size:clamp(20px,2.6vw,25px)}
+html.cgaModern body:has(#companySection) .privacyNote{font-size:11px;color:var(--cga-muted)}
+/* ========== Portfolio: dialog, small controls and language selector ========== */
+html.cgaModern .cvDialog{border-radius:16px;padding:0;max-width:min(480px,calc(100vw - 28px));border:1px solid var(--cga-border);background:var(--cga-surface);color:var(--cga-text);box-shadow:0 30px 80px rgba(0,0,0,.28)}
+html.cgaModern .cvDialog .cvDialogBody{padding:clamp(21px,4vw,32px)}
+html.cgaModern .cvDialog .cvDialogHead h2{font-size:clamp(19px,2.7vw,23px);letter-spacing:-.03em}
+html.cgaModern .cvDialog p{font-size:13px;line-height:1.55;color:var(--cga-muted)}
+html.cgaModern .cvDialog input{height:48px;border-radius:9px;border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);color:var(--cga-text);padding:12px}
+html.cgaModern .cvDialog button.primary{min-height:45px;border-radius:9px;font-size:14px;font-weight:700;gap:8px}
+html.cgaModern .cvDialog .cvDialogHead button{border-radius:8px;min-width:37px;min-height:37px}
+html.cgaModern .siteHeader .siteActions #cgaLangPicker{gap:3px!important}
+html.cgaModern .siteHeader .siteActions #cgaLangPicker button{border-radius:7px!important;font-weight:650}
+/* ========== Language landing ========== */
+html.cgaModern body:has(.languageGrid){background:var(--cga-bg);color:var(--cga-text)}
+html.cgaModern body:has(.languageGrid)>header{background:var(--cga-bg)}
+html.cgaModern body:has(.languageGrid) main{max-width:1050px}
+html.cgaModern body:has(.languageGrid) h1{font-size:clamp(35px,6vw,67px);letter-spacing:-.055em;line-height:1.08}
+html.cgaModern body:has(.languageGrid) .languageGrid{max-width:860px;gap:17px}
+html.cgaModern body:has(.languageGrid) .languageCard{border-radius:15px;min-height:152px;box-shadow:0 4px 24px rgba(0,0,0,.04);position:relative;overflow:hidden}
+html.cgaModern body:has(.languageGrid) .languageCard.primary{border-color:var(--cga-border-strong);background:var(--cga-surface)}
+html.cgaModern body:has(.languageGrid) .languageCard.primary:before{content:"";height:4px;background:linear-gradient(90deg,#df3e89,#fcd200);left:0;top:0;right:0;position:absolute}
+html.cgaModern body:has(.languageGrid) .languageCard:hover{transform:translateY(-3px);border-color:var(--ux-pink);box-shadow:0 14px 36px var(--cga-shadow)}
+html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:25px}
+html.cgaModern body:has(.languageGrid) .languageCard .description{font-size:13px;color:var(--cga-muted)}
+html.cgaModern body:has(.languageGrid) .languageCard .arrow{font-size:23px;color:var(--ux-pink)}
+html.cgaModern body:has(.languageGrid) .languageCard .recommended{color:var(--ux-pink);font-size:10px}
+@media(max-width:790px){
+ html.cgaModern body:has(#loginPanel) .adminStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ html.cgaModern body:has(#loginPanel) .adminNavigation{top:4px}
+ html.cgaModern body:has(#loginPanel) .adminNavigation button{font-size:12px;padding:8px 10px;justify-content:center;gap:5px}
+}
+@media(max-width:570px){
+ html.cgaModern body:has(#loginPanel) main{margin:18px auto}
+ html.cgaModern body:has(#loginPanel) .adminNavigation{margin-bottom:17px}
+ html.cgaModern body:has(#loginPanel) .adminNavigation button{flex-direction:column;min-height:53px;font-size:11px;gap:3px;padding:5px 7px}
+ html.cgaModern body:has(#loginPanel) .adminNavigation .cgaIcon{width:19px;height:19px}
+ html.cgaModern body:has(#loginPanel) .adminOwnerBadge{font-size:11px;padding:8px 10px}
+ html.cgaModern body:has(#loginPanel) .adminStats{gap:9px}
+ html.cgaModern body:has(#loginPanel) .adminStat{min-height:139px;padding:15px 13px}
+ html.cgaModern body:has(#loginPanel) .adminStat:before{left:13px}
+ html.cgaModern body:has(#loginPanel) .adminStat strong{font-size:31px}
+ html.cgaModern body:has(#loginPanel) .adminStat>span{font-size:12px}
+ html.cgaModern body:has(#loginPanel) .adminStat button{font-size:11px}
+ html.cgaModern body:has(#loginPanel) .adminQuickLinks button,html.cgaModern body:has(#loginPanel) .adminQuickLinks a{flex:1 1 160px}
+ html.cgaModern body:has(#loginPanel) .adminSectionHeader{align-items:flex-start}
+ html.cgaModern body:has(#loginPanel) .adminSectionActions{width:100%}
+ html.cgaModern body:has(#loginPanel) .adminSectionActions button{flex:1}
+ html.cgaModern body:has(#loginPanel) .adminFilterLine{width:100%}
+ html.cgaModern body:has(#loginPanel) .adminSearchWrap{width:100%}
+ html.cgaModern body:has(#loginPanel) .adminSearchWrap #documentsFilter{width:100%;max-width:none}
+ html.cgaModern .cvDialog .cvDialogBody{padding:20px}
+}
+@media(prefers-reduced-motion:reduce){
+ html.cgaModern *,html.cgaModern *:before,html.cgaModern *:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
