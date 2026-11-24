@@ -378,6 +378,11 @@ html.cgaModern body:has(#loginPanel) .crmQueueBottom{
 html.cgaModern body:has(#loginPanel) .crmQueueSignals{
  display:block;width:100%;font-weight:650;color:var(--cga-muted);
 }
+html.cgaModern body:has(#loginPanel) .crmQueueOpen{
+ align-self:flex-start;display:inline-block;font-size:11px;font-weight:760;
+ color:var(--cga-text);border-bottom:2px solid var(--brand-cyan);
+ padding-bottom:2px;margin:1px 0 0;
+}
 html.cgaModern body:has(#loginPanel) .crmInboxPagination{
  display:flex;align-items:center;justify-content:space-between;gap:6px;
  padding:13px 4px 5px;border-top:1px solid var(--cga-border);
