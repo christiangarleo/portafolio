@@ -65,8 +65,28 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <div class="row"><button id="recheck" type="button">Comprobar acceso</button><button class="logout" type="button">Cerrar sesión</button></div>
 </section>
 <div id="app" hidden>
+<section class="panel" id="publicPortfolios">
+  <div class="row" style="justify-content:space-between"><div><h1>Portafolios públicos · Español / English</h1>
+    <p>Dos PDF independientes. El visitante obtiene la versión que corresponda al idioma seleccionado; el inglés es el principal.</p></div>
+    <button id="refreshPublicPortfolios" type="button">Actualizar estado</button>
+  </div>
+  <div id="publicPortfolioStatus" class="row" aria-live="polite" style="margin:14px 0 18px">Consultando archivos…</div>
+  <h2>Publicar o actualizar un portafolio</h2>
+  <form id="publicPortfolioForm">
+    <div class="grid">
+      <div><label for="publicPortfolioLanguage">Idioma del documento</label>
+        <select id="publicPortfolioLanguage"><option value="en">🇬🇧 English — principal</option><option value="es">🇪🇸 Español</option></select>
+      </div>
+      <div><label for="publicPortfolioPDF">PDF definitivo (máx. 45 MB)</label>
+        <input id="publicPortfolioPDF" type="file" accept=".pdf,application/pdf" required>
+      </div>
+    </div>
+    <p class="note">Solo subí el PDF definitivo del idioma elegido. Si ya existe, el archivo anterior será reemplazado. Conservá una copia local para poder revertir cambios.</p>
+    <p><button id="publicPortfolioUploadButton" class="primary" type="submit">Publicar PDF del portafolio</button></p>
+  </form>
+</section>
 <section class="panel">
-<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el RUC: si hay un CV vigente, se descarga; si hay varios, elige la vacante desde su panel. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
+<div class="row" style="justify-content:space-between"><div><h1>CV personalizados</h1><p>El reclutador ingresa el RUC y accede siempre a su portal por empresa, con todos los CV activos por vacante. El estado de postulación solo se muestra acá.</p></div><button class="logout" type="button">Cerrar sesión</button></div>
 <h2>Subir nuevo CV</h2>
 <form id="uploadForm">
 <div class="grid">
@@ -91,6 +111,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=7"></script>
+<script type="module" src="./panel.js?v=8"></script>
   <script src="/theme/theme.js?v=20261123-01" defer></script>
 </body></html>
