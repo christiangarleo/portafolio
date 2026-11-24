@@ -65,6 +65,18 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - El modo oscuro afecta únicamente **interfaz, formularios, menús, controles, barras y fondo del lector**, pero NO modifica los píxeles de los documentos PDF (canvas, página y visor nativo).
 - **VERIFICADO:** enlaces e inicialización en las cuatro páginas, sintaxis de JavaScript y balance de reglas CSS; queda pendiente revisión visual manual en navegadores/móvil tras publicación en GitHub Pages.
 
+## Sitio bilingüe ES/EN — 23/11/2026
+- **EN vigente por defecto:** `/portafolio/?lang=en` y `/empresa/?ruc=<RUC>&lang=en`. La raíz `/` es una pantalla de elección permanente con «🇬🇧 English» primero y «🇪🇸 Español» después.
+- **Selección persistida:** `localStorage["cga-site-language"]` guarda `en` o `es`. URL `lang=` tiene prioridad sobre preferencia previa, que a su vez prevalece sobre el inglés predeterminado. Existe selector de idioma en los encabezados públicos.
+- **Fuente de traducciones:** `lang/i18n.js`. Solo se traduce interfaz, validaciones y mensajes; nunca se traduce automáticamente información que ingrese una empresa (como nombre de vacantes).
+- **Manifiesto PDF por idioma:** `lang/portfolio-files.js`. Español usa `portafolio/Christian_Arleo_Portafolio.pdf`; inglés usa exclusivamente `portafolio/Christian_Arleo_Portfolio_EN.pdf`. **No usar el español como reemplazo del inglés.**
+- **Estado de archivos verificado el 23/11/2026:** el PDF en español existe (aprox. 22,7 MB). El PDF inglés **NO está publicado**. La página inglesa lo indica claramente y bloquea su descarga hasta poder recuperar un archivo PDF real. Al subir el archivo en la ruta reservada, el lector inglés comenzará a cargarlo automáticamente.
+- **Fuente de subida autorizada:** `/admin/`, sección «Portafolios públicos · Español / English». El formulario valida la firma PDF y un máximo de 45 MB; requiere cuenta autorizada y confirmación antes de reemplazar un documento publicado.
+- **Permisos:** tres políticas RLS de `storage.objects` para SELECT / INSERT / UPDATE solamente por administradores y solamente para los dos nombres exactos. El bucket sigue público para visualizar los PDF, no para subirlos anónimamente.
+- **Navegación de páginas:** los enlaces comparten `?lang=`; cambiar de idioma elimina `?pagina=` para no llevar la misma página numérica a un PDF con distribución diferente. Índice y marcadores del español siguen configurados (3,4,5,6,23); los marcadores de inglés permanecen ocultos hasta revisar su PDF definitivo. El PDF, su conteo real de páginas, el visor y su descarga se tratan de forma independiente.
+- **No se altera:** el lector de CV privados por RUC, la base de propuestas, la autenticación ni el CSS de la apariencia. En administración se mantiene español como idioma interno.
+- **VERIFICADO en código:** rutas por idioma, fuente única del manifiesto, sintaxis JS, traducciones y RLS. **PENDIENTE de verificación E2E:** carga del PDF inglés real y comprobación de sus secciones, funcionamiento en móvil y revisión visual luego del despliegue.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
