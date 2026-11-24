@@ -448,42 +448,51 @@ html.cgaModern body:has(#loginPanel) .crmInboxDetail .crmHeader{gap:9px}
  html.cgaModern body:has(#loginPanel) .crmQueueItem{transition:none}
 }
 
-/* Portal de contratación · inversión de acentos solicitada:
-   selección: amarillo oficial; acción principal: rosa oficial. */
+/* Contratación: selección rosa en ambos temas; CTA cian claro / amarillo oscuro.
+   Los cinco colores oficiales se mantienen intactos. */
+:root{
+ --company-select-accent:var(--brand-pink);
+ --company-select-bg:color-mix(in srgb,var(--cga-surface) 74%,var(--brand-pink) 26%);
+ --company-submit-accent:var(--brand-cyan);
+}
+:root[data-theme="dark"]{
+ --company-select-bg:color-mix(in srgb,var(--cga-surface) 69%,var(--brand-pink) 31%);
+ --company-submit-accent:var(--brand-yellow);
+}
 html.cgaModern body:has(#companySection) #emptySection .choices button[aria-pressed="true"],
 html.cgaModern body:has(#companySection) #emptySection .choices button:hover{
- border-color:var(--brand-yellow)!important;
- background:color-mix(in srgb,var(--cga-surface) 78%,var(--brand-yellow) 22%)!important;
+ border-color:var(--company-select-accent)!important;
+ background:var(--company-select-bg)!important;
  color:var(--cga-text)!important;
+ box-shadow:inset 0 0 0 1px var(--company-select-accent)!important;
 }
 html.cgaModern body:has(#companySection) #emptySection .chip:has(input:checked),
 html.cgaModern body:has(#companySection) #emptySection .contactMethods .chip:has(input:checked){
- background:var(--brand-yellow)!important;
- border-color:var(--brand-yellow)!important;
- color:var(--brand-black)!important;
+ background:var(--company-select-bg)!important;
+ border-color:var(--company-select-accent)!important;
+ color:var(--cga-text)!important;
  font-weight:750;
+ box-shadow:inset 0 0 0 1px var(--company-select-accent)!important;
 }
-html.cgaModern body:has(#companySection) #emptySection .chip input,
-html.cgaModern body:has(#companySection) #emptySection input[type="radio"],
-html.cgaModern body:has(#companySection) #emptySection input[type="checkbox"]{
- accent-color:var(--brand-yellow)!important;
+html.cgaModern body:has(#companySection) #emptySection :is(input[type="radio"],input[type="checkbox"]){
+ accent-color:var(--company-select-accent)!important;
 }
 html.cgaModern body:has(#companySection) #emptySection .chip:has(input:checked) input{
- accent-color:var(--brand-black)!important;
+ accent-color:var(--company-select-accent)!important;
 }
 html.cgaModern body:has(#companySection) #emptySection :is(button,input,textarea,select,.chip):focus-visible{
- outline:3px solid var(--brand-yellow)!important;outline-offset:3px;
+ outline:3px solid var(--company-select-accent)!important;outline-offset:3px;
 }
 html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action{
- background:var(--brand-pink)!important;
- border:2px solid var(--brand-pink)!important;
+ background:var(--company-submit-accent)!important;
+ border:2px solid var(--company-submit-accent)!important;
  color:var(--brand-black)!important;
  font-size:19px;font-weight:800;
  min-height:49px;border-radius:9px;
 }
 html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action:hover:not(:disabled){
- filter:brightness(1.07);
- box-shadow:0 4px 15px color-mix(in srgb,var(--brand-pink) 33%,transparent);
+ filter:brightness(1.04);
+ box-shadow:0 4px 15px color-mix(in srgb,var(--company-submit-accent) 36%,transparent);
 }
 html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action:disabled{
  opacity:.6;cursor:not-allowed;
@@ -542,3 +551,25 @@ html.cgaModern body:has(#loginPanel) .crmRejectionSwitch{
  html.cgaModern body:has(#loginPanel) .crmRejectionComposer .crmDeliveryButtons a{flex:1 1 120px;justify-content:center}
  html.cgaModern body:has(#loginPanel) .crmRejectionSwitch{width:100%}
 }
+
+/* Identificador empresarial siempre visible en la bandeja privada y ficha detallada. */
+html.cgaModern body:has(#loginPanel) .crmQueueIdentifier{
+ display:block;max-width:100%;overflow-wrap:anywhere;
+ font-size:11px;line-height:1.45;color:var(--cga-muted);font-weight:650;
+}
+html.cgaModern body:has(#loginPanel) .crmCompanyIdentifier{
+ display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;
+ margin:10px 0 3px;font-size:12px;color:var(--cga-muted);
+}
+html.cgaModern body:has(#loginPanel) .crmCompanyIdentifier code{
+ font:700 12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;
+ color:var(--cga-text);background:var(--cga-surface-2);
+ border:1px solid var(--cga-border);padding:5px 8px;border-radius:6px;
+ overflow-wrap:anywhere;
+}
+html.cgaModern body:has(#loginPanel) .crmCompanyIdentifier button.crmCopyIdentifier{
+ min-height:33px;padding:5px 9px!important;font-size:11px;
+ display:inline-flex;gap:5px;align-items:center;background:var(--cga-surface-2);
+ border:1px solid var(--cga-border);color:var(--cga-text);border-radius:7px;
+}
+html.cgaModern body:has(#loginPanel) .crmCompanyIdentifier button .cgaIcon{width:15px;height:15px;min-width:15px}
