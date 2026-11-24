@@ -448,16 +448,16 @@ html.cgaModern body:has(#loginPanel) .crmInboxDetail .crmHeader{gap:9px}
  html.cgaModern body:has(#loginPanel) .crmQueueItem{transition:none}
 }
 
-/* Contratación: selección rosa en ambos temas; CTA cian claro / amarillo oscuro.
+/* Contratación: selección rosa en ambos temas; CTA amarillo claro / cian oscuro.
    Los cinco colores oficiales se mantienen intactos. */
 :root{
  --company-select-accent:var(--brand-pink);
  --company-select-bg:color-mix(in srgb,var(--cga-surface) 74%,var(--brand-pink) 26%);
- --company-submit-accent:var(--brand-cyan);
+ --company-submit-accent:var(--brand-yellow);
 }
 :root[data-theme="dark"]{
  --company-select-bg:color-mix(in srgb,var(--cga-surface) 69%,var(--brand-pink) 31%);
- --company-submit-accent:var(--brand-yellow);
+ --company-submit-accent:var(--brand-cyan);
 }
 html.cgaModern body:has(#companySection) #emptySection{
  border-top-color:var(--company-submit-accent)!important;
