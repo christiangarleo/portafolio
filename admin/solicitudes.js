@@ -2,7 +2,7 @@
    WhatsApp requiere confirmación en su app. No se afirma envío automático. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary");
- let leads=[],events=[],activeFilter="pendiente";
+ let leads=[],events=[],activeFilter="pendiente",firstLoad=true;
  const expanded=new Set(), meetingExpanded=new Set(), editExpanded=new Set(), historyExpanded=new Set();
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
  const kinds={in_house:"Contratación In-house",proyecto:"Contratación por proyecto",solicitud_cv:"Solicitud histórica"};
@@ -329,6 +329,15 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const {data,error}=await sb.from("portfolio_cv_leads").select("*").order("created_at",{ascending:false}).limit(200);
   if(error){notice("No se pudieron consultar las solicitudes: "+error.message,true);return;}
   leads=(data||[]).map(x=>({...x,decision_status:x.decision_status||"pendiente"}));events=[];
+  if(firstLoad){
+   firstLoad=false;
+   const pending=leads.filter(x=>x.decision_status==="pendiente");
+   const accepted=leads.filter(x=>x.decision_status==="avanzar");
+   if(!pending.length&&accepted.length){
+    activeFilter="avanzar";
+    if(accepted.length===1)expanded.add(accepted[0].id);
+   }else if(!pending.length&&leads.length)activeFilter="todas";
+  }
   if(leads.length){
    const {data:activities,error:activityError}=await sb.from("portfolio_cv_lead_activities")
      .select("lead_id,event_type,created_at").in("lead_id",leads.map(x=>x.id))
