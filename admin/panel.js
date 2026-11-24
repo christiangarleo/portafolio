@@ -220,10 +220,10 @@ el("documents").addEventListener("change", async e => {
 });
 el("uploadForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!isAdmin){notice("Sin autorización",true);return;}
-  const file=el("pdf").files[0],ruc=el("ruc").value.trim();
-  if(!file||!/^[0-9]{11}$/.test(ruc)||!file.name.toLowerCase().endsWith(".pdf")||file.size>30*1024*1024){notice("Revisá RUC y PDF (máximo 30 MB).",true);return;}
+  const file=el("pdf").files[0],ruc=el("ruc").value.trim().replace(/\s+/g," ").toUpperCase();
+  if(!file||!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(ruc)||!file.name.toLowerCase().endsWith(".pdf")||file.size>30*1024*1024){notice("Revisá el identificador de empresa y el PDF (máximo 30 MB).",true);return;}
   const main=el("principal").checked;const expiry=el("expires").value;
-  const path=ruc+"/"+crypto.randomUUID()+".pdf";const btn=el("uploadButton");btn.disabled=true;
+  const path="companies/"+crypto.randomUUID()+".pdf";const btn=el("uploadButton");btn.disabled=true;
   notice("Subiendo archivo privado…");
   try {
     const upload=await sb.storage.from(bucket).upload(path,file,{cacheControl:"0",upsert:false,contentType:"application/pdf"});
@@ -240,7 +240,7 @@ el("uploadForm").addEventListener("submit",async e=>{
     });
     if(added.error){await sb.storage.from(bucket).remove([path]);throw added.error;}
     e.target.reset();el("principal").checked=true;el("applicationStatus").value="preparado";
-    notice("CV guardado. Ya estará disponible por RUC si está activo y vigente.");await loadDocuments();
+    notice("CV guardado. Ya estará disponible con el identificador de la empresa si está activo y vigente.");await loadDocuments();
   } catch(err){notice("No se pudo subir: "+err.message,true);}
   finally{btn.disabled=false;}
 });
