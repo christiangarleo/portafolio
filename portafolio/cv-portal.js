@@ -1,6 +1,8 @@
 (() => {
   "use strict";
   const by = id => document.getElementById(id);
+  const t = value => window.CGALang?.t(value) ?? value;
+  const locale = window.CGALang?.current === "es" ? "es" : "en";
   const toggle = by("downloadToggle"), menu = by("downloadMenu");
   const dialog = by("cvDialog"), form = by("cvLookupForm"), ruc = by("cvRuc");
   const status = by("cvResult");
@@ -36,8 +38,8 @@
   form.addEventListener("submit",event=>{
     event.preventDefault();
     const value=ruc.value.replace(/\D/g,"");
-    if(!/^\d{11}$/.test(value)){status.textContent="Ingresá un RUC de 11 dígitos.";return;}
-    status.textContent="Abriendo el portal de la empresa…";
-    window.location.assign("/empresa/?ruc="+encodeURIComponent(value));
+    if(!/^\d{11}$/.test(value)){status.textContent=t("Ingresá un RUC de 11 dígitos.");return;}
+    status.textContent=t("Abriendo el portal de la empresa…");
+    window.location.assign("/empresa/?ruc="+encodeURIComponent(value)+"&lang="+locale);
   });
 })();
