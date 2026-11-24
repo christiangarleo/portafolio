@@ -46,6 +46,8 @@
     "Proyectos de autor":"Personal projects",
     "Experiencias profesionales":"Professional experience",
     "Portal de postulaciones por empresa":"Company application portal",
+    "Portal de postulaciones | Christian Gabriel Arleo":"Application portal | Christian Gabriel Arleo",
+    "Abrir enlace del portafolio":"Open portfolio link",
     "Ingresá el RUC de la empresa (11 dígitos) para acceder a su página con todas las vacantes asociadas y sus respectivos CV.":"Enter your company's 11-digit Peruvian tax ID (RUC) to see the positions and CVs linked to your organization.",
     "RUC de la empresa":"Company tax ID (RUC)",
     "Ingresar al portal":"Open company portal",
@@ -218,6 +220,7 @@
   function urlFor(lang){
     const url=new URL(location.href);
     url.searchParams.set("lang",lang);
+    if(lang!==locale && url.pathname.startsWith("/portafolio/")) url.searchParams.delete("pagina");
     return url.pathname+url.search+url.hash;
   }
   function go(lang){
