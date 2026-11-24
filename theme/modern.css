@@ -468,6 +468,9 @@ html.cgaModern body:has(#companySection) #emptySection input[type="radio"],
 html.cgaModern body:has(#companySection) #emptySection input[type="checkbox"]{
  accent-color:var(--brand-yellow)!important;
 }
+html.cgaModern body:has(#companySection) #emptySection .chip:has(input:checked) input{
+ accent-color:var(--brand-black)!important;
+}
 html.cgaModern body:has(#companySection) #emptySection :is(button,input,textarea,select,.chip):focus-visible{
  outline:3px solid var(--brand-yellow)!important;outline-offset:3px;
 }
