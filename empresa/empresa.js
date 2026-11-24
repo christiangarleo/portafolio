@@ -5,7 +5,7 @@
   const locale = window.CGALang?.current==="es"?"es":"en";
   const t = value => window.CGALang?.t(value) ?? value;
   const params = new URLSearchParams(location.search);
-  const ruc = params.get("ruc") || "";
+  const ruc = (params.get("ruc")||"").trim().replace(/\s+/g," ").toUpperCase();
   const selectedCV = params.get("cv") || "";
   const loading = by("loading");
   const message = by("downloadMessage");
@@ -37,8 +37,8 @@
     by("companyTitle").textContent=data.company;
     companyOnFile=data.company;
     by("companyDescription").textContent=locale==="en"
-      ? "Christian Gabriel Arleo's CVs for positions at your company · Tax ID: "+ruc
-      : "Postulaciones de Christian Gabriel Arleo vinculadas al RUC "+ruc+". Consultá cada vacante y su CV correspondiente.";
+      ? "Christian Gabriel Arleo's CVs for positions at your company · Company ID: "+ruc
+      : "Postulaciones de Christian Gabriel Arleo vinculadas al identificador de empresa "+ruc+". Consultá cada vacante y su CV correspondiente.";
     document.title=data.company+(locale==="en"?" | Applications":" | Portal de postulaciones");
     const wrap=by("vacancies");
     wrap.replaceChildren();
@@ -203,13 +203,13 @@
     }
   });
   async function init(){
-    if(!/^\d{11}$/.test(ruc)){show("invalidSection");return;}
+    if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(ruc)){show("invalidSection");return;}
     by("rucField").value=ruc;
     try {
       const data=await api({action:"resolve",ruc});
       if(data.status==="company"&&Array.isArray(data.items)&&data.items.length)displayCompany(data);
       else if(data.status==="not_found") {
-        by("companyDescription").textContent=t("Todavía no hay CV asociados a ese RUC.");
+        by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
         show("emptySection");
       } else throw Error("Respuesta del servicio no reconocida");
     } catch(error) {
