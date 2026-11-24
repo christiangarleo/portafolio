@@ -2,7 +2,7 @@
    WhatsApp requiere confirmación en su app. No se afirma envío automático. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
- let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false;
+ let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false,selectedLeadId=null,page=0,mobileDetail=false;
  const expanded=new Set(), meetingExpanded=new Set(), editExpanded=new Set(), historyExpanded=new Set();
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
  const kinds={in_house:"Contratación In-house",proyecto:"Contratación por proyecto",solicitud_cv:"Solicitud histórica"};
@@ -17,7 +17,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   marketing_contenido:"Marketing y contenido",automatizacion_ia:"Automatización e IA",
   solucion_digital:"Solución digital",urgente:"Urgente",este_mes:"Este mes",mas_adelante:"Más adelante",a_definir:"A definir"};
  const n=(tag,text,cls)=>node(tag,text,cls);
- searchInput.addEventListener("input",()=>render());
+ searchInput.addEventListener("input",()=>{page=0;mobileDetail=false;render();});
  function btn(text,cls){const x=n("button",text,cls);x.type="button";return x;}
  function row(cls="crmActions"){return n("div",undefined,cls);}
  function small(text,cls="crmHint"){return n("p",text,cls);}
@@ -383,63 +383,154 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   if(!eventsOfLead.length)ul.append(n("li","Todavía no hay movimientos."));
   details.append(ul);card.append(details);
  }
+
  function leadCard(lead){
-  const card=n("article",undefined,"crmCard"),head=n("div",undefined,"crmHeader"),title=n("div");
+  // Solo la ficha seleccionada se construye; evitamos decenas de formularios simultáneos.
+  const card=n("article",undefined,"crmCard crmSelectedDetail");
+  card.id="crmActiveDetail";
+  const head=n("div",undefined,"crmHeader"),title=n("div");
   title.append(n("strong",(kinds[lead.kind]||lead.kind)+" · "+lead.company_name));
-  title.append(n("small",(lead.contact_name||"")+" · "+lead.email+" · "+(lead.phone||"Sin teléfono")+" · "+
-   (lead.position_or_project||"Propuesta")+" · "+when(lead.created_at)));
-  const badge=n("span",labels[lead.decision_status]||"Por decidir","crmBadge");badge.dataset.state=lead.decision_status;
+  title.append(n("small",(lead.contact_name||"")+" · "+lead.email+" · "+(lead.phone||"Sin teléfono")+
+    " · "+(lead.position_or_project||"Propuesta")+" · "+when(lead.created_at)));
+  const badge=n("span",labels[lead.decision_status]||"Por decidir","crmBadge");
+  badge.dataset.state=lead.decision_status;
   head.append(title,badge);card.append(head);
-  original(lead,card);decision(lead,card);
+  original(lead,card);
+  decision(lead,card);
   if(lead.decision_status==="avanzar"){
-   const toggle=btn(expanded.has(lead.id)?"Ocultar":"Gestionar","crmManage");toggle.dataset.cgaIcon="arrow";
-   const area=n("div",undefined,"crmWorkflow");area.hidden=!expanded.has(lead.id);
-   toggle.setAttribute("aria-expanded",String(!area.hidden));
-   toggle.addEventListener("click",()=>{
-    area.hidden=!area.hidden;
-    if(area.hidden)expanded.delete(lead.id);else expanded.add(lead.id);
-    toggle.textContent=area.hidden?"Gestionar":"Ocultar";
-    toggle.setAttribute("aria-expanded",String(!area.hidden));
-   });
-   cvSection(lead,area);meetingSection(lead,area);messageSection(lead,area);
+   const area=n("div",undefined,"crmWorkflow");
+   cvSection(lead,area);
+   meetingSection(lead,area);
+   messageSection(lead,area);
    const select=n("select");
-   for(const [key,text] of [["nuevo","Nueva"],["en_evaluacion","En evaluación"],["contactado","Contactada"],["cerrado","Cerrada"]])
-    select.append(new Option(text,key));
+   for(const [key,text] of [["nuevo","Nueva"],["en_evaluacion","En evaluación"],
+     ["contactado","Contactada"],["cerrado","Cerrada"]])select.append(new Option(text,key));
    select.value=lead.status||"nuevo";
    select.addEventListener("change",async()=>{
-    select.disabled=true;try{await persist(lead,{status:select.value},"seguimiento_actualizado",{etapa:select.value});notice("Seguimiento actualizado.");}
-    catch(e){notice(e.message,true);await load();}
+    select.disabled=true;
+    try{
+     await persist(lead,{status:select.value},"seguimiento_actualizado",{etapa:select.value});
+     notice("Seguimiento actualizado.");
+    }catch(e){notice(e.message,true);await load();}
    });
-   const status=n("details",undefined,"crmStage");status.append(n("summary","Estado: "+select.selectedOptions[0]?.textContent),labeled("Etapa interna",select));
-   area.append(status);card.append(toggle,area);
+   const status=n("details",undefined,"crmStage");
+   status.append(n("summary","Etapa: "+select.selectedOptions[0]?.textContent),
+     labeled("Etapa interna",select));
+   area.append(status);card.append(area);
   }
-  archive(lead,card);return card;
+  archive(lead,card);
+  return card;
+ }
+ function compactRow(lead){
+  const item=btn("","crmQueueItem");
+  item.dataset.leadId=lead.id;
+  item.dataset.state=lead.decision_status;
+  item.setAttribute("aria-pressed",String(lead.id===selectedLeadId));
+  item.setAttribute("aria-controls","crmDetailPane");
+  item.setAttribute("aria-label","Abrir "+(kinds[lead.kind]||lead.kind)+
+    " de "+lead.company_name+" para "+(lead.position_or_project||"la propuesta"));
+  const top=n("span",undefined,"crmQueueTop");
+  top.append(n("strong",lead.company_name||"Empresa sin nombre"));
+  const badge=n("span",labels[lead.decision_status]||"Por decidir","crmQueueBadge");
+  badge.dataset.state=lead.decision_status;
+  top.append(badge);
+  const position=n("span",lead.position_or_project||"Sin vacante indicada","crmQueuePosition");
+  const bottom=n("span",undefined,"crmQueueBottom");
+  bottom.append(n("span",lead.kind==="proyecto"?"Proyecto":lead.kind==="in_house"?"In-house":"Solicitud"));
+  const date=new Date(lead.created_at);
+  bottom.append(n("time",Number.isNaN(date.getTime())?"Sin fecha":date.toLocaleDateString("es-PE",
+    {day:"2-digit",month:"short",year:"numeric"})));
+  const signals=[];
+  if(lead.cv_document_id)signals.push("CV");
+  if(lead.email_sent_at)signals.push("Correo ✓");
+  if(lead.whatsapp_sent_at)signals.push("WA ✓");
+  if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
+  item.append(top,position,bottom);
+  item.addEventListener("click",()=>{
+   selectedLeadId=lead.id;
+   mobileDetail=true;
+   render();
+   const heading=el("crmDetailTitle");
+   heading?.focus({preventScroll:true});
+   // En móvil el listado se oculta y la ficha ocupa la pantalla.
+   if(matchMedia("(max-width: 820px)").matches)el("crmDetailPane")?.scrollIntoView({block:"start"});
+  });
+  return item;
  }
  function render(){
   const count={pendiente:leads.filter(x=>x.decision_status==="pendiente").length,
    avanzar:leads.filter(x=>x.decision_status==="avanzar").length,
    rechazada:leads.filter(x=>x.decision_status==="rechazada").length,todas:leads.length};
   filters.replaceChildren();
-  for(const [key,label] of [["pendiente","Por decidir"],["avanzar","En seguimiento"],["rechazada","Rechazadas"],["todas","Todas"]]){
+  for(const [key,label] of [["pendiente","Por decidir"],["avanzar","En seguimiento"],
+   ["rechazada","Rechazadas"],["todas","Todas"]]){
    const x=btn(label+" · "+count[key]);x.setAttribute("aria-pressed",String(activeFilter===key));
-   x.addEventListener("click",()=>{activeFilter=key;render();});filters.append(x);
+   x.addEventListener("click",()=>{activeFilter=key;page=0;mobileDetail=false;render();});
+   filters.append(x);
   }
-  summary.textContent=count.pendiente+" pendientes · "+count.avanzar+" en seguimiento · "+count.rechazada+" rechazadas";
+  summary.textContent=count.pendiente+" por decidir · "+count.avanzar+
+    " en seguimiento · "+count.rechazada+" rechazadas";
   root.replaceChildren();
   const query=searchInput.value.trim().toLocaleLowerCase();
   const subset=leads.filter(x=>activeFilter==="todas"||x.decision_status===activeFilter);
-  const selected=subset.filter(x=>!query||[
-    x.company_name,x.contact_name,x.email,x.position_or_project,x.ruc,x.phone,x.kind
+  const matches=subset.filter(x=>!query||[
+   x.company_name,x.contact_name,x.email,x.position_or_project,x.ruc,x.phone,x.kind
   ].some(text=>String(text||"").toLocaleLowerCase().includes(query)));
-  if(!selected.length){
-    const empty=small(query?"No se encontraron solicitudes con esa búsqueda.":"No hay solicitudes en esta bandeja.");
-    root.append(empty);
-    if(query){const reset=btn("Limpiar búsqueda");reset.dataset.cgaIcon="refresh";
-      reset.addEventListener("click",()=>{searchInput.value="";render();searchInput.focus();});root.append(reset);}
-    window.CGAIcons?.decorate(root);
-    return;
+  if(!matches.length){
+   selectedLeadId=null;mobileDetail=false;
+   const empty=small(query?"No hay solicitudes con esos criterios.":"No hay solicitudes en esta bandeja.");
+   root.append(empty);
+   if(query){
+    const reset=btn("Limpiar búsqueda");reset.dataset.cgaIcon="refresh";
+    reset.addEventListener("click",()=>{searchInput.value="";page=0;render();searchInput.focus()});
+    root.append(reset);
+   }
+   window.CGAIcons?.decorate(root);
+   return;
   }
-  for(const lead of selected)root.append(leadCard(lead));
+  const limit=15;
+  const pages=Math.max(1,Math.ceil(matches.length/limit));
+  page=Math.min(page,pages-1);
+  const visible=matches.slice(page*limit,(page+1)*limit);
+  // Conservamos selección si sigue visible; si cambian filtros o página elegimos la primera.
+  if(!visible.some(x=>x.id===selectedLeadId))selectedLeadId=visible[0].id;
+  const selected=visible.find(x=>x.id===selectedLeadId);
+  const workspace=n("div",undefined,"crmInboxWorkspace");
+  workspace.dataset.mobileDetail=String(mobileDetail);
+  const list=n("div",undefined,"crmInboxList");
+  list.setAttribute("aria-label","Lista de solicitudes");
+  const listTitle=n("div",undefined,"crmInboxListTitle");
+  listTitle.append(n("strong","Solicitudes ("+matches.length+")"));
+  listTitle.append(n("small","Elegí una para gestionar"));
+  list.append(listTitle);
+  for(const lead of visible)list.append(compactRow(lead));
+  if(pages>1){
+   const nav=n("div",undefined,"crmInboxPagination");
+   const previous=btn("← Anterior");previous.disabled=page===0;
+   const next=btn("Siguiente →");next.disabled=page>=pages-1;
+   previous.addEventListener("click",()=>{page--;mobileDetail=false;selectedLeadId=null;render();});
+   next.addEventListener("click",()=>{page++;mobileDetail=false;selectedLeadId=null;render();});
+   nav.append(previous,n("small",(page+1)+" / "+pages),next);
+   list.append(nav);
+  }
+  const detail=n("section",undefined,"crmInboxDetail");
+  detail.id="crmDetailPane";
+  detail.setAttribute("aria-label","Solicitud seleccionada");
+  const detailHeader=n("div",undefined,"crmInboxDetailHeader");
+  const back=btn("Volver a solicitudes","crmInboxBack");
+  back.dataset.cgaIcon="return";
+  back.addEventListener("click",()=>{
+   mobileDetail=false;render();
+   const row=root.querySelector('[data-lead-id="'+selectedLeadId+'"]');
+   row?.focus({preventScroll:true});
+  });
+  const title=n("h2","Gestionar solicitud");
+  title.id="crmDetailTitle";title.tabIndex=-1;
+  detailHeader.append(back,title);
+  detail.append(detailHeader,leadCard(selected));
+  workspace.append(list,detail);
+  root.append(workspace);
+  window.CGAIcons?.decorate(root);
  }
  async function load(){
   const {data,error}=await sb.from("portfolio_cv_leads").select("*").order("created_at",{ascending:false}).limit(200);
@@ -451,7 +542,6 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    const accepted=leads.filter(x=>x.decision_status==="avanzar");
    if(!pending.length&&accepted.length){
     activeFilter="avanzar";
-    if(accepted.length===1)expanded.add(accepted[0].id);
    }else if(!pending.length&&leads.length)activeFilter="todas";
   }
   if(leads.length){
