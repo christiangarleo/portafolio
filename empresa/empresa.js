@@ -171,7 +171,7 @@
       formError("Seleccioná cómo contactarte y completá el teléfono si corresponde.");return;
     }
     const payload={
-      action:"lead_v3",kind,
+      action:"lead_v3",kind,language:locale,
       website:get("website"),company_name:get("company_name"),ruc,
       contact_name:get("contact_name"),email:get("email"),phone,
       contact_preference:preference,contact_method:method,
