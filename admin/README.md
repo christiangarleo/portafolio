@@ -102,6 +102,15 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el RUC (11 d�
 - **Privacidad:** si la empresa eligió «Nosotros te devolvemos la llamada», se mantiene el bloqueo de contacto salvo autorización posterior real.
 - **Estado:** código actualizado y validado estáticamente; pendiente prueba de interfaz y correo configurado en navegador con la cuenta Zoho del administrador.
 
+## Identificadores internacionales de empresa — 24/11/2026
+- **Vigente:** la entrada pública, el portal, el CRM y la administración usan «Identificador de empresa», con ejemplos RUC, RFC, NIT, RUT, CUIT, CNPJ, EIN, VAT ID, NIF/CIF y ABN; el ID **no tiene longitud fija de 11 dígitos**.
+- **Compatibilidad sin duplicación:** la columna histórica `ruc` de `public.portfolio_cv_documents` y `public.portfolio_cv_leads` sigue siendo el **campo canónico** para este identificador, ampliado de `varchar(11)` a `varchar(64)`. No se creó una columna paralela. Se relajaron los CHECK para aceptar valores no vacíos de hasta 64 caracteres (o NULL para solicitudes antiguas). Los RUC peruanos ya existentes no se modificaron.
+- **Normalización consistente:** navegador, administración y Edge Function utilizan el identificador sin espacios externos, espacios internos repetidos reducidos a uno, y mayúsculas. Se admiten letras (también Unicode), números y separadores comunes: espacio, punto, guion, guion bajo, barra, numeral, ampersand y paréntesis.
+- **Backend:** `portfolio-cv-portal` (resolve/download/lead_v3/lead_v2/lead legacy) consulta y valida por identificador normalizado. Sigue validando el UUID y la vigencia del CV. El campo JSON del protocolo continúa llamándose `ruc` por compatibilidad técnica; su contenido es **identificador empresarial general**, no necesariamente un RUC.
+- **Storage:** nuevas subidas del panel y del CRM usan rutas aleatorias `companies/<UUID>.pdf` para evitar convertir caracteres como `/` del identificador en segmentos de ruta. Los PDF anteriores y sus rutas continúan válidos.
+- **Seguridad aceptada:** los identificadores fiscales/de registro no son contraseñas. El acceso por identificador no acredita ser parte de la empresa, según la decisión de experiencia sin fricción; no se exponen estados internos de postulación.
+- **VERIFICADO:** migración de los dos campos y CHECK, despliegue de Edge Function, enlace correcto cliente/servidor y sintaxis JS. **PENDIENTE:** pruebas E2E en navegador con una empresa extranjera real y descarga de CV correspondiente; no se crearon registros de prueba falsos.
+
 ## Riesgos aceptados
 - RUC es un identificador público, no una autenticación: cualquiera que lo conozca puede consultar las vacantes y descargar CV vigentes. Decisión deliberada para experiencia sin fricción.
 - Los CV permanecen en Storage privado y se generan URLs firmadas solo en el backend; no garantiza identidad del reclutador.
