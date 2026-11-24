@@ -82,6 +82,7 @@ Deno.serve(async (req: Request) => {
   if (input.action === "lead_v3") {
     if (text(input.website, 100)) return reply(req, { status: "received" });
     const kind = text(input.kind, 25);
+    const language = text(input.language, 2) === "en" ? "en" : "es";
     const company = text(input.company_name, 160);
     const ruc = text(input.ruc, 11);
     const email = text(input.email, 200).toLowerCase();
@@ -131,7 +132,7 @@ Deno.serve(async (req: Request) => {
       contact_method: preference === "contactame" ? method : null,
       contact_time: null,
       observations: observations || null,
-      intake_data: intake, intake_version: 3
+      intake_data: intake, intake_version: 3, language
     });
     if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
     return reply(req, { status: "received" });
