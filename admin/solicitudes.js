@@ -262,33 +262,61 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   section.append(n("h4","Elegí cómo preparar el envío"));
   const actions=row("crmDeliveryButtons");
   const zoho=btn("Zoho Mail","crmAccept");zoho.dataset.cgaIcon="mail";
-  zoho.title="Abre un borrador en Zoho si es tu aplicación de correo predeterminada";
+  zoho.title="Abrir Zoho Mail en otra pestaña o ventana";
   const gmail=btn("Gmail","crmAccent");gmail.dataset.cgaIcon="mail";
   const whatsapp=btn("WhatsApp","crmAccent");whatsapp.dataset.cgaIcon="chat";
   const number=waNumber(lead),email=String(lead.email||"").trim();
   const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   zoho.disabled=gmail.disabled=!validEmail;
   whatsapp.disabled=!number;
+  const zohoHelp=n("div",undefined,"crmZohoHelp");
+  zohoHelp.hidden=true;
+  const helpTitle=n("strong","Prepará el correo en Zoho Mail");
+  const helpText=small("Zoho se abre aparte. Copiá los datos desde acá para pegarlos en el correo. El envío sigue siendo manual.");
+  const copyActions=row("crmCopyActions");
+  async function copyValue(value,label){
+    try{
+      if(!navigator.clipboard?.writeText)throw Error("clipboard-unavailable");
+      await navigator.clipboard.writeText(value);
+      notice(label+" copiado.");
+    }catch{
+      window.prompt("Copiá "+label.toLowerCase()+":",value);
+    }
+  }
+  for(const [label,getValue] of [
+   ["Copiar destinatario",()=>email],
+   ["Copiar asunto",()=>subject.value],
+   ["Copiar mensaje",()=>body.value]
+  ]){
+   const copy=btn(label,"crmSoftCopy");copy.dataset.cgaIcon="files";
+   copy.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
+   copyActions.append(copy);
+  }
+  zohoHelp.append(helpTitle,helpText,copyActions);
   zoho.addEventListener("click",()=>{
-   mailto(lead,subject.value,body.value);
-   reveal("email");
+   // mailto: usa el cliente predeterminado (en este navegador Gmail).
+   // Zoho debe abrirse expresamente mediante su webmail.
+   window.open("https://mail.zoho.com/zm/#compose","_blank",
+     "noopener,noreferrer,width=1100,height=760");
+   zohoHelp.hidden=false;
+   notice("Zoho Mail se abrió aparte. Copiá destinatario, asunto y mensaje desde este panel antes de enviarlo.");
+   void audit(lead,"zoho_abierto",{cv_id:current?.id||null});
   });
   gmail.addEventListener("click",()=>{
    const url="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(email)+
      "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
-   window.open(url,"_blank","noopener,noreferrer");
-   notice("Gmail se abrió con el borrador preparado. Confirmá el envío desde Gmail.");
+   window.open(url,"_blank","noopener,noreferrer,width=1100,height=760");
+   notice("Gmail se abrió aparte con el borrador preparado. Confirmá el envío desde Gmail.");
    void audit(lead,"gmail_abierto",{cv_id:current?.id||null});
-   reveal("email");
   });
   whatsapp.addEventListener("click",()=>{
    window.open("https://wa.me/"+number+"?text="+encodeURIComponent(body.value),"_blank","noopener,noreferrer");
    notice("WhatsApp se abrió con el mensaje preparado. Enviá allí y luego confirmá con el interruptor.");
    void audit(lead,"whatsapp_abierto",{cv_id:current?.id||null});
-   reveal("wa");
+
   });
   actions.append(zoho,gmail,whatsapp);
-  section.append(actions);
+  section.append(actions,zohoHelp);
   if(!number){
    const add=n("details",undefined,"crmPhone");add.append(n("summary","Agregar teléfono para WhatsApp"));
    const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";
@@ -330,17 +358,12 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     "correo_confirmado_enviado","correo_confirmacion_retirada");
   const waStatus=deliverySwitch("el WhatsApp","Ya envié por WhatsApp","whatsapp_sent_at",lead.whatsapp_sent_at,
     "whatsapp_confirmado_enviado","whatsapp_confirmacion_retirada");
-  if(!validEmail)mailStatus.hidden=true;
-  if(!number)waStatus.hidden=true;
-  if(!lead.email_sent_at)mailStatus.hidden=true;
-  if(!lead.whatsapp_sent_at)waStatus.hidden=true;
+  // Siempre visibles, incluso si el número de teléfono aún no está registrado.
+  // Abrir un proveedor no marca un mensaje como enviado.
   confirmations.append(mailStatus,waStatus);
-  function reveal(kind){
-   if(kind==="email")mailStatus.hidden=false;
-   if(kind==="wa")waStatus.hidden=false;
-  }
   section.append(confirmations);
-  section.append(small("Los botones abren borradores; enviá desde Zoho, Gmail o WhatsApp. Después confirmá con el interruptor. Zoho utiliza la aplicación de correo predeterminada."));
+  if(!number)section.append(small("No hay un teléfono válido. Podés agregarlo arriba para abrir WhatsApp. Si ya lo enviaste por otra vía, registrá la confirmación manualmente."));
+  section.append(small("Abrir Zoho, Gmail o WhatsApp no envía mensajes automáticamente. Activá cada switch solo cuando hayas enviado el mensaje."));
   parent.append(section);
  }
  function archive(lead,card){
