@@ -41,18 +41,40 @@
   background:var(--cga-bg);
   color:var(--cga-text);
 }
-/* Menú de apariencia accesible; menú fijo para evitar recortes del visor. */
-.cgaThemeControl{display:inline-flex;align-items:center;flex:0 0 auto;line-height:1;position:relative;z-index:15}
-.cgaThemeButton{font:inherit!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;padding:0!important;border:1px solid var(--cga-border)!important;border-radius:5px!important;color:var(--cga-text)!important;background:var(--cga-surface)!important;cursor:pointer}
-.cgaThemeButton:hover,.cgaThemeButton[aria-expanded="true"]{background:var(--cga-hover)!important}
-.cgaThemeButton:focus-visible,.cgaThemeMenu button:focus-visible{outline:2px solid var(--brand-pink);outline-offset:2px}
-.cgaThemeIcon{font-size:19px;line-height:1;color:inherit}
-.cgaThemeMenu{position:fixed;z-index:5000;width:170px;max-width:calc(100vw - 16px);padding:6px;border:1px solid var(--cga-border);background:var(--cga-surface);color:var(--cga-text);border-radius:7px;box-shadow:0 12px 32px var(--cga-shadow)}
-.cgaThemeMenu[hidden]{display:none!important}
-.cgaThemeMenu button{font:inherit!important;display:flex!important;gap:8px!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:38px!important;text-align:left!important;padding:9px 10px!important;border:0!important;border-radius:4px!important;color:var(--cga-text)!important;background:transparent!important;font-size:13px!important;cursor:pointer}
-.cgaThemeMenu button:hover,.cgaThemeMenu button[aria-checked="true"]{background:var(--cga-hover)!important}
-.cgaThemeMenu button .cgaSelected{font-size:13px;color:var(--cga-text)}
-/* Inicio */
+/* Switch de apariencia: sol/luna, selección visible y foco por teclado. */
+.cgaThemeControl{display:inline-flex;align-items:center;flex:0 0 auto;line-height:1;position:relative}
+.cgaThemeSwitch{
+ --theme-switch-width:58px;--theme-switch-height:30px;
+ box-sizing:border-box;display:inline-grid!important;place-items:center;
+ width:var(--theme-switch-width)!important;min-width:var(--theme-switch-width)!important;
+ height:44px!important;min-height:44px!important;flex:0 0 auto;
+ padding:0!important;margin:0!important;border:0!important;border-radius:999px!important;
+ color:var(--cga-text)!important;background:transparent!important;cursor:pointer;
+ font:inherit!important;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.cgaThemeTrack{
+ box-sizing:border-box;display:block;position:relative;overflow:hidden;
+ width:100%;height:var(--theme-switch-height);border-radius:999px;
+ border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);
+ transition:background-color .2s ease,border-color .2s ease;
+}
+.cgaThemeThumb{
+ position:absolute;top:2px;left:2px;width:calc(50% - 3px);height:calc(100% - 4px);
+ border-radius:999px;background:var(--brand-yellow);box-shadow:0 1px 4px var(--cga-shadow);
+ transition:transform .22s ease,background-color .2s ease;
+}
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeThumb{transform:translateX(calc(100% + 2px));background:var(--brand-cyan)}
+.cgaThemeSymbol{
+ position:absolute;top:0;bottom:0;width:50%;display:grid;place-items:center;
+ font:700 16px/1 system-ui,sans-serif;color:var(--cga-muted);pointer-events:none;
+}
+.cgaThemeSymbol--sun{left:0}
+.cgaThemeSymbol--moon{right:0}
+.cgaThemeSwitch[aria-checked="false"] .cgaThemeSymbol--sun,
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeSymbol--moon{color:var(--brand-black)}
+.cgaThemeSwitch:hover .cgaThemeTrack{border-color:var(--cga-text)}
+.cgaThemeSwitch:focus-visible{outline:2px solid var(--brand-pink)!important;outline-offset:2px}
+
 :root[data-theme="dark"] body{background:var(--cga-bg);color:var(--cga-text)}
 :root[data-theme="dark"] body>header:not(.siteHeader){border-bottom-color:var(--cga-border)}
 :root[data-theme="dark"] body>footer{border-top-color:var(--cga-border);color:var(--cga-muted)}
@@ -179,13 +201,14 @@
 :root[data-theme="dark"] .cvDocCard .cvDocStatus{background:var(--cga-chip);color:var(--cga-text)}
 :root[data-theme="dark"] .cvDocCard .cvDocStatus--expired{color:var(--cga-muted)}
 :root[data-theme="dark"] .toast{background:#303944;color:#fff}
-@media(prefers-reduced-motion:reduce){.cgaThemeMenu,.cgaThemeButton{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.cgaThemeTrack,.cgaThemeThumb{transition:none!important}}
 
 /* Language selection + appearance on narrow screens without clipping reader tools. */
 @media(max-width:430px){
   .siteActions{gap:1px!important}
   .siteActions .iconOnly{flex:0 0 29px!important;width:29px!important;height:31px!important;min-width:29px!important;min-height:31px!important;padding:5px!important}
-  .siteActions .cgaThemeButton{width:29px!important;min-width:29px!important;height:31px!important;min-height:31px!important}
+  .siteActions .cgaThemeSwitch{--theme-switch-width:48px;--theme-switch-height:26px;height:36px!important;min-height:36px!important}
+  .siteActions .cgaThemeSymbol{font-size:14px}
   .siteActions #cgaLangPicker{gap:1px!important}
   .siteActions #cgaLangPicker button{font-size:10px!important;padding:5px 3px!important;min-height:30px!important}
   .siteRow{gap:4px!important}

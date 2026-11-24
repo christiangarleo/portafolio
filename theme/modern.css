@@ -37,8 +37,6 @@ html.cgaModern .cgaActionButton{background:var(--ux-pink-soft)!important;border:
 html.cgaModern .cgaActionButton:hover:not(:disabled){box-shadow:0 3px 12px var(--cga-shadow)}
 html.cgaModern .cgaMeta{color:var(--cga-muted);font-size:12px;line-height:1.5}
 html.cgaModern .cgaAccentLine{width:70px;height:4px;border-radius:3px;background:var(--brand-gradient)}
-html.cgaModern .cgaThemeButton{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;border-radius:10px!important}
-html.cgaModern .cgaThemeMenu{border-radius:12px;padding:8px}
 
 /* ========== OWNER · Admin ========== */
 html.cgaModern body:has(#loginPanel){
@@ -230,7 +228,7 @@ html.cgaModern .adminNavigation button[aria-selected="true"]{color:var(--cga-tex
 html.cgaModern #loginPanel .adminEyebrow{color:var(--cga-text)!important}
 html.cgaModern .adminStat button,html.cgaModern .publicPortfolioCard>a{color:var(--ux-action-text)!important}
 html.cgaModern .crmFilters button[aria-pressed="true"]{color:var(--cga-text)!important}
-html.cgaModern .cgaThemeButton:focus-visible{outline:3px solid var(--brand-pink)!important}
+html.cgaModern .cgaThemeSwitch:focus-visible{outline:3px solid var(--brand-pink)!important}
 html.cgaModern .adminCompactForm button.primary:hover:not(:disabled){transform:translateY(-1px)}
 html.cgaModern body:has(#loginPanel) .adminSearchWrap .cgaIcon{position:absolute;left:11px;top:50%;transform:translateY(-50%)}
 html.cgaModern body:has(#loginPanel) .adminLeadSearch{position:relative;max-width:520px;margin:0 0 12px}

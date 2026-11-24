@@ -175,3 +175,9 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - **Decisión del titular:** sustituye exclusivamente la asignación de acentos del formulario descrita en la sección anterior: tema claro = amarillo oficial `#F6DB0E`; tema oscuro = cian oficial `#09B3DC`. Se conservan selección/foco rosa, texto negro del CTA, gradiente de marca y los demás módulos.
 - **Implementación:** `theme/modern.css` intercambia los dos valores de `--company-submit-accent` (borde superior, CTA y hover); `empresa/index.html` actualiza la versión del CSS. Base de implementación: `830cec7ae4453162dc89342d7c084c65bf41c23b`. Reversión: revertir el commit de esta corrección. No hay cambios de JS, datos ni backend.
 - **Validación:** comprobación estática de los dos tokens, consumidores y enlace de CSS; QA visual de ambos temas y producción pendiente de verificación independiente.
+
+## Switch global de apariencia — 24/11/2026
+- **Decisión del titular:** sustituir el menú desplegable por un switch visual sol/luna de dos posiciones, compartido por las cuatro rutas. Tema claro: indicador amarillo; oscuro: indicador cian. Etiqueta accesible ES/EN, foco rosa y movimiento reducido respetado.
+- **Preferencia:** se conserva `cga-appearance` y el seguimiento automático del dispositivo hasta la primera elección manual; después se guarda claro/oscuro. No hay una tercera posición ni retorno explícito a automático en la interfaz. Sin cambios de permisos, CRM o backend.
+- **Implementación:** `theme/theme.js`, `theme/theme.css`, limpieza de estilos anteriores en `theme/modern.css` y versión de recursos en los cuatro HTML. Base: `af2fa6ce2f4f66a04cb756f081ba2384d16d7218`. Reversión: revertir el commit de esta corrección.
+- **Validación:** comprobaciones de lógica y referencias estáticas; QA visual de escritorio/móvil y despliegue pendientes de verificación independiente.
