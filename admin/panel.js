@@ -11,7 +11,7 @@ const publicPortfolioFiles={
   es:"Christian_Arleo_Portafolio.pdf"
 };
 let publishedPortfolios=new Set();
-const authRedirect="https://christianarleo.com/admin/";
+
 const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 if (hashParams.get("error_code")) {
   const code=hashParams.get("error_code");
@@ -25,6 +25,7 @@ function show(screen){
   el("loginPanel").hidden=screen!=="login";
   el("pendingPanel").hidden=screen!=="pending";
   el("app").hidden=screen!=="app";
+  el("adminLogoutHeader").hidden=screen!=="app";
 }
 async function verifyAdmin(){
   const {data:{user},error}=await sb.auth.getUser();
@@ -44,42 +45,128 @@ async function verifyAdmin(){
     return;
   }
   isAdmin=Boolean(found.data);
+  if(!isAdmin){
+    // A Supabase Auth session is NOT enough. Revoke this browser session
+    // immediately unless the approved owner membership is visible by RLS.
+    await sb.auth.signOut();
+    currentUser=null;
+    show("login");
+    notice("Acceso exclusivo de la cuenta autorizada.",true);
+    return;
+  }
   el("serviceHint").hidden=true;
-  el("pendingTitle").textContent="Cuenta autenticada, pendiente de autorización";
-  el("pendingMessage").textContent="La consulta funciona, pero tu cuenta todavía no aparece habilitada como administradora.";
-  show(isAdmin?"app":"pending");
-  if(isAdmin){await loadPublicPortfolios();await loadDocuments();await loadLeads();}
+  show("app");
+  navigateAdmin(readAdminView());
+  await loadPublicPortfolios();
+  await loadDocuments();
+  await loadLeads();
+  refreshOverview();
 }
 el("authForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;
   const email=el("email").value.trim(),password=el("password").value;
   const {error}=await sb.auth.signInWithPassword({email,password});
-  if(error)notice(error.message,true);else{notice("Sesión iniciada.");await verifyAdmin();}
+  el("password").value="";
+  if(error)notice("No se pudo iniciar sesión. Revisá los datos o el estado de la cuenta.",true);
+  else await verifyAdmin();
   btn.disabled=false;
 });
-el("signUp").addEventListener("click",async()=>{
-  const email=el("email").value.trim(),password=el("password").value;
-  if(!email||password.length<8){notice("Completá correo y contraseña (mínimo 8 caracteres).",true);return;}
-  const {error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:authRedirect}});
-  notice(error?error.message:"Cuenta solicitada. Verificá tu correo y luego autorizá la cuenta en Supabase.",Boolean(error));
-});
-el("resendConfirmation").addEventListener("click", async () => {
-  const email=el("email").value.trim();
-  if(!email || !el("email").checkValidity()){
-    notice("Escribí un correo válido para reenviar la confirmación.",true);
-    el("email").focus();
-    return;
-  }
-  const btn=el("resendConfirmation");
-  btn.disabled=true;
-  try {
-    const {error}=await sb.auth.resend({type:"signup",email,options:{emailRedirectTo:authRedirect}});
-    notice(error?error.message:"Si el correo todavía necesita confirmación, recibirás un enlace nuevo. Revisá el mensaje más reciente.",Boolean(error));
-  } catch(e) { notice(e.message || "No se pudo enviar el correo.",true); }
-  finally {btn.disabled=false;}
-});
 el("recheck").addEventListener("click",verifyAdmin);
-document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{await sb.auth.signOut();notice("Sesión cerrada.");show("login");}));
+document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{
+  await sb.auth.signOut();
+  currentUser=null;isAdmin=false;
+  try{sessionStorage.removeItem("cga-admin-view")}catch{}
+  show("login");
+  notice("Sesión cerrada correctamente.");
+}));
+
+const adminViews=["overview","leads","cv","portfolio"];
+function readAdminView(){
+  try{const v=sessionStorage.getItem("cga-admin-view");return adminViews.includes(v)?v:"overview"}
+  catch{return "overview"}
+}
+function navigateAdmin(view){
+  if(!adminViews.includes(view))view="overview";
+  for(const name of adminViews){
+    const selected=name===view;
+    const pane=el("adminPane"+name[0].toUpperCase()+name.slice(1));
+    const tab=document.querySelector('button[data-admin-view="'+name+'"]');
+    pane.hidden=!selected;
+    tab.setAttribute("aria-selected",String(selected));
+    tab.tabIndex=selected?0:-1;
+  }
+  try{sessionStorage.setItem("cga-admin-view",view)}catch{}
+}
+el("app").addEventListener("click",event=>{
+  const button=event.target.closest("button[data-admin-view],button[data-go-view]");
+  if(!button)return;
+  if(button.dataset.adminView)navigateAdmin(button.dataset.adminView);
+  if(button.dataset.goView)navigateAdmin(button.dataset.goView);
+});
+el("app").querySelector(".adminNavigation").addEventListener("keydown",event=>{
+  if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+  const current=adminViews.indexOf(event.target.dataset.adminView);
+  if(current<0)return;
+  event.preventDefault();
+  const next=event.key==="Home"?0:event.key==="End"?adminViews.length-1:
+    (current+(event.key==="ArrowRight"?1:-1)+adminViews.length)%adminViews.length;
+  navigateAdmin(adminViews[next]);
+  document.querySelector('button[data-admin-view="'+adminViews[next]+'"]').focus();
+});
+let documentsLoaded=false,portfoliosLoaded=false;
+function refreshOverview(){
+  const totals=leadCRM.getSummary();
+  el("statPending").textContent=totals.loaded?String(totals.pending):"—";
+  el("statActive").textContent=totals.loaded?String(totals.active):"—";
+  el("statCV").textContent=documentsLoaded?String(documents.length):"—";
+  el("statPortfolios").textContent=portfoliosLoaded?String(publishedPortfolios.size):"—";
+  const target=el("adminPriorities");
+  target.replaceChildren();
+  function suggestion(message,label,view){
+    const item=node("div",undefined,"adminPriorityItem");
+    const text=node("p",message);
+    const button=node("button",label);
+    button.type="button";button.dataset.goView=view;
+    item.append(text,button);target.append(item);
+  }
+  if(totals.loaded&&totals.pending>0)suggestion(
+    (totals.pending===1?"Tenés 1 propuesta sin decidir.":"Tenés "+totals.pending+" propuestas pendientes de decisión."),
+    "Revisar ahora","leads"
+  );
+  if(totals.loaded&&totals.active>0)suggestion(
+    (totals.active===1?"Hay una oportunidad en seguimiento.":"Hay "+totals.active+" oportunidades en seguimiento."),
+    "Gestionar","leads"
+  );
+  if(documentsLoaded&&documents.length===0)suggestion(
+    "Todavía no hay CV personalizados asociados a empresas.",
+    "Subir un CV","cv"
+  );
+  if(portfoliosLoaded&&!publishedPortfolios.has("Christian_Arleo_Portfolio_EN.pdf"))suggestion(
+    "Falta publicar el PDF inglés del portafolio, idioma principal del sitio.",
+    "Publicar inglés","portfolio"
+  );
+  if(!target.children.length){
+    const p=node("p",totals.loaded?"No hay tareas urgentes pendientes en el panel.":"Consultando datos de la oficina…");
+    target.append(p);
+  }
+}
+function applyDocumentFilter(){
+  const query=el("documentsFilter").value.toLocaleLowerCase().trim();
+  const cards=[...el("documents").querySelectorAll("article.item")];
+  let visible=0;
+  for(const card of cards){
+    const fits=!query||card.textContent.toLocaleLowerCase().includes(query);
+    card.hidden=!fits;
+    if(fits)visible++;
+  }
+  const label=el("documentsCount");
+  if(!documentsLoaded)label.textContent="Consultando documentos…";
+  else label.textContent=visible===documents.length
+    ?documents.length+" CV registrados"
+    :"Mostrando "+visible+" de "+documents.length+" CV";
+}
+el("documentsFilter").addEventListener("input",applyDocumentFilter);
+
 const publicPortfolioDisplay={
   es:{label:"español",state:"publicPortfolioStateEs",link:"publicPortfolioLinkEs",button:"publicPortfolioButtonEs",file:"publicPortfolioFileEs"},
   en:{label:"inglés",state:"publicPortfolioStateEn",link:"publicPortfolioLinkEn",button:"publicPortfolioButtonEn",file:"publicPortfolioFileEn"}
@@ -111,6 +198,8 @@ async function loadPublicPortfolios(){
     return;
   }
   publishedPortfolios=new Set((data||[]).map(x=>x.name));
+  portfoliosLoaded=true;
+  refreshOverview();
   for(const [lang,filename] of Object.entries(publicPortfolioFiles)){
     setPublicPortfolioState(lang,publishedPortfolios.has(filename));
   }
@@ -164,7 +253,9 @@ async function loadDocuments(){
  const target=el("documents");target.replaceChildren();
  if(error){target.textContent=error.message;return;}
  documents=data||[];
- if(!documents.length){target.textContent="Todavía no hay CV cargados.";return;}
+ documentsLoaded=true;
+ refreshOverview();
+ if(!documents.length){target.textContent="Todavía no hay CV cargados. Usá el formulario anterior para agregar el primero.";applyDocumentFilter();return;}
  for(const x of documents){
    const box=node("article",undefined,"item");const title=node("strong",x.company_name+" · "+x.ruc+" · "+x.role_name);
    const tags=node("div");
@@ -200,6 +291,7 @@ async function loadDocuments(){
    }
    box.append(actions);target.append(box);
  }
+ applyDocumentFilter();
 }
 el("reloadDocuments").addEventListener("click",loadDocuments);
 el("documents").addEventListener("change", async e => {
@@ -278,6 +370,6 @@ el("documents").addEventListener("click",async e=>{
   }catch(err){notice(err.message,true);}finally{btn.disabled=false;}
 });
 const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDocuments,bucket});
-async function loadLeads(){await leadCRM.load();}
+async function loadLeads(){await leadCRM.load();refreshOverview();}
 el("reloadLeads").addEventListener("click",loadLeads);
 verifyAdmin().catch(e=>notice(e.message,true));
