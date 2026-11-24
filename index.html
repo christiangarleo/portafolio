@@ -1,46 +1,74 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo. Growth marketing, performance digital y proyectos.">
-  <title>Christian Gabriel Arleo | Portafolio profesional</title>
-    <script>
-    (() => {
-      try {
-        const mode=localStorage.getItem("cga-appearance");
-        const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.dataset.theme=dark?"dark":"light";
-        document.documentElement.style.colorScheme=dark?"dark":"light";
-      }catch{}
-    })();
-  </script>
-  <style>
-    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; background: #fff; color: #171717; }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
-    header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding: 26px max(24px, calc((100vw - 980px)/2)); border-bottom: 1px solid #ececec; font-size: 15px; font-weight: 700; }
-    main { width: min(100% - 48px, 980px); margin: auto; padding: 90px 0; }
-    .label { color: #545454; font-size: 13px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    h1 { font-size: clamp(38px, 7vw, 66px); line-height: 1.06; letter-spacing: -.045em; max-width: 800px; margin: 22px 0; }
-    p { max-width: 650px; line-height: 1.6; color: #444; font-size: 18px; margin-bottom: 36px; }
-    a.cta { display: inline-block; padding: 15px 24px; color: white; background: #171717; border: 1px solid #171717; text-decoration: none; font-weight: 700; }
-    a.cta:hover, a.cta:focus { background: #404040; }
-    footer { width: min(100% - 48px, 980px); margin: 0 auto; padding: 25px 0; border-top: 1px solid #ececec; color: #5a5a5a; font-size: 13px; }
-    footer a { color: inherit; }
-  </style>
-  <link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Christian Gabriel Arleo — growth marketing, digital performance and business. Choose the language of the professional portfolio.">
+<meta name="theme-color" content="#ffffff">
+<title>Christian Gabriel Arleo | Choose your language</title>
+<script>
+(() => {
+  const params=new URLSearchParams(location.search);
+  const q=params.get("lang");
+  let stored=null,mode="system";
+  try{stored=localStorage.getItem("cga-site-language");mode=localStorage.getItem("cga-appearance")||"system";}catch{}
+  document.documentElement.lang=q==="es"?"es":q==="en"?"en":stored==="es"?"es":"en";
+  const dark=mode==="dark"||(mode!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme=dark?"dark":"light";
+  document.documentElement.style.colorScheme=dark?"dark":"light";
+})();
+</script>
+<style>
+:root{color-scheme:light;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#171717}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid var(--cga-border,#eee);padding:20px max(22px,calc((100vw - 1050px)/2));font-weight:700;font-size:15px}
+main{width:min(1050px,calc(100% - 44px));margin:auto;padding:clamp(48px,7vw,110px) 0}
+.kicker{text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--cga-muted,#666);margin:0 0 20px}
+h1{font-size:clamp(34px,5vw,62px);line-height:1.07;letter-spacing:-.048em;max-width:790px;margin:0 0 16px}
+.intro{font-size:clamp(14px,1.5vw,18px);line-height:1.6;color:var(--cga-muted,#555);max-width:650px;margin:0 0 35px}
+.languageGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:790px}
+.languageCard{display:flex;gap:19px;align-items:center;justify-content:space-between;text-decoration:none;padding:clamp(20px,2.5vw,28px);border:1px solid var(--cga-border,#ddd);background:var(--cga-surface,#fff);color:var(--cga-text,#171717);border-radius:9px;min-height:125px;transition:border-color .2s,transform .2s,background .2s}
+.languageCard:hover,.languageCard:focus-visible{transform:translateY(-2px);border-color:#df3e89;background:var(--cga-surface-2,#fafafa)}
+.languageCard.primary{border-color:var(--cga-border-strong,#bbb)}
+.languageCard .flag{font-size:36px;line-height:1}
+.languageCard .name{font-size:22px;font-weight:700;line-height:1.2}
+.languageCard .description{display:block;color:var(--cga-muted,#666);font-size:12px;margin-top:7px;line-height:1.4}
+.languageCard .right{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.languageCard .arrow{font-size:22px;line-height:1}
+.languageCard .recommended{color:var(--cga-muted,#666);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.accent{height:3px;max-width:790px;background:linear-gradient(90deg,#df3e89,#fcd200);margin:0 0 31px}
+.note{font-size:12px;color:var(--cga-muted,#666);margin-top:21px;line-height:1.6}
+footer{width:min(1050px,calc(100% - 44px));margin:0 auto;border-top:1px solid var(--cga-border,#eee);padding:20px 0 28px;color:var(--cga-muted,#666);font-size:12px;line-height:1.5}
+footer a{color:inherit}
+@media(max-width:650px){.languageGrid{grid-template-columns:1fr}.languageCard{min-height:108px}.languageCard .name{font-size:20px}.languageCard .flag{font-size:29px}header{padding:15px 22px}}
+@media(prefers-reduced-motion:reduce){.languageCard{transition:none}.languageCard:hover{transform:none}}
+</style>
+<link rel="stylesheet" href="/theme/theme.css?v=20261123-01">
+<script src="/lang/i18n.js?v=20261123-01" defer></script>
 </head>
 <body>
-  <header>Christian Gabriel Arleo</header>
-  <main>
-    <div class="label">Portafolio profesional</div>
-    <h1>El trabajo detrás de los resultados.</h1>
-    <p>Conocé mi experiencia, proyectos y trabajo en growth marketing, performance digital y negocios.</p>
-    <a class="cta" href="/portafolio/">Ver portafolio ↗</a>
-  </main>
-  <footer>Christian Gabriel Arleo · Lima, Perú · <a href="mailto:hola@christianarleo.com">hola@christianarleo.com</a></footer>
-  <script src="/theme/theme.js?v=20261123-01" defer></script>
+<header><span>Christian Gabriel Arleo</span></header>
+<main>
+<p class="kicker">Professional portfolio · Portafolio profesional</p>
+<h1>Choose your language.<br>Elegí tu idioma.</h1>
+<p class="intro">Explore my work and experience in the language you prefer.<br>Explorá mi experiencia y proyectos en el idioma que prefieras.</p>
+<div class="accent" aria-hidden="true"></div>
+<nav class="languageGrid" aria-label="Choose a language / Elegir idioma">
+<a class="languageCard primary" href="/portafolio/?lang=en" lang="en" data-lang-choice="en">
+<span class="flag" aria-hidden="true">🇬🇧</span>
+<span style="flex:1"><span class="name">English</span><span class="description">View the English portfolio</span></span>
+<span class="right"><span class="recommended">Primary language</span><span class="arrow" aria-hidden="true">↗</span></span>
+</a>
+<a class="languageCard" href="/portafolio/?lang=es" lang="es" data-lang-choice="es">
+<span class="flag" aria-hidden="true">🇪🇸</span>
+<span style="flex:1"><span class="name">Español</span><span class="description">Ver el portafolio en español</span></span>
+<span class="right"><span class="arrow" aria-hidden="true">↗</span></span>
+</a>
+</nav>
+<p class="note">Your choice is saved for your next visit. · Tu elección se guardará para tu próxima visita.</p>
+</main>
+<footer>Christian Gabriel Arleo · Lima, Perú · <a href="mailto:hola@christianarleo.com">hola@christianarleo.com</a></footer>
+<script src="/theme/theme.js?v=20261123-01" defer></script>
 </body>
 </html>
