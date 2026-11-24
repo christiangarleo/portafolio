@@ -5,7 +5,7 @@
   const locale = window.CGALang?.current==="es"?"es":"en";
   const t = value => window.CGALang?.t(value) ?? value;
   const params = new URLSearchParams(location.search);
-  const ruc = (params.get("ruc")||"").trim().replace(/\s+/g," ").toUpperCase();
+  let ruc = (params.get("ruc")||"").trim().replace(/\s+/g," ").toUpperCase();
   const selectedCV = params.get("cv") || "";
   const loading = by("loading");
   const message = by("downloadMessage");
@@ -27,16 +27,37 @@
     missingInput.focus();
     missingInput.select();
   });
-  by("missingCVEditForm").addEventListener("submit",event=>{
+  by("missingCVEditForm").addEventListener("submit",async event=>{
     event.preventDefault();
     const proposed=missingInput.value.trim().replace(/\s+/g," ").toUpperCase();
     if(!companyIdValid(proposed)){
       by("missingCVError").textContent=t("Ingresá un identificador de empresa válido (hasta 64 caracteres).");return;
     }
-    const url=new URL("/empresa/",location.origin);
-    url.searchParams.set("ruc",proposed);
-    url.searchParams.set("lang",locale);
-    window.location.assign(url.pathname+url.search);
+    const submit=by("missingCVEditForm").querySelector('[type="submit"]');
+    submit.disabled=true;
+    by("missingCVError").textContent="";
+    try{
+      // Verificar cada nuevo identificador antes de salir del diálogo; incluso
+      // en el segundo o tercer intento se vuelve a mostrar el aviso.
+      const found=await api({action:"resolve",ruc:proposed});
+      const url=new URL("/empresa/",location.origin);
+      url.searchParams.set("ruc",proposed);
+      url.searchParams.set("lang",locale);
+      if(found.status==="company"&&Array.isArray(found.items)&&found.items.length){
+        window.location.assign(url.pathname+url.search);
+        return;
+      }
+      if(found.status!=="not_found")throw Error(t("No pudimos verificar ese identificador."));
+      ruc=proposed;
+      history.replaceState(null,"",url.pathname+url.search);
+      by("rucField").value=ruc;
+      by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
+      show("emptySection");
+      showNoCVDialog();
+      by("missingCVContinue").focus();
+    }catch(error){
+      by("missingCVError").textContent=error.message||t("No pudimos verificar ese identificador.");
+    }finally{submit.disabled=false;}
   });
   function showNoCVDialog(){
     by("missingCVIdentifier").textContent=ruc;
