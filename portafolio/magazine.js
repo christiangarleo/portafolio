@@ -17,17 +17,51 @@
     return loadPromise;
   }
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  // One physical spread in both viewers: cover on right, even page on left.
+  function spreadStart(page){return page<=1?1:2*Math.floor(page/2);}
+  function spreadSlots(page,count){
+    const p=spreadStart(page);return p===1?[null,1]:[p,p+1<=count?p+1:null];
+  }
+  function spreadStep(page,delta,count){
+    const p=spreadStart(page),next=delta>0?(p===1?2:p+2):(p<=2?1:p-2);
+    return next>=1&&next<=count?next:p;
+  }
+  const MIN_ZOOM=.5,MAX_ZOOM=3;
+  function layout(viewport,ratio,mode="page",manual=1){
+    const narrow=viewport.clientWidth<=820;
+    const padX=narrow?4:42,padY=4;
+    const aw=Math.max(80,viewport.clientWidth-2*padX),ah=Math.max(80,viewport.clientHeight-2*padY);
+    const widthFit=aw/2,heightFit=ah*ratio;
+    const fit=Math.min(widthFit,heightFit);
+    const factor=mode==="width"?widthFit/fit:mode==="manual"?clamp(manual,MIN_ZOOM,MAX_ZOOM):1;
+    const width=Math.max(1,Math.floor(fit*factor)),height=Math.max(1,Math.round(width/ratio));
+    return {width,height,factor,padX,padY};
+  }
+  async function pageRatio(pdf){
+    const samples=await Promise.all([1,Math.min(2,pdf.numPages),Math.min(3,pdf.numPages)].map(n=>pdf.getPage(n)));
+    const ratios=samples.map(p=>{const v=p.getViewport({scale:1});return v.width/v.height;}).sort((a,b)=>a-b);
+    return ratios[1];
+  }
   function safeExternal(value){
     try{const url=new URL(value);return ["https:","http:","mailto:","tel:"].includes(url.protocol)?url.href:null;}catch{return null;}
   }
-  function create({pdf,host,locale,onPage,onInternal,onError}){
+  function create({pdf,host,viewport,locale,onPage,onInternal,onError}){
     const count=pdf.numPages;
     const en=locale==="en";
     const msg={loading:en?"Loading page…":"Cargando página…",error:en?"Page unavailable":"Página no disponible",link:en?"Open portfolio link":"Abrir enlace del portafolio",page:en?"Page":"Página"};
     const cache=new Map(),failed=new Set(),originals=new Map();
     let book=null,active=false,desired=[],rendering=false,current=1,disposed=false,ratio=1,preparing=null;
+    let zoomMode="page",manualZoom=1,geometry=null,quality=1500;
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
-    function spreadSize(){return book?.getOrientation()==="landscape"?2:1;}
+    function spreadSize(){return 2;}
+    function applySize(){
+      geometry=layout(viewport,ratio,zoomMode,manualZoom);
+      host.style.width=geometry.width*2+"px";host.style.height=geometry.height+"px";
+      const stage=host.parentElement;stage.style.padding=geometry.padY+"px "+geometry.padX+"px";
+      const px=Math.max(geometry.width,geometry.height)*Math.min(window.devicePixelRatio||1,2);
+      quality=px>2200?2600:px>1500?2200:1500;
+      return geometry;
+    }
     function hasNext(){return current+(current===1?1:spreadSize())<=count;}
     function sync(page){
       current=clamp(Number(page)||1,1,count);
@@ -76,10 +110,10 @@
       const a=event.target.closest?.("a[data-magazine-destination]");
       if(a){event.preventDefault();onInternal(Number(a.dataset.magazineDestination));}
     });
-    async function raster(page){
+    async function raster(page,target){
       const pdfPage=await pdf.getPage(page);
       const unit=pdfPage.getViewport({scale:1});
-      const scale=Math.min(2,1500/Math.max(unit.width,unit.height),Math.sqrt(2100000/(unit.width*unit.height)));
+      const scale=Math.min(4.5,target/Math.max(unit.width,unit.height),Math.sqrt(4800000/(unit.width*unit.height)));
       const vp=pdfPage.getViewport({scale});
       const canvas=document.createElement("canvas");canvas.width=Math.ceil(vp.width);canvas.height=Math.ceil(vp.height);
       const context=canvas.getContext("2d",{alpha:false});
@@ -104,7 +138,7 @@
           }
           if(url||destination)links.push({x,y,w,h,url,page:destination});
         }
-        return {url:URL.createObjectURL(blob),ratio:unit.width/unit.height,links};
+        return {url:URL.createObjectURL(blob),ratio:unit.width/unit.height,links,quality:target};
       }finally{canvas.width=canvas.height=0;}
     }
     function trim(){
@@ -119,11 +153,11 @@
       rendering=true;
       try{
         while(active&&!disposed){
-          const page=desired.find(p=>!cache.has(p)&&!failed.has(p));if(!page)break;
+          const page=desired.find(p=>!failed.has(p)&&(!cache.has(p)||cache.get(p).quality<quality));if(!page)break;
           try{
-            const entry=await raster(page);
+            const target=quality,entry=await raster(page,target);
             if(disposed){URL.revokeObjectURL(entry.url);break;}
-            cache.set(page,entry);paint(page);trim();
+            const old=cache.get(page);cache.set(page,entry);paint(page);trim();if(old)URL.revokeObjectURL(old.url);
           }catch(error){failed.add(page);paint(page);if(page===current)onError(error);}
         }
       }finally{rendering=false;}
@@ -138,15 +172,12 @@
       if(!book){
         if(!preparing)preparing=(async()=>{
           const PageFlip=await loadLibrary();
-          const samples=await Promise.all([1,Math.min(2,count),Math.min(3,count)].map(n=>pdf.getPage(n)));
-          const ratios=samples.map(p=>{const v=p.getViewport({scale:1});return v.width/v.height;}).sort((a,b)=>a-b);
-          ratio=ratios[1]; // Ignore an atypical cover when selecting the book aspect ratio.
-          const wide=ratio>=1.12;
-          const minWidth=wide?701:340;
+          ratio=await pageRatio(pdf);
+          applySize();
           const width=650,height=Math.round(width/ratio);
           const items=Array.from({length:count},(_,i)=>createLeaf(i+1));
           host.replaceChildren(...items);
-          book=new PageFlip(host,{width,height,size:"stretch",minWidth,maxWidth:1200,minHeight:100,maxHeight:1600,autoSize:false,usePortrait:true,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:!reduced.matches,useMouseEvents:!reduced.matches,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:true,swipeDistance:35});
+          book=new PageFlip(host,{width,height,size:"stretch",minWidth:1,maxWidth:10000,minHeight:1,maxHeight:10000,autoSize:false,usePortrait:false,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:!reduced.matches,useMouseEvents:!reduced.matches,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:true,swipeDistance:35});
           book.on("flip",e=>sync(e.data+1));
           book.on("changeOrientation",()=>{if(active&&book)queue(current);});
           book.on("changeState",()=>{if(active)for(const p of desired)paint(p);});
@@ -157,7 +188,7 @@
         try{await preparing;}catch(error){preparing=null;active=false;throw error;}
       }
       if(!active||disposed)return;
-      book.update();book.turnToPage(page-1);sync(book.getCurrentPageIndex()+1);
+      applySize();book.update();book.turnToPage(page-1);sync(book.getCurrentPageIndex()+1);
     }
     function go(page){
       if(!active||!book)return;
@@ -171,9 +202,13 @@
       delta>0?book.flipNext("bottom"):book.flipPrev("bottom");
     }
     function close(){active=false;desired=[];}
-    function resize(){if(active&&book){book.update();sync(book.getCurrentPageIndex()+1);}}
+    function resize(mode=zoomMode,manual=manualZoom){
+      zoomMode=mode;manualZoom=manual;
+      if(active&&book){applySize();book.update();sync(book.getCurrentPageIndex()+1);}
+      return geometry;
+    }
     function dispose(){disposed=true;close();for(const entry of cache.values())URL.revokeObjectURL(entry.url);cache.clear();if(book)try{book.destroy();}catch{}}
     return {open,close,go,step,resize,dispose};
   }
-  window.CGAMagazine={create};
+  window.CGAMagazine={create,layout,pageRatio,spreadStart,spreadSlots,spreadStep,MIN_ZOOM,MAX_ZOOM};
 })();

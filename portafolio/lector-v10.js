@@ -19,8 +19,7 @@
   const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
   const byId = id => document.getElementById(id);
   const input = byId("pageNumber");
-  const canvas = byId("pageCanvas");
-  const links = byId("pageLinks");
+  const spreads=window.CGAMagazine;
   const viewportBox = byId("pageViewport");
   const pageStatus = byId("pageStatus");
   const pageContainer = byId("pageContainer");
@@ -115,8 +114,11 @@
   const shareButton = byId("actionsToggle");
   let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
   refreshSectionLinks();
-  let zoomMode = "page", manualZoom = 1, currentScale = 1, nativeMode = false;
-  const MIN_ZOOM = 0.25, MAX_ZOOM = 3.0;
+  let zoomMode="page",manualZoom=1,currentScale=1,nativeMode=false,ratioPromise=null;
+  const {MIN_ZOOM,MAX_ZOOM}=spreads;
+  const classicStart=page=>spreads.spreadStart(page);
+  function updateZoom(factor){currentScale=factor;zoomText.textContent=Math.round(factor*100)+"%";byId("zoomOut").disabled=factor<=MIN_ZOOM+.001;byId("zoomIn").disabled=factor>=MAX_ZOOM-.001;}
+  function getRatio(){return ratioPromise ||= spreads.pageRatio(pdfDocument);}
   const pageLink = page => SHARE_URL + "&pagina=" + page;
   const validPage = value => /^\d+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= totalPages;
 
@@ -175,7 +177,7 @@
   function updateToolbar() {
     totalPagesText.textContent = totalPages>0?String(totalPages):"—";
     const back=magazineActive&&magazineNav?!magazineNav.previous:activePage<=1;
-    const forward=magazineActive&&magazineNav?!magazineNav.next:activePage>=totalPages;
+    const forward=magazineActive&&magazineNav?!magazineNav.next:spreads.spreadStep(activePage,1,totalPages)===classicStart(activePage);
     previousButton.disabled=sidePrevious.disabled=back;
     nextButton.disabled=sideNext.disabled=forward;
     input.max = String(totalPages);
@@ -197,12 +199,11 @@
   }
 
   function resetView() {
-    links.replaceChildren();
     pageContainer.hidden = true;
     pageStage.hidden = false;
   }
 
-  async function drawPageLinks(pdfPage, cssViewport) {
+  async function drawPageLinks(pdfPage, cssViewport, links) {
     links.replaceChildren();
     let annotations;
     try { annotations = await pdfPage.getAnnotations({ intent:"display" }); }
@@ -226,7 +227,7 @@
           event.preventDefault();
           try {
             const dest = typeof item.dest === "string" ? await pdfDocument.getDestination(item.dest) : item.dest;
-            if (!dest || !dest[0]) return;
+            if (!dest || dest[0]==null) return;
             const index = typeof dest[0] === "number" ? dest[0] : await pdfDocument.getPageIndex(dest[0]);
             if (Number.isInteger(index)) navigate(index+1, true);
           } catch { showMessage("No se pudo abrir el enlace interno"); }
@@ -236,76 +237,57 @@
     }
   }
 
+  async function renderSheet(pdfPage,geometry,group){
+    const sheet=document.createElement("div");sheet.className="cgaClassicSheet";
+    sheet.style.width=geometry.width+"px";sheet.style.height=geometry.height+"px";
+    if(!pdfPage){sheet.classList.add("cgaClassicSheet--blank");sheet.setAttribute("aria-hidden","true");return sheet;}
+    const unit=pdfPage.getViewport({scale:1});
+    const scale=Math.min(geometry.width/unit.width,geometry.height/unit.height);
+    const cssViewport=pdfPage.getViewport({scale});
+    const pixelRatio=Math.min(window.devicePixelRatio||1,2,Math.sqrt(8000000/(cssViewport.width*cssViewport.height)));
+    const actualViewport=pdfPage.getViewport({scale:scale*pixelRatio});
+    const paper=document.createElement("div");paper.className="cgaClassicPaper";
+    paper.style.width=cssViewport.width+"px";paper.style.height=cssViewport.height+"px";
+    const canvas=document.createElement("canvas");canvas.setAttribute("role","img");canvas.setAttribute("aria-label",locale==="en"?"Page "+pdfPage.pageNumber:"Página "+pdfPage.pageNumber);
+    canvas.width=Math.ceil(actualViewport.width);canvas.height=Math.ceil(actualViewport.height);canvas.style.width=cssViewport.width+"px";canvas.style.height=cssViewport.height+"px";
+    const links=document.createElement("div");links.className="cgaClassicLinks";paper.append(canvas,links);sheet.append(paper);
+    if(group.cancelled)return sheet;
+    const task=pdfPage.render({canvasContext:canvas.getContext("2d",{alpha:false}),viewport:actualViewport});
+    group.tasks.push(task);await task.promise;
+    if(!group.cancelled)await drawPageLinks(pdfPage,cssViewport,links);
+    return sheet;
+  }
   async function navigate(page, updateURL=true) {
     if(magazineOpening)return;
     if(magazineActive&&magazine){if(validPage(page))magazine.go(Number(page));else showMessage("Elegí una página entre 1 y "+totalPages);return;}
-    if (!validPage(page)) { showMessage("Elegí una página entre 1 y "+totalPages); return; }
-    const id = ++ticket;
-    activePage = Number(page);
-    updateToolbar();
-    resetView();
-    setLoading("Cargando página " + page + "…");
-    try {
-      if (!pdfDocument) throw new Error("Lector PDF no disponible");
-      if (nativeMode) {
-        nativeMode = false;
-        nativeFallback.hidden = true;
-        pageStage.hidden = false;
-        viewerModeButton.textContent = t("Visor PDF clásico");
-      }
-      const pdfPage = await pdfDocument.getPage(Number(page));
-      if (id !== ticket) return;
-      if (activeRender) {
-        const oldRender = activeRender;
-        activeRender = null;
-        oldRender.cancel();
-        try { await oldRender.promise; } catch {}
-      }
-      if (id !== ticket) return;
-      const unit = pdfPage.getViewport({scale:1});
-      const narrowLayout = window.innerWidth <= 720;
-      // Reserve room for the side navigation on larger screens.
-      const horizontalPadding = narrowLayout ? 28 : (window.innerWidth <= 1050 ? 116 : 156);
-      const verticalPadding = narrowLayout ? 24 : 44;
-      const availableWidth = Math.max(180, viewportBox.clientWidth - horizontalPadding);
-      const availableHeight = Math.max(150, viewportBox.clientHeight - verticalPadding);
-      const fitWidth = availableWidth / unit.width;
-      const fitPage = Math.min(fitWidth, availableHeight / unit.height);
-      const scale = zoomMode === "page" ? fitPage : zoomMode === "width" ? fitWidth : manualZoom;
-      currentScale = scale;
-      zoomText.textContent = Math.round(scale * 100) + "%";
-      byId("zoomOut").disabled = scale <= MIN_ZOOM;
-      byId("zoomIn").disabled = scale >= MAX_ZOOM;
-      const cssViewport = pdfPage.getViewport({scale});
-      const maxCanvasPixels = 14000000;
-      const safePixelRatio = Math.sqrt(maxCanvasPixels / (cssViewport.width * cssViewport.height));
-      const pixelRatio = Math.max(0.5, Math.min(window.devicePixelRatio || 1, 2, safePixelRatio));
-      const actualViewport = pdfPage.getViewport({scale:scale*pixelRatio});
-      canvas.width = Math.ceil(actualViewport.width);
-      canvas.height = Math.ceil(actualViewport.height);
-      pageContainer.style.width = cssViewport.width + "px";
-      pageContainer.style.height = cssViewport.height + "px";
-      canvas.style.width = cssViewport.width + "px";
-      canvas.style.height = cssViewport.height + "px";
-      links.style.width = cssViewport.width + "px";
-      links.style.height = cssViewport.height + "px";
-      const context = canvas.getContext("2d", {alpha: false});
-      activeRender = pdfPage.render({canvasContext:context,viewport:actualViewport});
-      await activeRender.promise;
-      if (id !== ticket) return;
-      activeRender = null;
-      await drawPageLinks(pdfPage, cssViewport);
-      if (id !== ticket) return;
-      pageContainer.hidden = false;
-      pageStatus.hidden = true;
-      viewportBox.scrollTop = 0;
-      viewportBox.scrollLeft = 0;
-      if (updateURL) history.replaceState(null, "", "/portafolio/?lang="+locale+(page===1?"":"&pagina="+page));
-    } catch (error) {
-      if (id !== ticket || error.name === "RenderingCancelledException") return;
-      console.error("Falló renderizado de página", error);
-      setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
-    }
+    if(!validPage(page)){showMessage("Elegí una página entre 1 y "+totalPages);return;}
+    const id=++ticket,previous=activePage;
+    const priorX=viewportBox.scrollLeft,priorY=viewportBox.scrollTop;
+    activePage=Number(page);updateToolbar();
+    resetView();setLoading("Cargando página "+page+"…");
+    if(activeRender){activeRender.cancel();activeRender=null;}
+    const group={tasks:[],cancelled:false,promise:null,cancel(){this.cancelled=true;for(const t of this.tasks)t.cancel();}};
+    activeRender=group;
+    try{
+      if(!pdfDocument)throw Error("Lector PDF no disponible");
+      if(nativeMode){nativeMode=false;nativeFallback.hidden=true;}
+      const slots=spreads.spreadSlots(activePage,totalPages);
+      const [ratio,pdfPages]=await Promise.all([getRatio(),Promise.all(slots.map(p=>p?pdfDocument.getPage(p):null))]);
+      if(id!==ticket||group.cancelled)return;
+      const geometry=spreads.layout(viewportBox,ratio,zoomMode,manualZoom);
+      pageStage.style.padding=geometry.padY+"px "+geometry.padX+"px";
+      updateZoom(geometry.factor);
+      group.promise=Promise.all(pdfPages.map(p=>renderSheet(p,geometry,group)));
+      const sheets=await group.promise;
+      if(id!==ticket||group.cancelled)return;
+      pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
+      viewportBox.scrollTop=previous===activePage?priorY:0;
+      viewportBox.scrollLeft=previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2);
+      if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(page===1?"":"&pagina="+page));
+    }catch(error){
+      if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
+      console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
+    }finally{if(activeRender===group)activeRender=null;}
   }
 
   function jumpToSelectedPage() {
@@ -325,7 +307,7 @@
   });
   // Allow selecting a page without the redundant “Ir a página” button.
   input.addEventListener("change", jumpToSelectedPage);
-  function stepPage(delta){if(magazineOpening)return;if(magazineActive&&magazine)magazine.step(delta);else navigate(activePage+delta);}
+  function stepPage(delta){if(magazineOpening)return;if(magazineActive&&magazine)magazine.step(delta);else{const next=spreads.spreadStep(activePage,delta,totalPages);if(next!==classicStart(activePage))navigate(next);}}
   previousButton.addEventListener("click", () => stepPage(-1));
   nextButton.addEventListener("click", () => stepPage(1));
   sidePrevious.addEventListener("click", () => stepPage(-1));
@@ -386,10 +368,10 @@
       try {
         frame.contentWindow.focus();
         frame.contentWindow.print();
-        showMessage("Si no se abre la impresión, usá «Visor PDF clásico» y Ctrl + P");
+        showMessage(locale==="en"?"If printing fails, download the PDF and print it from your PDF application.":"Si no se abre la impresión, descargá el PDF e imprimilo desde tu aplicación de PDF.");
       } catch (error) {
         console.error("La impresión del PDF fue bloqueada:", error);
-        showMessage("Brave bloqueó la impresión directa. Usá «Visor PDF clásico» y Ctrl + P");
+        showMessage(locale==="en"?"Direct printing was blocked. Download the PDF and print it separately.":"Brave bloqueó la impresión directa. Descargá el PDF para imprimirlo.");
       } finally {
         printButton.disabled = false;
         printButton.title = t("Imprimir portafolio");
@@ -397,7 +379,7 @@
     }, {once:true});
     frame.addEventListener("error", () => {
       removePrintFrame();
-      showMessage("No se pudo iniciar la impresión. Usá «Visor PDF clásico»");
+      showMessage(locale==="en"?"Printing failed. Download the PDF to print it.":"No se pudo iniciar la impresión. Descargá el PDF para imprimirlo.");
     }, {once:true});
     // Leave the print frame available until the browser finishes with it.
     // The following click replaces any prior frame rather than opening tabs.
@@ -405,51 +387,30 @@
     document.body.appendChild(frame);
     frame.src = verifiedPdfBlobUrl + "#toolbar=0&navpanes=0";
   });
-  function adjustZoom(factor) {
-    if(magazineOpening)return;
-    if(magazineActive)closeMagazine(false);
-    zoomMode = "manual";
-    manualZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentScale * factor));
-    if (pdfDocument) navigate(activePage, false);
+  function refreshZoom(){
+    if(magazineOpening||!pdfDocument||nativeMode)return;
+    if(magazineActive&&magazine){
+      const oldWidth=viewportBox.scrollWidth,oldHeight=viewportBox.scrollHeight;
+      const fx=(viewportBox.scrollLeft+viewportBox.clientWidth/2)/Math.max(1,oldWidth);
+      const fy=(viewportBox.scrollTop+viewportBox.clientHeight/2)/Math.max(1,oldHeight);
+      const geometry=magazine.resize(zoomMode,manualZoom);
+      if(geometry)updateZoom(geometry.factor);
+      viewportBox.scrollLeft=Math.max(0,fx*viewportBox.scrollWidth-viewportBox.clientWidth/2);
+      viewportBox.scrollTop=Math.max(0,fy*viewportBox.scrollHeight-viewportBox.clientHeight/2);
+    }else void navigate(activePage,false);
   }
-  byId("zoomOut").addEventListener("click", () => adjustZoom(0.8));
-  byId("zoomIn").addEventListener("click", () => adjustZoom(1.25));
-  byId("fitPage").addEventListener("click", () => {
-    if(magazineOpening)return;
-    if(magazineActive)closeMagazine(false);
-    zoomMode = "page"; if (pdfDocument) navigate(activePage, false);
-  });
-  byId("fitWidth").addEventListener("click", () => {
-    if(magazineOpening)return;
-    if(magazineActive)closeMagazine(false);
-    zoomMode = "width"; if (pdfDocument) navigate(activePage, false);
-  });
-  viewerModeButton.addEventListener("click", () => {
-    if(magazineActive)closeMagazine(false);
-    if (!nativeMode) {
-      nativeMode = true;
-      ticket++;
-      if (activeRender) { activeRender.cancel(); activeRender = null; }
-      pageStage.hidden = true;
-      pageStatus.hidden = true;
-      nativeFallback.hidden = false;
-      if (!verifiedPdfBlobUrl) {
-        nativeMode = false;
-        nativeFallback.hidden = true;
-        pageStage.hidden = false;
-        showMessage("La versión actual del PDF todavía no está disponible");
-        return;
-      }
-      nativeFallback.src = verifiedPdfBlobUrl + "#page=" + activePage + "&view=FitH";
-      viewerModeButton.textContent = t("Volver al lector");
-      showMessage("Visor clásico: zoom, impresión, descarga y selección de texto desde el PDF");
-    } else {
-      nativeMode = false;
-      nativeFallback.hidden = true;
-      pageStage.hidden = false;
-      viewerModeButton.textContent = t("Visor PDF clásico");
-      navigate(activePage, false);
-    }
+  function adjustZoom(factor){
+    if(magazineOpening||nativeMode)return;
+    zoomMode="manual";manualZoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,currentScale*factor));refreshZoom();
+  }
+  byId("zoomOut").addEventListener("click",()=>adjustZoom(.8));
+  byId("zoomIn").addEventListener("click",()=>adjustZoom(1.25));
+  byId("fitPage").addEventListener("click",()=>{if(magazineOpening)return;zoomMode="page";refreshZoom();});
+  byId("fitWidth").addEventListener("click",()=>{if(magazineOpening)return;zoomMode="width";refreshZoom();});
+  viewerModeButton.addEventListener("click",()=>{
+    if(magazineOpening||!pdfDocument)return;
+    if(magazineActive)closeMagazine();
+    else if(nativeMode){nativeMode=false;nativeFallback.hidden=true;void navigate(activePage,false);}
   });
   // Copy the page actually displayed, not an unconfirmed value typed in the page selector.
   byId("sendPage").addEventListener("click", async () => {
@@ -467,7 +428,7 @@
   });
 
   window.addEventListener("resize", () => {
-    if(magazineActive){magazine?.resize();return;}
+    if(magazineActive){refreshZoom();return;}
     if (!pdfDocument || nativeMode) return;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => navigate(activePage,false), 320);
@@ -492,11 +453,9 @@
   }
   function setMagazineControls(active){
     magazineButton.setAttribute("aria-pressed",String(active));magazineButton.textContent=magazineLabel(active);
-    for(const id of ["zoomOut","zoomIn","fitPage","fitWidth"]){
-      const b=byId(id);b.title=active?(locale==="en"?"Returns to PDF reader":"Regresa al lector PDF"):"";
-      if(active)b.disabled=false;
-    }
-    if(active)zoomText.textContent=locale==="en"?"Fit":"Ajuste";
+    viewerModeButton.setAttribute("aria-pressed",String(!active));
+    viewerModeButton.title=locale==="en"?"Classic two-page reader":"Lectura convencional a doble página";
+    if(active){const geometry=magazine?.resize(zoomMode,manualZoom);if(geometry)updateZoom(geometry.factor);}
   }
   function closeMagazine(render=true){
     magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
@@ -513,12 +472,12 @@
       if(activeRender){const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
       nativeMode=false;nativeFallback.hidden=true;pageStage.hidden=true;pageStatus.hidden=true;
       viewerModeButton.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
-      magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),locale,
+      magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),viewport:viewportBox,locale,
         onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
         onInternal:page=>{if(validPage(page))magazine.go(page);},
         onError:error=>{console.warn("Magazine page",error);showMessage(locale==="en"?"Page could not load. Exit magazine to retry.":"No se pudo cargar la página. Salí de revista para reintentar.");}
       });
-      await magazine.open(initial);if(magazineActive)setMagazineControls(true);
+      await magazine.open(initial);if(magazineActive){setMagazineControls(true);viewportBox.scrollLeft=Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2);viewportBox.scrollTop=0;}
     }catch(error){
       magazineOpening=false;
       console.warn("Magazine unavailable",error);closeMagazine();showMessage(locale==="en"?"Magazine unavailable. PDF reader restored.":"Vista revista no disponible. Se restauró el lector PDF.");
@@ -576,6 +535,7 @@
       sidePrevious.disabled = true;
       sideNext.disabled = true;
       if (verifiedPdfBlobUrl) {
+        nativeMode=true;
         setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.");
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";
