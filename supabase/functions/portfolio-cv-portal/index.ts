@@ -22,7 +22,10 @@ function headers(req: Request) {
 function reply(req: Request, data: object, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: headers(req) });
 }
-const digits = (v: unknown) => typeof v === "string" && /^[0-9]{11}$/.test(v);
+// La columna histórica "ruc" almacena cualquier identificador empresarial.
+const companyId = (v: unknown) => typeof v === "string" ? v.trim().replace(/\s+/g, " ").toUpperCase() : "";
+const validCompanyId = (id: string) => id.length >= 1 && id.length <= 64 &&
+  /^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]*$/u.test(id);
 const text = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(req) });
@@ -34,7 +37,8 @@ Deno.serve(async (req: Request) => {
   let input: Record<string, unknown>;
   try { input = await req.json(); if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error(); }
   catch { return reply(req, { error: "Solicitud invalida" }, 400); }
-  // El RUC identifica a la empresa; NO autentica al reclutador.
+  // El identificador de empresa es público y NO autentica al reclutador.
+  // El campo ruc conserva su nombre por compatibilidad con versiones anteriores.
   // No exponer el estado interno de las postulaciones en este portal.
   const cvSelect = "id,company_name,role_name,storage_path,original_filename,expires_at,is_main";
   async function signedLink(row: { storage_path: string; original_filename: string }) {
@@ -44,10 +48,11 @@ Deno.serve(async (req: Request) => {
     return data.signedUrl;
   }
   if (input.action === "resolve") {
-    if (!digits(input.ruc)) return reply(req, { error: "El RUC debe tener 11 digitos" }, 400);
+    const identifier = companyId(input.ruc);
+    if (!validCompanyId(identifier)) return reply(req, { error: "Ingresá un identificador de empresa válido (hasta 64 caracteres)." }, 400);
     const { data, error } = await supabase.from("portfolio_cv_documents")
       .select(cvSelect)
-      .eq("ruc", input.ruc as string).eq("is_active", true)
+      .eq("ruc", identifier).eq("is_active", true)
       .order("is_main", { ascending: false }).order("created_at", { ascending: false }).limit(100);
     if (error) { console.error("cv_lookup", error.message); return reply(req, { error: "Error temporal de consulta" }, 503); }
     const now = Date.now();
@@ -63,10 +68,11 @@ Deno.serve(async (req: Request) => {
   }
   if (input.action === "download") {
     const id = text(input.id, 50);
-    if (!digits(input.ruc) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+    const identifier = companyId(input.ruc);
+    if (!validCompanyId(identifier) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
       return reply(req, { error: "Solicitud invalida" }, 400);
     const { data: row, error } = await supabase.from("portfolio_cv_documents")
-      .select(cvSelect).eq("id", id).eq("ruc", input.ruc as string).eq("is_active", true).maybeSingle();
+      .select(cvSelect).eq("id", id).eq("ruc", identifier).eq("is_active", true).maybeSingle();
     if (error) { console.error("cv_download_lookup",error.message); return reply(req,{ error:"No se pudo consultar el archivo" },503); }
     if (!row || (row.expires_at && new Date(row.expires_at).getTime() <= Date.now()))
       return reply(req,{ error:"Este CV ya no está disponible" },404);
@@ -84,7 +90,7 @@ Deno.serve(async (req: Request) => {
     const kind = text(input.kind, 25);
     const language = text(input.language, 2) === "en" ? "en" : "es";
     const company = text(input.company_name, 160);
-    const ruc = text(input.ruc, 11);
+    const ruc = companyId(input.ruc);
     const email = text(input.email, 200).toLowerCase();
     const contactName = text(input.contact_name, 140);
     const phone = text(input.phone, 65);
@@ -96,7 +102,7 @@ Deno.serve(async (req: Request) => {
       ? data as Record<string, unknown> : null;
     const pick = (k: string, n: number) => text(values?.[k], n);
     const bad = () => reply(req, { error: "Revisá los campos obligatorios antes de enviar." }, 400);
-    if (!["in_house","proyecto"].includes(kind) || !digits(ruc) || company.length < 2 ||
+    if (!["in_house","proyecto"].includes(kind) || !validCompanyId(ruc) || company.length < 2 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !values ||
       !["contactame","empresa_contacta"].includes(preference) ||
       (preference === "contactame" && (!["email","whatsapp","llamada"].includes(method) ||
@@ -141,7 +147,7 @@ Deno.serve(async (req: Request) => {
     if (text(input.website, 300)) return reply(req, { status: "received" });
     const kind = text(input.kind, 25);
     const company = text(input.company_name, 160);
-    const ruc = text(input.ruc, 11);
+    const ruc = companyId(input.ruc);
     const name = text(input.contact_name, 140);
     const email = text(input.email, 200).toLowerCase();
     const phone = text(input.phone, 65);
@@ -157,7 +163,7 @@ Deno.serve(async (req: Request) => {
       ["lunes","martes","miercoles","jueves","viernes","sabado","domingo"].includes(x)) && new Set(val).size === val.length;
     const clean = (key: string, max: number) => text(obj?.[key], max);
     const invalid = () => reply(req, { error: "Revisá los campos obligatorios y las condiciones seleccionadas." }, 400);
-    if (!inList(kind, ["in_house","proyecto"]) || !digits(ruc) || company.length < 2 || name.length < 2 ||
+    if (!inList(kind, ["in_house","proyecto"]) || !validCompanyId(ruc) || company.length < 2 || name.length < 2 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !obj ||
       !inList(contactPreference, ["contactame","empresa_contacta"]) ||
       (contactPreference === "contactame" &&
@@ -259,10 +265,10 @@ Deno.serve(async (req: Request) => {
     const company = text(input.company_name, 160);
     const name = text(input.contact_name, 140);
     const email = text(input.email, 200).toLowerCase();
-    const ruc = text(input.ruc, 11);
+    const ruc = companyId(input.ruc);
     if (!["solicitud_cv","in_house","proyecto"].includes(kind) || company.length < 2 ||
       name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-      (ruc && !digits(ruc))) {
+      (ruc && !validCompanyId(ruc))) {
       return reply(req, { error: "Revisa los datos obligatorios" }, 400);
     }
     const { error } = await supabase.from("portfolio_cv_leads").insert({
