@@ -447,3 +447,52 @@ html.cgaModern body:has(#loginPanel) .crmInboxDetail .crmHeader{gap:9px}
 @media(prefers-reduced-motion:reduce){
  html.cgaModern body:has(#loginPanel) .crmQueueItem{transition:none}
 }
+
+/* Portal de contratación · inversión de acentos solicitada:
+   selección: amarillo oficial; acción principal: rosa oficial. */
+html.cgaModern body:has(#companySection) #emptySection .choices button[aria-pressed="true"],
+html.cgaModern body:has(#companySection) #emptySection .choices button:hover{
+ border-color:var(--brand-yellow)!important;
+ background:color-mix(in srgb,var(--cga-surface) 78%,var(--brand-yellow) 22%)!important;
+ color:var(--cga-text)!important;
+}
+html.cgaModern body:has(#companySection) #emptySection .chip:has(input:checked),
+html.cgaModern body:has(#companySection) #emptySection .contactMethods .chip:has(input:checked){
+ background:var(--brand-yellow)!important;
+ border-color:var(--brand-yellow)!important;
+ color:var(--brand-black)!important;
+ font-weight:750;
+}
+html.cgaModern body:has(#companySection) #emptySection .chip input,
+html.cgaModern body:has(#companySection) #emptySection input[type="radio"],
+html.cgaModern body:has(#companySection) #emptySection input[type="checkbox"]{
+ accent-color:var(--brand-yellow)!important;
+}
+html.cgaModern body:has(#companySection) #emptySection :is(button,input,textarea,select,.chip):focus-visible{
+ outline:3px solid var(--brand-yellow)!important;outline-offset:3px;
+}
+html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action{
+ background:var(--brand-pink)!important;
+ border:2px solid var(--brand-pink)!important;
+ color:var(--brand-black)!important;
+ font-size:19px;font-weight:800;
+ min-height:49px;border-radius:9px;
+}
+html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action:hover:not(:disabled){
+ filter:brightness(1.07);
+ box-shadow:0 4px 15px color-mix(in srgb,var(--brand-pink) 33%,transparent);
+}
+html.cgaModern body:has(#companySection) #emptySection .quickSubmit .action:disabled{
+ opacity:.6;cursor:not-allowed;
+}
+/* Editor de respuesta compacto: copiar y abrir proveedor sin una tarjeta adicional. */
+html.cgaModern body:has(#loginPanel) .crmInlineCompose{
+ display:flex;flex-wrap:wrap;gap:7px;margin:11px 0 5px;
+}
+html.cgaModern body:has(#loginPanel) .crmInlineCompose button{
+ padding:8px 11px;min-height:39px;
+ font-size:12px;font-weight:650;
+}
+html.cgaModern body:has(#loginPanel) .crmDeliveryButtons{
+ margin:7px 0 11px;
+}
