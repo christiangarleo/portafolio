@@ -205,6 +205,15 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const buttons=row();
   const mail=b("Abrir correo preparado","crmAccept");
   mail.disabled=!can||!lead.email;mail.addEventListener("click",()=>openMail(lead,false,subject.value,body.value));
+  const gmail=b("Abrir en Gmail");
+  gmail.disabled=!can||!lead.email;
+  gmail.addEventListener("click",()=>{
+   const target="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(lead.email)+
+      "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
+   window.open(target,"_blank","noopener,noreferrer");
+   notice("Gmail abierto con el correo preparado. Adjuntá el PDF si corresponde y enviá el mensaje desde Gmail.");
+   audit(lead,"gmail_abierto",{cv_id:lead.cv_document_id||null});
+  });
   const copy=b("Copiar correo");
   copy.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("Asunto: "+subject.value+"\n\n"+body.value);notice("Mensaje copiado.");}catch{notice("No se pudo copiar al portapapeles.",true);}});
   const confirmMail=b(lead.email_sent_at?"✓ Correo enviado ("+stamp(lead.email_sent_at)+")":"Confirmar que envié el correo");
@@ -213,7 +222,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    if(!confirm("¿Confirmás que ya enviaste el correo desde tu aplicación?"))return;
    await save(lead,{email_sent_at:new Date().toISOString(),status:"contactado"},"correo_confirmado_enviado");notice("Correo marcado como enviado.");
   });
-  buttons.append(mail,copy,confirmMail);section.append(buttons);
+  buttons.append(mail,gmail,copy,confirmMail);section.append(buttons);
   const wa=n("textarea");wa.rows=5;wa.maxLength=5000;wa.value=d0.body;
   section.append(block("Mensaje de WhatsApp (editable)",wa));
   const waButtons=row(),num=waNumber(lead);
@@ -240,7 +249,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   details.append(n("summary","Historial de acciones ("+evt.length+")"));
   const labels={decision_avanzar:"Decisión: avanzar",decision_rechazada:"Decisión: rechazar",decision_reconsiderada:"Reconsiderada",
    cv_asociado:"CV asociado",cv_subido_asociado:"CV subido y asociado",reunion_propuesta_guardada:"Reunión propuesta (sin enviar)",
-   reunion_propuesta_borrada:"Reunión eliminada",correo_abierto:"Correo abierto (sin confirmar envío)",
+   reunion_propuesta_borrada:"Reunión eliminada",correo_abierto:"Correo abierto (sin confirmar envío)",gmail_abierto:"Gmail abierto (sin confirmar envío)",
    rechazo_correo_abierto:"Rechazo por correo abierto",whatsapp_abierto:"WhatsApp abierto (sin confirmar envío)",
    correo_confirmado_enviado:"Correo enviado (confirmación manual)",whatsapp_confirmado_enviado:"WhatsApp enviado (confirmación manual)",
    seguimiento_actualizado:"Etapa actualizada",autorizacion_contacto_posterior:"Autorización de contacto posterior"};
