@@ -11,6 +11,29 @@
   const message = by("downloadMessage");
   let items = [];
   let companyOnFile = "";
+  let currentFilter="all";
+  function updateCVFilters(){
+    const search=by("companySearchInput").value.trim().toLocaleLowerCase();
+    const cards=[...by("vacancies").querySelectorAll("article.card")];
+    let visible=0;
+    for(const card of cards){
+      const isAvailable=!card.classList.contains("expired");
+      const matches=!search||(card.querySelector("h3")?.textContent||"").toLocaleLowerCase().includes(search);
+      const show=matches&&(currentFilter==="all"||isAvailable);
+      card.hidden=!show;
+      if(show)visible++;
+    }
+    by("filterAllCV").setAttribute("aria-pressed",String(currentFilter==="all"));
+    by("filterActiveCV").setAttribute("aria-pressed",String(currentFilter==="active"));
+    by("filteredCVCount").textContent=locale==="en"
+      ? "Showing "+visible+" of "+cards.length+" positions"
+      : "Mostrando "+visible+" de "+cards.length+" vacantes";
+    by("emptyCVSearch").hidden=visible>0;
+  }
+  by("companySearchInput").addEventListener("input",updateCVFilters);
+  by("filterAllCV").addEventListener("click",()=>{currentFilter="all";updateCVFilters();});
+  by("filterActiveCV").addEventListener("click",()=>{currentFilter="active";updateCVFilters();});
+
   function show(section) {
     for (const id of ["loading","companySection","emptySection","invalidSection"]) by(id).hidden = id !== section;
   }
@@ -61,6 +84,7 @@
       button.dataset.cvId=x.id;
       card.append(top,title,expiry,button);wrap.append(card);
     }
+    updateCVFilters();
     show("companySection");
     if(selectedCV){const featured=by("selected-cv");if(featured)requestAnimationFrame(()=>featured.scrollIntoView({behavior:"smooth",block:"center"}));}
     // El contacto comercial es accesible siempre, incluso si la empresa tiene CV vigentes.
