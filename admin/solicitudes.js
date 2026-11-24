@@ -68,14 +68,93 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const body=hello+"\n\n"+intro+cv+(rejection?"":suggestion(lead))+(en?"\n\nKind regards,\nChristian Gabriel Arleo":"\n\nQuedo atento.\nChristian Gabriel Arleo");
   return {subject,body};
  }
- function mailto(lead,subject,body){
+ function rejectionComposer(lead){
+  const panel=n("div",undefined,"crmRejectionComposer");
   const to=String(lead.email||"").trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw Error("El contacto no tiene un correo válido.");
-  const a=n("a");a.href="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
-  document.body.append(a);a.click();a.remove();
-  notice("Se abrió un borrador en tu correo predeterminado (Zoho, si está configurado). Revisá y enviá desde allí; todavía no consta como enviado.");
-  void audit(lead,"correo_abierto",{cv_id:doc(lead)?.id||null});
+  const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
+  const draftText=draft(lead,true);
+  const subject=n("input");subject.type="text";subject.maxLength=180;subject.value=draftText.subject;
+  const body=n("textarea");body.rows=6;body.maxLength=5000;body.value=draftText.body;
+  panel.append(n("h4","Respuesta de rechazo"),labeled("Para",(()=>{
+    const input=n("input");input.type="text";input.readOnly=true;input.value=to||"Sin correo registrado";return input;
+  })()),labeled("Asunto",subject),labeled("Mensaje",body));
+  if(!validEmail)panel.append(small("El contacto no tiene un correo válido. No es posible abrir un borrador dirigido a esta empresa."));
+  const copyActions=row("crmCopyActions crmInlineCompose");
+  async function copyValue(value,label){
+    try{
+      if(!navigator.clipboard?.writeText)throw Error("No se pudo copiar automáticamente");
+      await navigator.clipboard.writeText(value);
+      notice(label+" copiado.");
+    }catch{
+      window.prompt("Copiá "+label.toLowerCase()+":",value);
+    }
+  }
+  for(const [label,getValue] of [
+    ["Copiar destinatario",()=>to],
+    ["Copiar asunto",()=>subject.value],
+    ["Copiar mensaje",()=>body.value]
+  ]){
+    const button=btn(label,"crmSoftCopy");button.dataset.cgaIcon="files";
+    button.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
+    copyActions.append(button);
+  }
+  panel.append(copyActions);
+  const channels=row("crmDeliveryButtons");
+  const zoho=n("a","Zoho Mail ↗","crmAccept");
+  zoho.href="https://mail.zoho.com/zm/#mail/folder/inbox";
+  zoho.target="_blank";zoho.rel="noopener noreferrer";zoho.dataset.cgaIcon="mail";
+  zoho.title="Abrir Zoho Mail en otra pestaña; copiá los campos del mensaje desde acá";
+  const gmail=n("a","Gmail ↗","crmAccent");
+  gmail.href="https://mail.google.com/mail/";
+  gmail.target="_blank";gmail.rel="noopener noreferrer";gmail.dataset.cgaIcon="mail";
+  gmail.title="Abrir Gmail en otra pestaña con el mensaje precargado";
+  if(!validEmail){
+    for(const link of [zoho,gmail]){link.removeAttribute("href");link.setAttribute("aria-disabled","true");link.tabIndex=-1;}
+  }
+  zoho.addEventListener("click",event=>{
+    if(!validEmail){event.preventDefault();return;}
+    notice("Se abrió Zoho Mail en otra pestaña. Copiá allí destinatario, asunto y mensaje.");
+    void audit(lead,"rechazo_zoho_abierto");
+  });
+  gmail.addEventListener("click",event=>{
+    if(!validEmail){event.preventDefault();return;}
+    gmail.href="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(to)+
+      "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
+    notice("Se abrió Gmail en otra pestaña con el mensaje listo para revisar y enviar.");
+    void audit(lead,"rechazo_gmail_abierto");
+  });
+  channels.append(zoho,gmail);panel.append(channels);
+  const recent=events.find(e=>e.lead_id===lead.id&&
+    (e.event_type==="rechazo_correo_confirmado"||e.event_type==="rechazo_correo_confirmacion_retirada"));
+  const sent=recent?.event_type==="rechazo_correo_confirmado";
+  const toggle=n("label",undefined,"crmSwitchRow crmRejectionSwitch");
+  const check=n("input");check.type="checkbox";check.setAttribute("role","switch");
+  check.setAttribute("aria-label","Ya envié la respuesta de rechazo");check.checked=sent;
+  const track=n("span",undefined,"crmSwitchTrack");
+  const caption=n("span","Ya envié el rechazo","crmSwitchText");
+  const status=n("small",sent?"Confirmado · "+when(recent.created_at):"Sin confirmar","crmSwitchStatus");
+  check.addEventListener("change",async()=>{
+    const previous=!check.checked;
+    check.disabled=true;
+    try{
+      const {error}=await sb.from("portfolio_cv_lead_activities").insert({
+        lead_id:lead.id,
+        event_type:check.checked?"rechazo_correo_confirmado":"rechazo_correo_confirmacion_retirada",
+        details:{channel:"email",context:"rejection"}
+      });
+      if(error)throw error;
+      notice(check.checked?"Respuesta de rechazo registrada como enviada.":"Confirmación de rechazo retirada.");
+      await load();
+    }catch(error){
+      check.checked=previous;
+      notice(error.message||"No se pudo guardar la confirmación.",true);
+    }finally{check.disabled=false;}
+  });
+  toggle.append(check,track,caption,status);panel.append(toggle);
+  panel.append(small("Abrir un correo no lo envía automáticamente. Confirmalo cuando lo hayas enviado desde Zoho o Gmail."));
+  return panel;
  }
+
  function original(lead,card){
   const details=n("details");details.append(n("summary","Ver información recibida"));
   const dl=n("dl",undefined,"leadData");
@@ -94,7 +173,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    box.append(n("h4","¿Qué querés hacer?"));
    const accept=btn("Avanzar","crmAccept"),decline=btn("Rechazar","crmReject");
    accept.dataset.cgaIcon="check";decline.dataset.cgaIcon="close";
-   action(accept,async()=>{expanded.add(lead.id);activeFilter="avanzar";await persist(lead,{decision_status:"avanzar",decision_at:new Date().toISOString(),decision_reason:null,status:"en_evaluacion"},"decision_avanzar");notice("Solicitud habilitada para seguimiento.");});
+   action(accept,async()=>{activeFilter="avanzar";await persist(lead,{decision_status:"avanzar",decision_at:new Date().toISOString(),decision_reason:null,status:"en_evaluacion"},"decision_avanzar");notice("Solicitud habilitada para seguimiento.");});
    decline.addEventListener("click",()=>{
     const note=n("textarea");note.placeholder="Motivo interno (opcional)";note.maxLength=500;note.rows=2;
     const yes=btn("Confirmar rechazo","crmReject"),cancel=btn("Cancelar");
@@ -112,9 +191,18 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    r.append(reconsider);
    if(lead.decision_status==="rechazada"){
     if(lead.decision_reason)box.append(small("Motivo interno: "+lead.decision_reason));
-    const respond=btn("Responder rechazo por correo");respond.disabled=!allowed(lead);
-    respond.addEventListener("click",()=>{const text=draft(lead,true);mailto(lead,text.subject,text.body);});
+    const respond=btn("Preparar correo de rechazo");respond.dataset.cgaIcon="mail";
+    respond.disabled=!allowed(lead);
+    const draftPanel=rejectionComposer(lead);draftPanel.hidden=true;
+    respond.setAttribute("aria-expanded","false");
+    respond.addEventListener("click",()=>{
+      draftPanel.hidden=!draftPanel.hidden;
+      respond.setAttribute("aria-expanded",String(!draftPanel.hidden));
+      respond.textContent=draftPanel.hidden?"Preparar correo de rechazo":"Ocultar respuesta";
+      if(!draftPanel.hidden)draftPanel.querySelector("input:not([readonly])")?.focus();
+    });
     r.prepend(respond);
+    box.append(draftPanel);
    }
   }
   box.append(r);card.append(box);
@@ -370,7 +458,11 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    reunion_propuesta_guardada:"Reunión propuesta guardada",reunion_propuesta_borrada:"Reunión eliminada",
    correo_abierto:"Correo preparado",whatsapp_abierto:"WhatsApp abierto",correo_confirmado_enviado:"Correo enviado (confirmado)",
    whatsapp_confirmado_enviado:"WhatsApp enviado (confirmado)",autorizacion_contacto_posterior:"Autorización posterior",
-   telefono_contacto_actualizado:"Teléfono actualizado",seguimiento_actualizado:"Etapa actualizada"};
+   telefono_contacto_actualizado:"Teléfono actualizado",seguimiento_actualizado:"Etapa actualizada",
+   rechazo_zoho_abierto:"Respuesta de rechazo preparada en Zoho",
+   rechazo_gmail_abierto:"Respuesta de rechazo preparada en Gmail",
+   rechazo_correo_confirmado:"Respuesta de rechazo enviada (confirmada)",
+   rechazo_correo_confirmacion_retirada:"Confirmación de rechazo retirada"};
   const ul=n("ul");
   for(const e of eventsOfLead.slice(0,30))ul.append(n("li",when(e.created_at)+" · "+(eventNames[e.event_type]||e.event_type)));
   if(!eventsOfLead.length)ul.append(n("li","Todavía no hay movimientos."));
@@ -436,6 +528,9 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const signals=[];
   if(lead.cv_document_id)signals.push("CV");
   if(lead.email_sent_at)signals.push("Correo ✓");
+  const latestRejectionEmail=events.find(e=>e.lead_id===lead.id&&
+    (e.event_type==="rechazo_correo_confirmado"||e.event_type==="rechazo_correo_confirmacion_retirada"));
+  if(latestRejectionEmail?.event_type==="rechazo_correo_confirmado")signals.push("Rechazo ✓");
   if(lead.whatsapp_sent_at)signals.push("WA ✓");
   if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
   const openLabel=n("span","Ver detalle →","crmQueueOpen");
