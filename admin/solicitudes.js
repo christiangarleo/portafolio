@@ -12,7 +12,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function stamp(v){return new Date(v).toLocaleString("es-PE",{dateStyle:"medium",timeStyle:"short"});}
  function msg(text){return n("p",text,"crmHint");}
  function row(){return n("div",undefined,"crmActions");}
- function block(label,field){const x=n("div",undefined,"crmField"),l=n("label",label);x.append(l,field);return x;}
+ function block(label,field){const x=n("div",undefined,"crmField"),l=n("label",label);if(!field.id)field.id="crm-"+crypto.randomUUID();l.htmlFor=field.id;x.append(l,field);return x;}
  function value(v){return Array.isArray(v)?v.map(x=>translations[x]||x).join(", "):v===true?"Sí":v===false?"No":translations[v]||String(v||"");}
  function selectedCV(lead){return getDocuments().find(x=>x.id===lead.cv_document_id)||null;}
  function allCV(lead){return getDocuments().filter(x=>x.ruc===lead.ruc&&x.is_active&&(!x.expires_at||Date.parse(x.expires_at)>Date.now()));}
@@ -94,6 +94,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
      if(!canContact(lead)&&!confirm("Esta empresa prefirió contactarte. ¿Confirmás que corresponde responder ahora?"))return;
      openMail(lead,true);
     });controls.append(mail);
+    const confirmation=b(lead.email_sent_at?"✓ Respuesta enviada el "+stamp(lead.email_sent_at):"Confirmar que envié el rechazo");
+    confirmation.disabled=Boolean(lead.email_sent_at);
+    action(confirmation,async()=>{
+     if(!confirm("¿Ya enviaste realmente la respuesta de rechazo por correo?"))return;
+     await save(lead,{email_sent_at:new Date().toISOString()},"rechazo_correo_confirmado_enviado");
+     notice("Respuesta de rechazo registrada como enviada.");
+    });
+    controls.append(confirmation);
    }
   }
   p.append(controls);card.append(p);
@@ -141,7 +149,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     const stored=await sb.storage.from(bucket).upload(path,pdf,{contentType:"application/pdf",upsert:false,cacheControl:"0"});
     if(stored.error)throw stored.error;
     const added=await sb.from("portfolio_cv_documents").insert({company_name:lead.company_name,ruc:lead.ruc,
-     role_name:role.value.trim(),original_filename:pdf.name,storage_path:path,is_active:true,is_main:docs.length===0,application_status:"preparado"}).select("id").single();
+     role_name:role.value.trim(),original_filename:pdf.name,storage_path:path,is_active:true,is_main:!getDocuments().some(x=>x.ruc===lead.ruc&&x.is_main),application_status:"preparado"}).select("id").single();
     if(added.error||!added.data){await sb.storage.from(bucket).remove([path]);throw Error(added.error?.message||"Error al registrar CV.");}
     const related=await sb.from("portfolio_cv_leads").update({cv_document_id:added.data.id}).eq("id",lead.id).select("id").single();
     if(related.error||!related.data){notice("CV subido. Falta asociarlo a la propuesta; usá el selector de CV.",true);await loadDocuments();await load();return;}
@@ -250,7 +258,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const labels={decision_avanzar:"Decisión: avanzar",decision_rechazada:"Decisión: rechazar",decision_reconsiderada:"Reconsiderada",
    cv_asociado:"CV asociado",cv_subido_asociado:"CV subido y asociado",reunion_propuesta_guardada:"Reunión propuesta (sin enviar)",
    reunion_propuesta_borrada:"Reunión eliminada",correo_abierto:"Correo abierto (sin confirmar envío)",gmail_abierto:"Gmail abierto (sin confirmar envío)",
-   rechazo_correo_abierto:"Rechazo por correo abierto",whatsapp_abierto:"WhatsApp abierto (sin confirmar envío)",
+   rechazo_correo_abierto:"Rechazo por correo abierto",rechazo_correo_confirmado_enviado:"Rechazo enviado (confirmación manual)",whatsapp_abierto:"WhatsApp abierto (sin confirmar envío)",
    correo_confirmado_enviado:"Correo enviado (confirmación manual)",whatsapp_confirmado_enviado:"WhatsApp enviado (confirmación manual)",
    seguimiento_actualizado:"Etapa actualizada",autorizacion_contacto_posterior:"Autorización de contacto posterior"};
   const ul=n("ul");for(const e of evt.slice(0,40))ul.append(n("li",stamp(e.created_at)+" · "+(labels[e.event_type]||e.event_type)));
