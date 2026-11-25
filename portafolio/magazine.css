@@ -95,7 +95,16 @@
  body.cgaMobileLandscape .siteActions .cgaThemeSwitch{--theme-switch-width:48px;--theme-switch-height:26px;height:36px!important;min-height:36px!important}
  body.cgaMobileLandscape .siteActions .cgaThemeSymbol{font-size:14px}
  body.cgaMobileLandscape .actionsWrap{flex:0 0 auto}
- body.cgaMobileLandscape .sideNav{display:none!important}
+ /* Reuse the reader's original arrows, not the toolbar duplicates. */
+ body.cgaMobileLandscape #gotoForm :is(#previousPage,#nextPage){display:none!important}
+ body.cgaMobileLandscape .viewerShell>.sideNav{display:flex!important;align-items:center;justify-content:center;position:absolute;top:50%;transform:translateY(-50%);width:44px;min-width:44px;height:44px;min-height:44px;border-radius:10px;border:1px solid var(--cga-border);background:color-mix(in srgb,var(--cga-surface) 88%,transparent);color:var(--cga-text);box-shadow:0 2px 12px var(--cga-shadow);font-size:23px;line-height:1;padding:0;backdrop-filter:blur(8px);z-index:5;touch-action:manipulation}
+ body.cgaMobileLandscape .viewerShell>.sidePrevious{left:4px;right:auto}
+ body.cgaMobileLandscape .viewerShell>.sideNext{right:4px;left:auto}
+ body.cgaMobileLandscape .viewerShell:has(#magazineStage:not([hidden]):not(.cgaCameraFocused))>.sidePrevious{left:max(4px,calc((var(--cga-book-gutter,52px) - 44px)/2))}
+ body.cgaMobileLandscape .viewerShell:has(#magazineStage:not([hidden]):not(.cgaCameraFocused))>.sideNext{right:max(4px,calc((var(--cga-book-gutter,52px) - 44px)/2))}
+ body.cgaMobileLandscape .viewerShell:has(.cgaCameraFocused)>.sideNav{opacity:.65}
+ body.cgaMobileLandscape .viewerShell>.sideNav:disabled{opacity:.25}
+ body.cgaMobileLandscape .viewerShell>.sideNav:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
  body.cgaMobileLandscape :is(#contactMenu,#landscapeChapterMenu,#actionsMenu,#downloadMenu){position:fixed!important;top:6px!important;bottom:auto!important;max-height:calc(100dvh - 12px);max-width:calc(100vw - var(--cga-rail-left) - var(--cga-rail-right) - 16px);overflow:auto;overscroll-behavior:contain;z-index:70}
  body.cgaMobileLandscape :is(#contactMenu,#landscapeChapterMenu){left:calc(var(--cga-rail-left) + 5px)!important;right:auto!important}
  body.cgaMobileLandscape :is(#actionsMenu,#downloadMenu){left:auto!important;right:calc(var(--cga-rail-right) + 5px)!important}
