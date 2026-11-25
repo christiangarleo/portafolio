@@ -300,14 +300,14 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-vis
 @media(max-width:900px){
  html.cgaModern body:has(.languageGrid) main{width:min(360px,calc(100% - 56px));margin:0 auto;flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;padding:clamp(28px,5svh,60px) 0 clamp(44px,15svh,170px)}
  html.cgaModern body:has(.languageGrid) .kicker{font-size:10px;line-height:1.5;letter-spacing:.12em;margin-bottom:16px}
- html.cgaModern body:has(.languageGrid) h1{font-size:clamp(32px,6vw,42px);line-height:1.09;letter-spacing:-.045em;margin-bottom:18px}
+ html.cgaModern body:has(.languageGrid) h1{font-size:clamp(22px,7vw,30px);line-height:1.16;letter-spacing:-.04em;margin-bottom:20px;display:grid;gap:9px}
  html.cgaModern body:has(.languageGrid) .languageGrid{grid-template-columns:minmax(0,1fr);width:100%;margin:0;gap:12px}
  html.cgaModern body:has(.languageGrid) .languageCard{width:100%;min-height:100px;padding:18px;gap:14px;border-radius:16px}
  html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:23px;letter-spacing:-.025em}
  html.cgaModern body:has(.languageGrid) .languageCard .description{font-size:12px;line-height:1.4;margin-top:5px}
  html.cgaModern body:has(.languageGrid) .languageCard .flag{width:36px}
  html.cgaModern body:has(.languageGrid) .languageCard .arrow{font-size:19px}
- html.cgaModern body:has(.languageGrid) .accent{width:56%;max-width:200px;margin-bottom:24px}
+ html.cgaModern body:has(.languageGrid) .accent{width:100%;max-width:none;margin-bottom:24px}
  html.cgaModern body:has(.languageGrid) >header{padding:15px 22px}
 }
 @media(max-width:360px){

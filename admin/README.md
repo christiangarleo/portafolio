@@ -230,3 +230,8 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - Evidencia: captura del titular en dispositivo real; título y tarjetas de anchos diferentes, contenido reducido en relación con la pantalla y espacio superior excesivo.
 - Se alinea el título, acento y tarjetas en un único bloque de hasta 360 px, con márgenes laterales adaptativos de 24–28 px, tarjetas de altura mínima 100 px y tipografía jerarquizada. Se desplaza el centro visual ligeramente hacia arriba sin fijar alturas ni cortar contenido. Se conservan SVG, cristal, navegación, contraste y escritorio. Cambios solo en HOME; base `af2177f217d686618b7c623ddd06e9abe3fb79c8`; reversión mediante revert del commit.
 - Verificación estática de estructura, anchos calculados y reglas responsive; validación visual real pendiente.
+
+## HOME — refinamiento del título bilingüe en móvil
+- Solicitud del titular: una línea por idioma, menor tipografía, separación entre frases y degradado del ancho de las tarjetas.
+- Se separan las frases en elementos con idioma semántico, se ajusta la tipografía móvil a 22–30 px con 9 px de separación y se extiende la línea al ancho del bloque. Se mantiene el ajuste natural de texto para accesibilidad y el escritorio sin cambios visuales. Base: `a03455c8a04a3d545a0f9ff6c356e4103be4d479`; reversión: revertir este commit.
+- Verificación estática de estructura, reglas CSS y enlaces; validación visual pendiente.
