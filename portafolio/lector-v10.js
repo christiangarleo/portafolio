@@ -395,7 +395,7 @@
   });
   // Zoom is relative to the fitted spread, not the browser UI.
   const clampZoom=n=>Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,n));
-  const readingNode=()=>magazineActive?byId("magazineBook"):pageContainer;
+  const readingNode=()=>magazineActive?byId("magazineZoomSurface"):pageContainer;
   const centerPoint=()=>{const r=viewportBox.getBoundingClientRect();return {x:r.left+viewportBox.clientWidth/2,y:r.top+viewportBox.clientHeight/2};};
   function captureAnchor(point){
     const r=readingNode().getBoundingClientRect();
@@ -403,11 +403,12 @@
     return {x:Math.max(0,Math.min(1,(point.x-r.left)/r.width)),y:Math.max(0,Math.min(1,(point.y-r.top)/r.height))};
   }
   function restoreAnchor(anchor,point,geometry){
-    if(!anchor||!geometry)return;
+    if(!geometry)return;
+    viewportBox.classList.toggle("cgaZoomPan",geometry.scrollX||geometry.scrollY);
+    if(!anchor)return;
     const r=readingNode().getBoundingClientRect();
     viewportBox.scrollLeft=geometry.scrollX?viewportBox.scrollLeft+r.left+anchor.x*r.width-point.x:0;
     viewportBox.scrollTop=geometry.scrollY?viewportBox.scrollTop+r.top+anchor.y*r.height-point.y:0;
-    viewportBox.classList.toggle("cgaZoomPan",geometry.scrollX||geometry.scrollY);
   }
   function refreshZoom(from=centerPoint(),to=from){
     if(magazineOpening||!pdfDocument||nativeMode)return;
@@ -450,7 +451,7 @@
   // A wheel over the actual document zooms; Shift+wheel / horizontal trackpad pans.
   viewportBox.addEventListener("wheel",event=>{
     if(magazineOpening||nativeMode||!pdfDocument)return;
-    if(event.shiftKey||(!event.ctrlKey&&Math.abs(event.deltaX)>Math.abs(event.deltaY)))return;
+    if(event.shiftKey||(!event.ctrlKey&&Math.abs(event.deltaX)>Math.abs(event.deltaY))){event.preventDefault();viewportBox.scrollLeft+=event.deltaX||event.deltaY;return;}
     if(!event.deltaY)return;
     event.preventDefault();
     const units=event.deltaMode===1?16:event.deltaMode===2?viewportBox.clientHeight:1;
@@ -469,16 +470,17 @@
   function startGesture(e){
     if(magazineOpening||nativeMode||!pdfDocument||e.button!==0||e.target.closest?.("#nativeFallback"))return;
     const touch=e.pointerType==="touch"||e.pointerType==="pen";
-    if(!touch&&(!canPan()||e.target.closest?.("a")))return;
+    if(!touch&&!canPan()&&!magazineActive)return;
     pointers.set(e.pointerId,pos(e));
     if(pointers.size===1){
       gesture={start:pos(e),last:pos(e),pan:canPan(),pinched:false,moved:false,touch};
-      if(!touch){e.preventDefault();capture(e.pointerId);}
+      // Capture only after a real drag so taps on PDF links remain functional.
     }else if(pointers.size===2){
       const [a,b]=pointers.values();gesture.pinched=true;gesture.moved=true;gesture.pinchDistance=distance(a,b);gesture.mid=midpoint(a,b);
       for(const id of pointers.keys())capture(id);
     }
-    if(touch)e.stopPropagation();
+    // This viewer owns both touch and mouse gestures; StPageFlip only animates turns.
+    e.stopPropagation();
   }
   function moveGesture(e){
     if(!gesture||!pointers.has(e.pointerId))return;
@@ -489,7 +491,7 @@
       gesture.pinchDistance=d;gesture.mid=mid;gesture.pinched=true;gesture.moved=true;
     }else{
       if(distance(p,gesture.start)>7){gesture.moved=true;capture(e.pointerId);}
-      if(gesture.pan||gesture.pinched){viewportBox.scrollLeft-=p.x-gesture.last.x;viewportBox.scrollTop-=p.y-gesture.last.y;viewportBox.classList.add("cgaZoomDragging");}
+      if((gesture.pan||gesture.pinched)&&gesture.moved){viewportBox.scrollLeft-=p.x-gesture.last.x;viewportBox.scrollTop-=p.y-gesture.last.y;viewportBox.classList.add("cgaZoomDragging");}
       gesture.last=p;
     }
     if(gesture.moved){e.preventDefault();e.stopPropagation();}
@@ -504,7 +506,7 @@
     const g=gesture;gesture=null;viewportBox.classList.remove("cgaZoomDragging");
     if(g.moved||g.pinched){
       suppressClickUntil=performance.now()+350;
-      if(e.type==="pointerup"&&g.touch&&!g.pan&&!g.pinched){
+      if(e.type==="pointerup"&&(g.touch||magazineActive)&&!g.pan&&!g.pinched){
         const dx=e.clientX-g.start.x,dy=e.clientY-g.start.y;
         if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)stepPage(dx<0?1:-1);
       }
@@ -512,9 +514,9 @@
     }
   }
   viewportBox.addEventListener("pointerdown",startGesture,true);
-  viewportBox.addEventListener("pointermove",moveGesture,true);
-  viewportBox.addEventListener("pointerup",finishGesture,true);
-  viewportBox.addEventListener("pointercancel",finishGesture,true);
+  window.addEventListener("pointermove",moveGesture,{capture:true,passive:false});
+  window.addEventListener("pointerup",finishGesture,true);
+  window.addEventListener("pointercancel",finishGesture,true);
   viewportBox.addEventListener("lostpointercapture",finishGesture,true);
   for(const type of ["touchstart","touchmove","touchend","touchcancel"]){
     viewportBox.addEventListener(type,e=>{if(!nativeMode&&pdfDocument)e.stopPropagation();},{capture:true,passive:true});

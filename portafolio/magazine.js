@@ -37,32 +37,17 @@
     const width=Math.max(1,Math.floor(fit*factor)),height=Math.max(1,Math.floor(width/ratio));
     return {width,height,factor,padX,padY};
   }
-  // Measure the scrollport without existing scrollbars, then reserve only the axes
-  // genuinely required by the spread. A vertical scrollbar reduces width in width-fit.
+  // A stable scrollport: never toggle axes or reset scroll during a gesture.
+  // Scrollbars are visually hidden by CSS, so their appearance cannot resize the viewport.
   function applyViewportLayout(viewport,stage,ratio,mode="page",manual=1){
-    const setAxes=(x,y)=>{viewport.style.overflowX=x?"scroll":"hidden";viewport.style.overflowY=y?"scroll":"hidden";};
-    setAxes(false,false);
-    const full={clientWidth:viewport.clientWidth,clientHeight:viewport.clientHeight};
-    const base=layout(full,ratio,mode,manual);
-    let g=base,x=false,y=false;
-    for(let i=0;i<4;i++){
-      const w=viewport.clientWidth,h=viewport.clientHeight;
-      if(mode==="width"){
-        const width=Math.max(1,Math.floor((w-2*base.padX)/2));
-        g={...base,width,height:Math.max(1,Math.floor(width/ratio)),factor:base.factor*width/base.width};
-      }
-      const nextX=x||2*g.width+2*g.padX>w;
-      const nextY=y||g.height+2*g.padY>h;
-      if(nextX===x&&nextY===y)break;
-      x=nextX;y=nextY;setAxes(x,y);
-    }
-    // Explicit border-box dimensions isolate animated StPageFlip overflow from scroll size.
-    stage.style.width=Math.max(viewport.clientWidth,2*g.width+2*g.padX)+"px";
-    stage.style.height=Math.max(viewport.clientHeight,g.height+2*g.padY)+"px";
+    if(viewport.style.overflowX!=="auto")viewport.style.overflowX="auto";
+    if(viewport.style.overflowY!=="auto")viewport.style.overflowY="auto";
+    const g=layout(viewport,ratio,mode,manual);
+    const w=Math.max(viewport.clientWidth,2*g.width+2*g.padX);
+    const h=Math.max(viewport.clientHeight,g.height+2*g.padY);
+    stage.style.width=w+"px";stage.style.height=h+"px";
     stage.style.padding=g.padY+"px "+g.padX+"px";
-    if(!x)viewport.scrollLeft=0;
-    if(!y)viewport.scrollTop=0;
-    return {...g,scrollX:x,scrollY:y};
+    return {...g,scrollX:w>viewport.clientWidth,scrollY:h>viewport.clientHeight};
   }
   async function pageRatio(pdf){
     const samples=await Promise.all([1,Math.min(2,pdf.numPages),Math.min(3,pdf.numPages)].map(n=>pdf.getPage(n)));
@@ -78,15 +63,26 @@
     const msg={loading:en?"Loading page…":"Cargando página…",error:en?"Page unavailable":"Página no disponible",link:en?"Open portfolio link":"Abrir enlace del portafolio",page:en?"Page":"Página"};
     const cache=new Map(),failed=new Set(),originals=new Map();
     let book=null,active=false,desired=[],rendering=false,current=1,disposed=false,ratio=1,preparing=null;
-    let zoomMode="page",manualZoom=1,geometry=null,quality=1500;
+    let zoomMode="page",manualZoom=1,geometry=null,quality=1500,baseGeometry=null,qualityTimer=0;
+    const surface=host.parentElement,stage=surface.parentElement;
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
     function spreadSize(){return 2;}
     function applySize(){
-      geometry=applyViewportLayout(viewport,host.parentElement,ratio,zoomMode,manualZoom);
-      host.style.width=geometry.width*2+"px";host.style.height=geometry.height+"px";
+      geometry=applyViewportLayout(viewport,stage,ratio,zoomMode,manualZoom);
+      const base=layout(viewport,ratio,"page",1);
+      const changed=!baseGeometry||base.width!==baseGeometry.width||base.height!==baseGeometry.height;
+      if(changed){
+        baseGeometry=base;
+        host.style.width=base.width*2+"px";host.style.height=base.height+"px";
+      }
+      surface.style.width=geometry.width*2+"px";surface.style.height=geometry.height+"px";
+      host.style.transform="scale("+geometry.width/baseGeometry.width+","+geometry.height/baseGeometry.height+")";
       const px=Math.max(geometry.width,geometry.height)*Math.min(window.devicePixelRatio||1,2);
-      quality=px>2200?2600:px>1500?2200:1500;
-      return geometry;
+      const target=px>2200?2600:px>1500?2200:1500;
+      // Defer raster upgrades until the gesture settles; do not repaint on each frame.
+      clearTimeout(qualityTimer);
+      qualityTimer=setTimeout(()=>{if(active&&!disposed&&target>quality){quality=target;queue(current);}},280);
+      return changed;
     }
     function hasNext(){return current+(current===1?1:spreadSize())<=count;}
     function sync(page){
@@ -203,7 +199,7 @@
           const width=650,height=Math.round(width/ratio);
           const items=Array.from({length:count},(_,i)=>createLeaf(i+1));
           host.replaceChildren(...items);
-          book=new PageFlip(host,{width,height,size:"stretch",minWidth:1,maxWidth:10000,minHeight:1,maxHeight:10000,autoSize:false,usePortrait:false,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:!reduced.matches,useMouseEvents:!reduced.matches,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:true,swipeDistance:35});
+          book=new PageFlip(host,{width,height,size:"stretch",minWidth:1,maxWidth:10000,minHeight:1,maxHeight:10000,autoSize:false,usePortrait:false,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:false,useMouseEvents:false,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:true,swipeDistance:35});
           book.on("flip",e=>sync(e.data+1));
           book.on("changeOrientation",()=>{if(active&&book)queue(current);});
           book.on("changeState",()=>{if(active)for(const p of desired)paint(p);});
@@ -227,10 +223,10 @@
       if(reduced.matches){delta>0?book.turnToNextPage():book.turnToPrevPage();return;}
       delta>0?book.flipNext("bottom"):book.flipPrev("bottom");
     }
-    function close(){active=false;desired=[];}
+    function close(){active=false;desired=[];clearTimeout(qualityTimer);}
     function resize(mode=zoomMode,manual=manualZoom){
       zoomMode=mode;manualZoom=manual;
-      if(active&&book){applySize();book.update();sync(book.getCurrentPageIndex()+1);}
+      if(active&&book){const changed=applySize();if(changed){book.update();queue(current);}}
       return geometry;
     }
     function dispose(){disposed=true;close();for(const entry of cache.values())URL.revokeObjectURL(entry.url);cache.clear();if(book)try{book.destroy();}catch{}}
