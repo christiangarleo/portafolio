@@ -85,6 +85,8 @@
     .helper {font-size:12px;color:#777;margin:7px 0 0; }
     .formActions {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:19px 0 8px;}
     .formActions .secondary { min-height:42px; }
+    #requestSuccessActions .actionLink{display:inline-flex;align-items:center;justify-content:center;min-height:44px;}
+    #requestSuccessActions .actionLink:focus-visible{outline:2px solid var(--cga-focus,#222);outline-offset:3px;}
     .errorBox { font-size:13px;color:#a21d35;min-height:18px;margin:8px 0;}
     .inlineCheck { display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:400; }
     .inlineCheck input {width:auto;min-height:0;margin:0;}
@@ -299,6 +301,9 @@
       <div id="formError" class="errorBox" role="alert" aria-live="polite"></div>
       <div id="leadMessage" class="message" role="status" aria-live="polite"></div>
     </form>
+    <div id="requestSuccessActions" class="formActions" hidden>
+      <a id="successBackPortfolio" class="actionLink" href="/portafolio/?lang=es">Volver al portafolio</a>
+    </div>
   </section>
     <section id="invalidSection" class="panel" hidden>
     <h2>Identificador de empresa no válido</h2><p class="sub">Volvé al portafolio e ingresá el identificador de tu empresa (RUC, RFC, NIT, RUT, CUIT, CNPJ, EIN, VAT ID, NIF/CIF, ABN, etc.).</p>
@@ -331,7 +336,7 @@
     <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
   </div>
 </main>
-<script src="./empresa.js?v=20261124-retry-id2" defer></script>
+<script src="./empresa.js?v=20261125-success-back1" defer></script>
   <script src="/theme/theme.js?v=20261124-switch1" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>
 </body></html>

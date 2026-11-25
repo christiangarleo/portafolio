@@ -10,7 +10,7 @@
   const loading = by("loading");
   const message = by("downloadMessage");
   const portfolioBack="/portafolio/?lang="+locale;
-  for(const id of ["returnPortfolio","invalidBackPortfolio","missingCVBack"]){
+  for(const id of ["returnPortfolio","invalidBackPortfolio","missingCVBack","successBackPortfolio"]){
     const link=by(id);if(link)link.href=portfolioBack;
   }
   const missingDialog=by("missingCVDialog");
@@ -274,7 +274,10 @@
       if(existing)existing.remove();
       const note=element("p",contactMessage,"sub");
       note.id="requestSuccess";
-      by("emptySection").append(note);
+      const actions=by("requestSuccessActions");
+      by("emptySection").insertBefore(note,actions);
+      by("successBackPortfolio").textContent=t("Volver al portafolio");
+      actions.hidden=false;
       by("emptySection").scrollIntoView({block:"nearest",behavior:"smooth"});
     }catch(error){
       setMessage(by("leadMessage"),"",false);
