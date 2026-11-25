@@ -72,11 +72,76 @@ async function notifyNewLead(lead: NotificationLead): Promise<void> {
   }
   console.error("lead_notification_failed", id, "retry_exhausted");
 }
-function scheduleLeadNotification(lead: NotificationLead) {
+
+// Confirmation email: controlled pilot, never send to an unverified arbitrary address.
+// The public form still accepts and saves every valid lead; external receipts remain disabled.
+const CONFIRMATION_TEST_RECIPIENT = "hola@christianarleo.com";
+type ConfirmationLead = NotificationLead & { email: string; contact_name: string; language: string };
+function confirmationPayload(lead: ConfirmationLead) {
+  const en = lead.language === "en";
+  const clean = (s: string, max: number) => String(s || "").replace(/[\r\n\t\u0000-\u001f\u007f]/g, " ").trim().slice(0,max);
+  const esc = (s: string) => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] || c));
+  const name = clean(lead.contact_name,140);
+  const company = clean(lead.company_name,160);
+  // v3 may supply a synthetic contact name when the visitor omits their name.
+  const greeting = !name || name === "Equipo de " + company.slice(0,120) ? (en ? "Hello:" : "Hola:") : (en ? "Hello, " : "Hola, ") + name + ":";
+  const category = (en ? {solicitud_cv:"CV request",in_house:"in-house hiring",proyecto:"project-based hiring"} : {solicitud_cv:"solicitud de CV",in_house:"contratación In-house",proyecto:"contratación por proyecto"})[lead.kind] || (en ? "professional inquiry" : "contacto profesional");
+  const subject = en ? "I received your request | Christian Gabriel Arleo" : "Recibí la solicitud | Christian Gabriel Arleo";
+  const receipt = lead.kind === "solicitud_cv" ? (en ? "I received your CV request on behalf of " + company + "." : "Recibí correctamente tu solicitud de CV en representación de " + company + ".") : (en ? "I received your request for " + category + " on behalf of " + company + "." : "Recibí correctamente tu solicitud de " + category + " en representación de " + company + ".");
+  const thanks = en ? "Thank you for contacting me and for your interest in my professional profile." : "Gracias por contactarme y por tu interés en mi perfil profesional.";
+  const next = en ? "I will personally review your proposal and, depending on the nature of the opportunity, we will coordinate the next steps." : "Revisaré personalmente tu propuesta y, según las características de la oportunidad, coordinaremos los próximos pasos.";
+  const before = en ? "In the meantime, you can continue exploring my portfolio at " : "Mientras tanto, podés seguir explorando mi portafolio en ";
+  const after = en ? " and share it if you wish." : " y compartirlo si gusta.";
+  const regards = en ? "Kind regards," : "Saludos cordiales,";
+  const role = en ? "Marketing 360 | Growth | Commercial Strategy | Applied AI" : "Marketing 360 | Growth | Estrategia Comercial | IA aplicada";
+  const note = en ? "This message automatically confirms receipt of your request." : "Este mensaje confirma automáticamente la recepción de tu solicitud.";
+  const portfolio = "https://christianarleo.com/portafolio/?lang=" + (en ? "en" : "es");
+  const whatsapp = "https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte.";
+  const linkedin = "https://www.linkedin.com/in/christianarleo/";
+  const link = (url: string,label: string) => '<a href="'+esc(url)+'" style="color:#0000bb;text-decoration:underline">'+esc(label)+'</a>';
+  const colors = ["#DF3E89","#E14682","#E24E7B","#E45573","#E55D6C","#E76565","#E86D5E","#EA7557","#EB7C4F","#ED8448","#EE8C41","#F0943A","#F19B32","#F3A32B","#F4AB24","#F6B31D","#F7BB16","#F9C20E","#FACA07","#FCD200"];
+  const gradient = colors.map(c=>'<td bgcolor="'+c+'" width="5%" height="2" style="height:2px;font-size:0;line-height:2px;">&nbsp;</td>').join("");
+  const paragraph = (s: string) => '<p style="margin:0 0 16px">'+esc(s)+'</p>';
+  const html = '<!doctype html><html lang="'+(en?"en":"es")+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style>:root{color-scheme:light dark;supported-color-schemes:light dark}@media(prefers-color-scheme:dark){.email-text,.signature-name{color:#ededed!important}.signature-role,.auto-note{color:#b7b7b7!important}a{color:#b9b9ff!important}}</style></head><body><div class="email-text" style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#161616;overflow-wrap:break-word;">'
+    + [greeting,thanks,receipt,next].map(paragraph).join("")
+    + '<p style="margin:0 0 16px">'+esc(before)+link("https://christianarleo.com/","christianarleo.com")+esc(after)+'</p>'
+    + '<p style="margin:0 0 28px">'+esc(regards)+'</p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="500" style="width:100%;max-width:500px;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;"><tr><td class="signature-name" style="font-size:23px;font-weight:400;color:#161616;line-height:1.3;padding:0 0 10px">Christian Gabriel Arleo</td></tr><tr><td style="padding:0 0 6px"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:linear-gradient(90deg,#DF3E89,#FCD200);"><tr>'+gradient+'</tr></table></td></tr>'
+    + '<tr><td class="signature-role" style="font-size:15px;line-height:1.45;color:#666666;padding:0">'+esc(role)+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link(whatsapp,"WhatsApp")+" | "+link(linkedin,"LinkedIn")+" | "+link(portfolio,en?"Professional portfolio":"Portafolio profesional")+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link("mailto:hola@christianarleo.com","hola@christianarleo.com")+'</td></tr></table><p class="auto-note" style="font-size:12px;line-height:1.5;color:#666666;font-style:italic;margin:28px 0 0">'+esc(note)+'</p></div></body></html>';
+  const plain = [greeting,thanks,receipt,next,before+"christianarleo.com"+after,regards,"Christian Gabriel Arleo\n"+role+"\nWhatsApp: "+whatsapp+"\nLinkedIn: "+linkedin+"\n"+portfolio+"\nhola@christianarleo.com",note].join("\n\n");
+  return {from:"Christian Gabriel Arleo <alertas@notificaciones.christianarleo.com>",to:[CONFIRMATION_TEST_RECIPIENT],reply_to:"hola@christianarleo.com",subject,html,text:plain};
+}
+async function notifyRequester(lead: ConfirmationLead): Promise<void> {
+  const id = lead.id;
+  if (lead.email !== CONFIRMATION_TEST_RECIPIENT) { console.log("lead_confirmation_skipped",id,"pilot_recipient"); return; }
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) { console.error("lead_confirmation_failed",id,"missing_secret"); return; }
+  // Cap the pilot even if someone repeatedly submits the public form with the owner's address.
+  const {count,error} = await supabase.from("portfolio_cv_leads").select("id",{count:"exact",head:true}).eq("email",CONFIRMATION_TEST_RECIPIENT).gte("created_at",new Date(Date.now()-15*60*1000).toISOString());
+  if(error || count === null || count > 2) { console.warn("lead_confirmation_skipped",id,error?"rate_check_error":"pilot_rate_limit"); return; }
+  const body = JSON.stringify(confirmationPayload(lead));
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      const res = await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-confirmation/"+id},body,signal:AbortSignal.timeout(8000)});
+      if(res.ok){
+        const accepted=await res.json().catch(()=>null);
+        if(typeof accepted?.id==="string"&&accepted.id){console.log("lead_confirmation_accepted",id,accepted.id,attempt);return;}
+      }else{
+        console.warn("lead_confirmation_http",id,attempt,res.status);
+        if(res.status!==408&&res.status!==429&&res.status<500){console.error("lead_confirmation_failed",id,"permanent_http",res.status);return;}
+      }
+    }catch{console.warn("lead_confirmation_retry",id,attempt,"network_or_timeout");}
+    if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*1000));
+  }
+  console.error("lead_confirmation_failed",id,"retry_exhausted");
+}
+
+function scheduleLeadNotification(lead: ConfirmationLead) {
   if (!lead?.id) { console.error("lead_notification_failed", "missing_lead_id"); return; }
   try {
     const task = notifyNewLead(lead).catch(() => console.error("lead_notification_failed", lead.id, "unexpected"));
     EdgeRuntime.waitUntil(task);
+    EdgeRuntime.waitUntil(notifyRequester(lead).catch(() => console.error("lead_confirmation_failed",lead.id,"unexpected")));
   } catch { console.error("lead_notification_failed", lead.id, "schedule_error"); }
 }
 
@@ -192,9 +257,9 @@ Deno.serve(async (req: Request) => {
       contact_time: null,
       observations: observations || null,
       intake_data: intake, intake_version: 3, language
-    }).select("id,kind,company_name,created_at").single();
+    }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
-    scheduleLeadNotification(savedLead as NotificationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead_v2") {
@@ -305,12 +370,12 @@ Deno.serve(async (req: Request) => {
       contact_time: contactPreference === "contactame" ? contactTime || null : null,
       observations: observations || null,
       intake_data: intake, intake_version: 2
-    }).select("id,kind,company_name,created_at").single();
+    }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) {
       console.error("lead_v2_insert", error.message);
       return reply(req, { error: "No se pudo registrar la propuesta." }, 503);
     }
-    scheduleLeadNotification(savedLead as NotificationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead") {
@@ -330,9 +395,9 @@ Deno.serve(async (req: Request) => {
       kind, company_name: company, contact_name: name, email, ruc: ruc || null,
       phone: text(input.phone, 65), position_or_project: text(input.position_or_project, 180),
       details: text(input.details, 1600)
-    }).select("id,kind,company_name,created_at").single();
+    }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) { console.error("cv_lead", error.message); return reply(req, { error: "No se pudo registrar la solicitud" }, 503); }
-    scheduleLeadNotification(savedLead as NotificationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead);
     return reply(req, { status: "received" });
   }
   return reply(req, { error: "Accion invalida" }, 400);
