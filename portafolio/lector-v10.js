@@ -24,7 +24,11 @@
   const pageStatus = byId("pageStatus");
   const pageContainer = byId("pageContainer");
   const pageStage = byId("pageStage");
-  const zoomText = byId("zoomReadout");
+  const focusButton=byId("focusMode"),focusDialog=byId("focusDialog"),focusScroll=byId("focusScroll"),focusPageNode=byId("focusPage"),focusStatus=byId("focusStatus");
+  focusButton.textContent=locale==="en"?"Reading mode":"Modo lectura";
+  byId("focusTitle").textContent=focusButton.textContent;
+  byId("focusClose").textContent=locale==="en"?"← Back":"← Volver";
+  focusScroll.setAttribute("aria-label",locale==="en"?"Page in reading mode":"Página en modo lectura");
   const viewerModeButton = byId("viewerMode");
   const nativeFallback = byId("nativeFallback");
   const magazineButton=byId("magazineMode"), magazineStage=byId("magazineStage");
@@ -114,11 +118,8 @@
   const shareButton = byId("actionsToggle");
   let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
   refreshSectionLinks();
-  let zoomMode="page",manualZoom=1,currentScale=1,nativeMode=false,ratioPromise=null;
-  let classicRatio=null,classicGeometry=null,classicRenderedWidth=0,zoomRenderTimer=0;
-  const {MIN_ZOOM,MAX_ZOOM}=spreads;
-  const classicStart=page=>spreads.spreadStart(page);
-  function updateZoom(factor){currentScale=factor;viewportBox.classList.toggle("cgaZoomPan",viewportBox.scrollWidth>viewportBox.clientWidth+2||viewportBox.scrollHeight>viewportBox.clientHeight+2);zoomText.textContent=Math.round(factor*100)+"%";byId("zoomOut").disabled=factor<=MIN_ZOOM+.001;byId("zoomIn").disabled=factor>=MAX_ZOOM-.001;}
+  let nativeMode=false,ratioPromise=null;
+  const classicStart=page=>spreads.spreadStart(page,spreads.singlePage());
   function getRatio(){return ratioPromise ||= spreads.pageRatio(pdfDocument);}
   const pageLink = page => SHARE_URL + "&pagina=" + page;
   const validPage = value => /^\d+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= totalPages;
@@ -178,7 +179,8 @@
   function updateToolbar() {
     totalPagesText.textContent = totalPages>0?String(totalPages):"—";
     const back=magazineActive&&magazineNav?!magazineNav.previous:activePage<=1;
-    const forward=magazineActive&&magazineNav?!magazineNav.next:spreads.spreadStep(activePage,1,totalPages)===classicStart(activePage);
+    const forward=magazineActive&&magazineNav?!magazineNav.next:spreads.spreadStep(activePage,1,totalPages,spreads.singlePage())===classicStart(activePage);
+    focusButton.disabled=!pdfDocument||nativeMode||magazineOpening;
     previousButton.disabled=sidePrevious.disabled=back;
     nextButton.disabled=sideNext.disabled=forward;
     input.max = String(totalPages);
@@ -204,7 +206,7 @@
     pageStage.hidden = false;
   }
 
-  async function drawPageLinks(pdfPage, cssViewport, links) {
+  async function drawPageLinks(pdfPage, cssViewport, links, onInternal=page=>navigate(page,true)) {
     links.replaceChildren();
     let annotations;
     try { annotations = await pdfPage.getAnnotations({ intent:"display" }); }
@@ -230,7 +232,7 @@
             const dest = typeof item.dest === "string" ? await pdfDocument.getDestination(item.dest) : item.dest;
             if (!dest || dest[0]==null) return;
             const index = typeof dest[0] === "number" ? dest[0] : await pdfDocument.getPageIndex(dest[0]);
-            if (Number.isInteger(index)) navigate(index+1, true);
+            if (Number.isInteger(index)) onInternal(index+1);
           } catch { showMessage("No se pudo abrir el enlace interno"); }
         });
       }
@@ -238,10 +240,11 @@
     }
   }
 
-  async function renderSheet(pdfPage,geometry,group){
+  async function renderSheet(pdfPage,geometry,group,onInternal){
     const sheet=document.createElement("div");sheet.className="cgaClassicSheet";
     sheet.style.width=geometry.width+"px";sheet.style.height=geometry.height+"px";
     if(!pdfPage){sheet.classList.add("cgaClassicSheet--blank");sheet.setAttribute("aria-hidden","true");return sheet;}
+    sheet.dataset.readerPage=String(pdfPage.pageNumber);
     const unit=pdfPage.getViewport({scale:1});
     const scale=Math.min(geometry.width/unit.width,geometry.height/unit.height);
     const cssViewport=pdfPage.getViewport({scale});
@@ -255,44 +258,36 @@
     if(group.cancelled)return sheet;
     const task=pdfPage.render({canvasContext:canvas.getContext("2d",{alpha:false}),viewport:actualViewport});
     group.tasks.push(task);await task.promise;
-    if(!group.cancelled)await drawPageLinks(pdfPage,cssViewport,links);
+    if(!group.cancelled)await drawPageLinks(pdfPage,cssViewport,links,onInternal);
     return sheet;
   }
-  async function navigate(page, updateURL=true, zoomGeometry=null) {
+  async function navigate(page, updateURL=true) {
     if(magazineOpening)return;
     if(magazineActive&&magazine){if(validPage(page))magazine.go(Number(page));else showMessage("Elegí una página entre 1 y "+totalPages);return;}
     if(!validPage(page)){showMessage("Elegí una página entre 1 y "+totalPages);return;}
-    clearTimeout(zoomRenderTimer);
-    const id=++ticket,previous=activePage;
-    const priorX=viewportBox.scrollLeft,priorY=viewportBox.scrollTop;
+    const id=++ticket;
     activePage=Number(page);updateToolbar();
     if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(activePage===1?"":"&pagina="+activePage));
-    if(!zoomGeometry){classicGeometry=null;classicRenderedWidth=0;pageContainer.style.transform="";resetView();setLoading("Cargando página "+page+"…");}
+    resetView();setLoading("Cargando página "+page+"…");
     if(activeRender){activeRender.cancel();activeRender=null;}
     const group={tasks:[],cancelled:false,promise:null,cancel(){this.cancelled=true;for(const t of this.tasks)t.cancel();}};
     activeRender=group;
     try{
       if(!pdfDocument)throw Error("Lector PDF no disponible");
       if(nativeMode){nativeMode=false;nativeFallback.hidden=true;}
-      const slots=spreads.spreadSlots(activePage,totalPages);
+      const single=spreads.singlePage();
+      const slots=spreads.spreadSlots(activePage,totalPages,single);
       const [ratio,pdfPages]=await Promise.all([getRatio(),Promise.all(slots.map(p=>p?pdfDocument.getPage(p):null))]);
       if(id!==ticket||group.cancelled)return;
-      classicRatio=ratio;
-      const geometry=zoomGeometry||spreads.applyViewportLayout(viewportBox,pageStage,ratio,zoomMode,manualZoom);
-      updateZoom(geometry.factor);
+      const geometry=spreads.applyViewportLayout(viewportBox,pageStage,ratio,single);
       group.promise=Promise.all(pdfPages.map(p=>renderSheet(p,geometry,group)));
       const sheets=await group.promise;
       if(id!==ticket||group.cancelled)return;
-      pageContainer.replaceChildren(...sheets);pageContainer.style.transform="";pageContainer.hidden=false;pageStatus.hidden=true;
-      classicRenderedWidth=geometry.width;classicGeometry=geometry;
-      if(!zoomGeometry){
-        viewportBox.scrollTop=geometry.scrollY&&previous===activePage?priorY:0;
-        viewportBox.scrollLeft=geometry.scrollX?(previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2)):0;
-      }
-      updateZoom(geometry.factor);
+      pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
+      viewportBox.scrollTop=viewportBox.scrollLeft=0;updateToolbar();
     }catch(error){
       if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
-      console.error("Falló renderizado de pliego",error);if(zoomGeometry){showMessage(locale==="en"?"Could not sharpen the zoomed page.":"No se pudo mejorar la nitidez de la página ampliada.");}else setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
+      console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
     }finally{if(activeRender===group)activeRender=null;}
   }
 
@@ -313,7 +308,7 @@
   });
   // Allow selecting a page without the redundant “Ir a página” button.
   input.addEventListener("change", jumpToSelectedPage);
-  function stepPage(delta){if(magazineOpening)return;if(magazineActive&&magazine)magazine.step(delta);else{const next=spreads.spreadStep(activePage,delta,totalPages);if(next!==classicStart(activePage))navigate(next);}}
+  function stepPage(delta){if(magazineOpening)return;if(magazineActive&&magazine)magazine.step(delta);else{const next=spreads.spreadStep(activePage,delta,totalPages,spreads.singlePage());if(next!==classicStart(activePage))navigate(next);}}
   previousButton.addEventListener("click", () => stepPage(-1));
   nextButton.addEventListener("click", () => stepPage(1));
   sidePrevious.addEventListener("click", () => stepPage(-1));
@@ -329,7 +324,7 @@
   // Keyboard navigation mirrors the side arrows, but never hijacks form fields.
   document.addEventListener("keydown", event => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
-        event.shiftKey || nativeMode || !pdfDocument) return;
+        event.shiftKey || nativeMode || !pdfDocument || focusDialog.open) return;
     const focused = event.target;
     if (focused && (focused.closest("input,textarea,select,[contenteditable='true']") ||
                     focused.closest("[role='textbox']"))) return;
@@ -393,135 +388,80 @@
     document.body.appendChild(frame);
     frame.src = verifiedPdfBlobUrl + "#toolbar=0&navpanes=0";
   });
-  // Zoom is relative to the fitted spread, not the browser UI.
-  const clampZoom=n=>Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,n));
-  const readingNode=()=>magazineActive?byId("magazineZoomSurface"):pageContainer;
-  const centerPoint=()=>{const r=viewportBox.getBoundingClientRect();return {x:r.left+viewportBox.clientWidth/2,y:r.top+viewportBox.clientHeight/2};};
-  function captureAnchor(point){
-    const r=readingNode().getBoundingClientRect();
-    if(!r.width||!r.height)return null;
-    return {x:Math.max(0,Math.min(1,(point.x-r.left)/r.width)),y:Math.max(0,Math.min(1,(point.y-r.top)/r.height))};
+  // Focus mode has its own native vertical scroll and fresh PDF.js render.
+  // It never changes activePage, the magazine engine, or the URL on entry/exit.
+  let focusNumber=0,focusRender=null,focusTicket=0,focusResizeTimer=0;
+  function cancelFocus(){
+    focusTicket++;
+    if(focusRender){focusRender.cancel();focusRender=null;}
+    clearTimeout(focusResizeTimer);
   }
-  function restoreAnchor(anchor,point,geometry){
-    if(!geometry)return;
-    viewportBox.classList.toggle("cgaZoomPan",geometry.scrollX||geometry.scrollY);
-    if(!anchor)return;
-    const r=readingNode().getBoundingClientRect();
-    viewportBox.scrollLeft=geometry.scrollX?viewportBox.scrollLeft+r.left+anchor.x*r.width-point.x:0;
-    viewportBox.scrollTop=geometry.scrollY?viewportBox.scrollTop+r.top+anchor.y*r.height-point.y:0;
+  async function renderFocus(preserveScroll=false){
+    if(!focusDialog.open||!validPage(focusNumber))return;
+    cancelFocus();const id=focusTicket,top=focusScroll.scrollTop;
+    const group={tasks:[],cancelled:false,cancel(){this.cancelled=true;for(const t of this.tasks)t.cancel();}};
+    focusRender=group;
+    focusStatus.hidden=false;focusStatus.textContent=locale==="en"?"Loading page…":"Cargando página…";
+    try{
+      const p=await pdfDocument.getPage(focusNumber);
+      if(id!==focusTicket||!focusDialog.open)return;
+      const unit=p.getViewport({scale:1});
+      const width=Math.max(1,Math.min(980,focusScroll.clientWidth-(focusScroll.clientWidth<=600?8:32)));
+      const height=width*unit.height/unit.width;
+      const sheet=await renderSheet(p,{width,height},group,page=>{focusDialog.close();void navigate(page,true);});
+      if(id!==focusTicket||!focusDialog.open||group.cancelled)return;
+      focusPageNode.replaceChildren(sheet);focusStatus.hidden=true;
+      focusScroll.scrollTop=preserveScroll?top:0;
+    }catch(error){
+      if(id!==focusTicket||group.cancelled)return;
+      console.warn("Reading mode",error);focusStatus.textContent=locale==="en"?"Page could not load. Close and try again.":"No se pudo cargar la página. Cerrá y volvé a intentar.";
+    }finally{if(focusRender===group)focusRender=null;}
   }
-  function refreshZoom(from=centerPoint(),to=from){
-    if(magazineOpening||!pdfDocument||nativeMode)return;
-    const anchor=captureAnchor(from);
-    if(magazineActive&&magazine){
-      const geometry=magazine.resize(zoomMode,manualZoom);
-      if(geometry){updateZoom(geometry.factor);restoreAnchor(anchor,to,geometry);}
-    }else if(classicRatio&&classicRenderedWidth&&!pageContainer.hidden){
-      // Keep the currently visible raster and its links on screen during gestures.
-      // Render sharp PDF.js canvases once the gesture settles, without a blank flash.
-      clearTimeout(zoomRenderTimer);
-      if(activeRender){ticket++;activeRender.cancel();activeRender=null;}
-      const geometry=spreads.applyViewportLayout(viewportBox,pageStage,classicRatio,zoomMode,manualZoom);
-      pageContainer.style.transform="scale("+geometry.width/classicRenderedWidth+")";
-      classicGeometry=geometry;updateZoom(geometry.factor);restoreAnchor(anchor,to,geometry);
-      const page=activePage;
-      zoomRenderTimer=setTimeout(()=>{if(!magazineActive&&!magazineOpening&&page===activePage)void navigate(page,false,geometry);},180);
-    }else void navigate(activePage,false);
+  function openFocus(page){
+    if(!pdfDocument||nativeMode||magazineOpening||!validPage(page)||focusDialog.open)return;
+    focusNumber=Number(page);focusPageNode.replaceChildren();
+    byId("focusPageLabel").textContent=focusNumber+" / "+totalPages;
+    focusDialog.showModal();void renderFocus();
   }
-  let pendingZoom=null,zoomFrame=0;
-  function flushZoom(){
-    if(zoomFrame)cancelAnimationFrame(zoomFrame);zoomFrame=0;
-    const pending=pendingZoom;pendingZoom=null;if(!pending)return;
-    if(magazineOpening||nativeMode||!pdfDocument)return;
-    zoomMode="manual";manualZoom=clampZoom(currentScale*pending.factor);
-    refreshZoom(pending.from,pending.to);
-  }
-  function requestZoom(factor,from=centerPoint(),to=from){
-    if(magazineOpening||nativeMode||!pdfDocument||!Number.isFinite(factor)||factor<=0)return;
-    if(pendingZoom){pendingZoom.factor*=factor;pendingZoom.to=to;}
-    else pendingZoom={factor,from,to};
-    if(!zoomFrame)zoomFrame=requestAnimationFrame(flushZoom);
-  }
-  function discardZoom(){if(zoomFrame)cancelAnimationFrame(zoomFrame);zoomFrame=0;pendingZoom=null;clearTimeout(zoomRenderTimer);}
-  function adjustZoom(factor){flushZoom();requestZoom(factor);flushZoom();}
-  byId("zoomOut").addEventListener("click",()=>adjustZoom(.8));
-  byId("zoomIn").addEventListener("click",()=>adjustZoom(1.25));
-  byId("fitPage").addEventListener("click",()=>{if(magazineOpening)return;discardZoom();zoomMode="page";refreshZoom();});
-  byId("fitWidth").addEventListener("click",()=>{if(magazineOpening)return;discardZoom();zoomMode="width";refreshZoom();});
-  // A wheel over the actual document zooms; Shift+wheel / horizontal trackpad pans.
-  viewportBox.addEventListener("wheel",event=>{
-    if(magazineOpening||nativeMode||!pdfDocument)return;
-    if(event.shiftKey||(!event.ctrlKey&&Math.abs(event.deltaX)>Math.abs(event.deltaY))){event.preventDefault();viewportBox.scrollLeft+=event.deltaX||event.deltaY;return;}
-    if(!event.deltaY)return;
-    event.preventDefault();
-    const units=event.deltaMode===1?16:event.deltaMode===2?viewportBox.clientHeight:1;
-    const delta=Math.max(-180,Math.min(180,event.deltaY*units));
-    requestZoom(Math.exp(-delta*.003),{x:event.clientX,y:event.clientY});
-  },{passive:false});
-  // Touch gestures are isolated from StPageFlip's touch handlers. At fit, a
-  // horizontal swipe turns the spread; when enlarged, dragging pans instead.
-  const pointers=new Map();
-  let gesture=null,suppressClickUntil=0;
-  const pos=e=>({x:e.clientX,y:e.clientY});
-  const midpoint=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
-  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-  const canPan=()=>viewportBox.scrollWidth>viewportBox.clientWidth+2||viewportBox.scrollHeight>viewportBox.clientHeight+2;
-  function capture(id){try{viewportBox.setPointerCapture(id);}catch{}}
-  function startGesture(e){
-    if(magazineOpening||nativeMode||!pdfDocument||e.button!==0||e.target.closest?.("#nativeFallback"))return;
-    const touch=e.pointerType==="touch"||e.pointerType==="pen";
-    if(!touch&&!canPan()&&!magazineActive)return;
-    pointers.set(e.pointerId,pos(e));
-    if(pointers.size===1){
-      gesture={start:pos(e),last:pos(e),pan:canPan(),pinched:false,moved:false,touch};
-      // Capture only after a real drag so taps on PDF links remain functional.
-    }else if(pointers.size===2){
-      const [a,b]=pointers.values();gesture.pinched=true;gesture.moved=true;gesture.pinchDistance=distance(a,b);gesture.mid=midpoint(a,b);
-      for(const id of pointers.keys())capture(id);
-    }
-    // This viewer owns both touch and mouse gestures; StPageFlip only animates turns.
-    e.stopPropagation();
-  }
-  function moveGesture(e){
-    if(!gesture||!pointers.has(e.pointerId))return;
-    const p=pos(e);pointers.set(e.pointerId,p);
-    if(pointers.size>=2){
-      const [a,b]=pointers.values(),d=distance(a,b),mid=midpoint(a,b);
-      if(gesture.pinchDistance>0&&d>0)requestZoom(d/gesture.pinchDistance,gesture.mid,mid);
-      gesture.pinchDistance=d;gesture.mid=mid;gesture.pinched=true;gesture.moved=true;
-    }else{
-      if(distance(p,gesture.start)>7){gesture.moved=true;capture(e.pointerId);}
-      if((gesture.pan||gesture.pinched)&&gesture.moved){viewportBox.scrollLeft-=p.x-gesture.last.x;viewportBox.scrollTop-=p.y-gesture.last.y;viewportBox.classList.add("cgaZoomDragging");}
-      gesture.last=p;
-    }
-    if(gesture.moved){e.preventDefault();e.stopPropagation();}
-  }
-  function finishGesture(e){
-    if(!gesture||!pointers.has(e.pointerId))return;
-    pointers.delete(e.pointerId);
-    if(gesture.pinched)flushZoom();
-    if(pointers.size){
-      const [p]=pointers.values();gesture.last=p;gesture.start=p;gesture.pinchDistance=0;gesture.pan=true;return;
-    }
-    const g=gesture;gesture=null;viewportBox.classList.remove("cgaZoomDragging");
-    if(g.moved||g.pinched){
-      suppressClickUntil=performance.now()+350;
-      if(e.type==="pointerup"&&(g.touch||magazineActive)&&!g.pan&&!g.pinched){
-        const dx=e.clientX-g.start.x,dy=e.clientY-g.start.y;
-        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)stepPage(dx<0?1:-1);
-      }
-      e.preventDefault();e.stopPropagation();
+  focusButton.addEventListener("click",()=>openFocus(activePage));
+  byId("focusClose").addEventListener("click",()=>focusDialog.close());
+  focusDialog.addEventListener("close",()=>{cancelFocus();focusPageNode.replaceChildren();focusButton.focus({preventScroll:true});});
+  // One gesture owner: a horizontal swipe turns pages, a tap opens focus.
+  // Multi-touch stays native; no custom zoom, no wheel interception.
+  let swipe=null,suppressClickUntil=0;
+  const touches=new Set();
+  viewportBox.addEventListener("pointerdown",e=>{
+    if(!pdfDocument||nativeMode||magazineOpening||focusDialog.open||e.button!==0)return;
+    touches.add(e.pointerId);
+    if(touches.size!==1){swipe=null;return;}
+    swipe={id:e.pointerId,x:e.clientX,y:e.clientY};
+  },true);
+  window.addEventListener("pointermove",e=>{
+    if(!swipe||swipe.id!==e.pointerId)return;
+    const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;
+    if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.4){try{viewportBox.setPointerCapture(e.pointerId);}catch{}}
+  },true);
+  function endSwipe(e){
+    touches.delete(e.pointerId);
+    if(!swipe||swipe.id!==e.pointerId)return;
+    const g=swipe;swipe=null;
+    if(e.type!=="pointerup")return;
+    const dx=e.clientX-g.x,dy=e.clientY-g.y;
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4){
+      suppressClickUntil=performance.now()+400;e.preventDefault();stepPage(dx<0?1:-1);
     }
   }
-  viewportBox.addEventListener("pointerdown",startGesture,true);
-  window.addEventListener("pointermove",moveGesture,{capture:true,passive:false});
-  window.addEventListener("pointerup",finishGesture,true);
-  window.addEventListener("pointercancel",finishGesture,true);
-  viewportBox.addEventListener("lostpointercapture",finishGesture,true);
-  for(const type of ["touchstart","touchmove","touchend","touchcancel"]){
-    viewportBox.addEventListener(type,e=>{if(!nativeMode&&pdfDocument)e.stopPropagation();},{capture:true,passive:true});
-  }
-  viewportBox.addEventListener("click",e=>{if(e.detail!==0&&performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
+  window.addEventListener("pointerup",endSwipe,true);
+  window.addEventListener("pointercancel",endSwipe,true);
+  viewportBox.addEventListener("click",e=>{
+    if(performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();return;}
+    if(e.target.closest?.("a,button")||nativeMode||magazineOpening)return;
+    const leaf=e.target.closest?.("[data-reader-page],[data-magazine-page]");
+    if(!leaf)return;
+    const page=Number(leaf.dataset.readerPage||leaf.dataset.magazinePage);
+    const visible=spreads.spreadSlots(activePage,totalPages,spreads.singlePage());
+    if(visible.includes(page))openFocus(page);
+  },true);
   viewerModeButton.addEventListener("click",()=>{
     if(magazineOpening||!pdfDocument)return;
     if(magazineActive)closeMagazine();
@@ -545,7 +485,8 @@
   window.addEventListener("resize", () => {
     if (!pdfDocument || nativeMode || magazineOpening) return;
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => refreshZoom(), 180);
+    resizeTimer = setTimeout(() => {if(magazineActive)magazine?.resize();else void navigate(activePage,false);},180);
+    if(focusDialog.open){clearTimeout(focusResizeTimer);focusResizeTimer=setTimeout(()=>void renderFocus(true),220);}
   });
   document.addEventListener("fullscreenchange", () => {
     // Keep the controls accessible: request fullscreen on the whole application.
@@ -568,11 +509,9 @@
   function setMagazineControls(active){
     magazineButton.setAttribute("aria-pressed",String(active));magazineButton.textContent=magazineLabel(active);
     viewerModeButton.setAttribute("aria-pressed",String(!active));
-    viewerModeButton.title=locale==="en"?"Classic two-page reader":"Lectura convencional a doble página";
-    if(active){const geometry=magazine?.resize(zoomMode,manualZoom);if(geometry)updateZoom(geometry.factor);}
+    viewerModeButton.title=locale==="en"?"Classic reader":"Lectura convencional";
   }
   function closeMagazine(render=true){
-    discardZoom();
     magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
     pageStage.hidden=false;setMagazineControls(false);syncMagazineURL();updateToolbar();
     if(render&&pdfDocument)void navigate(activePage,false);
@@ -580,7 +519,7 @@
   async function openMagazine(){
     if(!pdfDocument||magazineOpening||magazineActive)return;
     if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");void navigate(activePage,false);return;}
-    discardZoom();magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
+    magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
     const initial=activePage;
     try{
       ticket++; // Cancel pending getPage/render work before switching modes.
@@ -596,7 +535,7 @@
     }catch(error){
       magazineOpening=false;
       console.warn("Magazine unavailable",error);closeMagazine();showMessage(locale==="en"?"Magazine unavailable. PDF reader restored.":"Vista revista no disponible. Se restauró el lector PDF.");
-    }finally{magazineOpening=false;magazineButton.disabled=false;viewerModeButton.disabled=false;}
+    }finally{magazineOpening=false;magazineButton.disabled=false;viewerModeButton.disabled=false;updateToolbar();}
   }
   magazineButton.addEventListener("click",()=>{if(magazineActive)closeMagazine();else void openMagazine();});
   async function start() {
@@ -649,6 +588,7 @@
     } catch (error) {
       console.error("Error del visor PDF", error);
       pageStage.hidden = true;
+      focusButton.disabled=true;
       previousButton.disabled = true;
       nextButton.disabled = true;
       sidePrevious.disabled = true;
@@ -673,7 +613,7 @@
 
   window.addEventListener("pagehide", event => {
     if(event.persisted)return;
-    discardZoom();magazine?.dispose();
+    cancelFocus();magazine?.dispose();
     if (verifiedPdfBlobUrl) URL.revokeObjectURL(verifiedPdfBlobUrl);
   });
 
