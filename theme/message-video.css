@@ -3,7 +3,13 @@
     .requestSuccessVideo{display:block;width:100%;height:auto;aspect-ratio:9/16;max-height:72vh;max-height:72dvh;object-fit:contain;background:#161616;border:1px solid var(--cga-border,#ddd);border-radius:12px;}
     #requestVideoStatus,#requestVideoLanguage{color:var(--cga-muted,#555);font-size:12px;text-align:center;margin:0;}
     #requestSuccessActions{align-items:stretch;flex-direction:column;width:100%;margin:0;}
-    @media(max-width:660px){.requestSuccessLayout{grid-template-columns:minmax(0,340px);gap:18px;}.requestSuccessVideo{max-height:68vh;max-height:68dvh;}}
+    /* Narrow windows and touch-first devices: always read top to bottom. */
+    @media (max-width:760px), (hover:none) and (pointer:coarse){
+      .requestSuccessLayout{grid-template-columns:minmax(0,360px);gap:20px;align-items:start;justify-items:center;}
+      .requestVideoArea{max-width:360px;width:100%;}
+      .requestSuccessVideo{width:100%;height:auto;max-height:none;aspect-ratio:9/16;}
+      #requestSuccessActions{width:100%;max-width:360px;}
+    }
 
 /* Compact, neutral glass cards derived from HOME; no accent fill on video actions. */
 .requestSuccessLayout{
