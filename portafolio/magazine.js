@@ -57,6 +57,11 @@
     let book=null,active=false,desired=[],rendering=false,current=1,disposed=false,ratio=1,preparing=null;
     let geometry=null,quality=1500,resizing=false;
     const camera=host.parentElement,stage=camera.parentElement,hint=stage.querySelector("#magazineHint");
+    // Stable, non-animated reading plane. It shares the PDF raster cache and annotations,
+    // but never shares StPageFlip's moving DOM, clipped leaves, shadows or hit testing.
+    const readingPlane=document.createElement("div");
+    readingPlane.id="magazineReadingPlane";readingPlane.hidden=true;
+    camera.append(readingPlane);
     let focused=false,scale=1,tx=0,ty=0,focusPage=1,left=0,top=0,transitionTimer=0,qualityTimer=0;
     let press=null,lastTap=null,drag=null,panTap=null,suppressClickUntil=0,tapTimer=0;
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
@@ -86,7 +91,7 @@
       queue(current);
     }
     function label(){
-      hint.textContent=focused?(en?"Drag to read · Double tap to return":"Arrastrá para leer · Doble toque para volver"):(en?"Grab a corner · Double tap to read":"Agarrá una esquina · Doble toque para leer");
+      hint.textContent=focused?(en?"Drag to read · Double tap to return":"Arrastrá para leer · Doble toque para volver"):(en?"Double tap to read closer":"Doble toque para leer de cerca");
       stage.classList.toggle("cgaCameraFocused",focused);
       onFocus(focused);
     }
@@ -106,6 +111,14 @@
       const half=x-r.left-left<geometry.width?0:1;
       return slots[half]||slots[1-half]||current;
     }
+    function buildReadingPlane(){
+      const slots=spreadSlots(current,count);
+      readingPlane.replaceChildren(...slots.map(page=>{
+        if(page){const leaf=createLeaf(page,false);leaf.style.width=geometry.width+"px";leaf.style.height=geometry.height+"px";return leaf;}
+        const blank=document.createElement("div");blank.className="cgaReadingBlank";return blank;
+      }));
+      for(const page of slots.filter(Boolean))paint(page);
+    }
     function enter(page,animate=true){
       if(!active||!book||focused||!geometry)return false;
       const state=book.getState();
@@ -115,7 +128,12 @@
       const i=slots[0]===focusPage?0:1,w=geometry.width,h=geometry.height,sw=stage.clientWidth,sh=stage.clientHeight;
       // Exact midpoint formula approved in StPageFlip original v0.5.
       scale=(Math.max(1.25,Math.min(5.5,Math.max(sw*.96,Math.min(950,sw*1.18))/w))+(sw<=600?1.9:sw<=900?1.7:1.5))/2;
-      focused=true;book.getSettings().showPageCorners=false;
+      // A hover fold can still be active at the end of a double click. Cancel it
+      // before isolating the book; the reading plane always presents a flat spread.
+      book.getSettings().showPageCorners=false;
+      if(state==="fold_corner")book.getFlipController().showCorner({x:-10000,y:-10000});
+      book.userStop({x:-10000,y:-10000},true);
+      focused=true;buildReadingPlane();readingPlane.hidden=false;host.inert=true;
       tx=sw/2-left-(i+.5)*w*scale;ty=Math.max(0,(sh-h*scale)/2)-top;
       bound();renderCamera(animate);label();
       clearTimeout(qualityTimer);
@@ -126,7 +144,8 @@
       if(!focused)return false;
       clearTimeout(qualityTimer);
       focused=false;scale=1;tx=ty=0;drag=null;panTap=null;press=null;lastTap=null;
-      if(book)book.getSettings().showPageCorners=true;
+      readingPlane.hidden=true;readingPlane.replaceChildren();host.inert=false;
+      if(book){book.userStop({x:-10000,y:-10000},true);book.getSettings().showPageCorners=true;}
       renderCamera(animate);label();return true;
     }
     function toggleFocus(page){return focused?leave():enter(page);}
@@ -152,15 +171,33 @@
     },{capture:true,passive:true});
     window.addEventListener("touchend",e=>{if(active&&!focused&&e.changedTouches.length===1)end(e.changedTouches[0].clientX,e.changedTouches[0].clientY);},{capture:true,passive:true});
     window.addEventListener("touchcancel",()=>{press=null;lastTap=null;},true);
-    // Camera drag is exclusively active while focused. Keep real PDF anchors
-    // clickable: no opaque overlay and no interception of stationary link taps.
+    // Camera drag is exclusively active while focused. Keep actual PDF anchors
+    // clickable on the flat reading plane; StPageFlip cannot receive its gestures.
     for(const type of ["mousedown","touchstart"]){
       stage.addEventListener(type,e=>{if(focused)e.stopPropagation();},{capture:true,passive:true});
     }
+    // The library registers these on window, not just the book. Stop them at
+    // capture before the library's bubble handlers, including drags beyond the stage.
+    for(const type of ["mousemove","mouseup","touchmove","touchend"]){
+      window.addEventListener(type,e=>{
+        if(active&&focused&&(drag||stage.contains(e.target)))e.stopImmediatePropagation();
+      },{capture:true,passive:true});
+    }
+    stage.addEventListener("dragstart",e=>{if(focused)e.preventDefault();},true);
     stage.addEventListener("pointerdown",e=>{
       if(!active||!focused||e.button!==0||drag)return;
-      camera.style.transition="none";
-      drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),moved:false,link:!!e.target.closest?.("a")};
+      // If the user grabs during the easing animation, start from the actual
+      // on-screen transform, not the animation's destination.
+      if(camera.style.transition!=="none"){
+        const matrix=new DOMMatrixReadOnly(getComputedStyle(camera).transform);
+        tx=matrix.m41;ty=matrix.m42;camera.style.transition="none";
+        // Keep the approved reading scale; finish the zoom before translating.
+        bound();renderCamera();
+      }
+      const link=!!e.target.closest?.("a");
+      drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),moved:false,link};
+      if(!link){try{stage.setPointerCapture(e.pointerId);}catch{}}
+      if(e.pointerType==="mouse"&&!link)e.preventDefault();
     },true);
     window.addEventListener("pointermove",e=>{
       if(!focused||!drag||drag.id!==e.pointerId)return;
@@ -185,13 +222,15 @@
     }
     window.addEventListener("pointerup",stopPan,true);
     window.addEventListener("pointercancel",stopPan,true);
+    stage.addEventListener("lostpointercapture",stopPan,true);
+    window.addEventListener("blur",()=>{if(drag){drag=null;panTap=null;suppressClickUntil=performance.now()+350;}});
     stage.addEventListener("click",e=>{if(performance.now()<suppressClickUntil&&e.detail!==0){e.preventDefault();e.stopImmediatePropagation();}},true);
     stage.addEventListener("wheel",e=>{
       if(!focused)return;
       e.preventDefault();const units=e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1;
       tx-=(e.deltaX+(e.shiftKey?e.deltaY:0))*units;ty-=(e.shiftKey?0:e.deltaY)*units;bound();renderCamera();
     },{passive:false});
-    function createLeaf(page){
+    function createLeaf(page,register=true){
       const leaf=document.createElement("div");
       leaf.className="cgaMagazinePage";leaf.dataset.magazinePage=String(page);
       if(page===1||page===count)leaf.dataset.density="hard";
@@ -199,11 +238,12 @@
       const image=document.createElement("img");image.className="cgaMagazineImage";image.alt=msg.page+" "+page;image.hidden=true;image.draggable=false;
       const placeholder=document.createElement("span");placeholder.className="cgaMagazinePlaceholder";placeholder.textContent=msg.loading;
       const links=document.createElement("div");links.className="cgaMagazineLinks";
-      content.append(image,placeholder,links);leaf.append(content);originals.set(page,leaf);return leaf;
+      content.append(image,placeholder,links);leaf.append(content);if(register)originals.set(page,leaf);return leaf;
     }
     function leaves(page){
       const items=new Set(host.querySelectorAll('[data-magazine-page="'+page+'"]'));
       if(originals.has(page))items.add(originals.get(page));
+      for(const leaf of readingPlane.querySelectorAll('[data-magazine-page="'+page+'"]'))items.add(leaf);
       return items;
     }
     function paint(page){
@@ -219,7 +259,7 @@
         if(links.dataset.rendered===entry.url)continue;
         links.replaceChildren();links.dataset.rendered=entry.url;
         for(const link of entry.links){
-          const a=document.createElement("a");a.setAttribute("aria-label",msg.link);
+          const a=document.createElement("a");a.setAttribute("aria-label",msg.link);a.draggable=false;
           Object.assign(a.style,{left:link.x+"%",top:link.y+"%",width:link.w+"%",height:link.h+"%"});
           if(link.url){a.href=link.url;if(/^https?:/.test(link.url)){a.target="_blank";a.rel="noopener noreferrer";}}
           else{a.href="#";a.dataset.magazineDestination=String(link.page);}
@@ -227,7 +267,7 @@
         }
       }
     }
-    host.addEventListener("click",event=>{
+    camera.addEventListener("click",event=>{
       if(!active)return;
       const a=event.target.closest?.("a[data-magazine-destination]");
       if(a){event.preventDefault();onInternal(Number(a.dataset.magazineDestination));}

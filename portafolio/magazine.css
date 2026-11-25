@@ -13,13 +13,13 @@
 .cgaClassicLinks a:is(:hover,:focus-visible){outline:2px solid var(--cga-focus);background:color-mix(in srgb,var(--cga-accent) 12%,transparent)}
 #viewerMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;box-shadow:inset 0 0 0 1px var(--cga-focus);font-weight:700}
 #magazineBook .stf__wrapper{height:100%!important;padding-bottom:0!important}
-#magazineBook .cgaMagazinePage{background:#fff;color:#161616;overflow:hidden;box-sizing:border-box;box-shadow:inset 0 0 1px #aaa}
-#magazineBook .cgaMagazineContent{position:absolute;inset:0;margin:auto;overflow:hidden;background:#fff}
-#magazineBook .cgaMagazineImage{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;-webkit-user-drag:none}
-#magazineBook .cgaMagazinePlaceholder{position:absolute;inset:0;display:grid;place-content:center;font:500 13px/1.4 system-ui,sans-serif;color:#555;padding:12px}
-#magazineBook .cgaMagazineLinks{position:absolute;inset:0;pointer-events:none}
-#magazineBook .cgaMagazineLinks a{position:absolute;display:block;pointer-events:auto}
-#magazineBook .cgaMagazineLinks a:is(:hover,:focus-visible){outline:2px solid var(--cga-focus);background:color-mix(in srgb,var(--cga-accent) 12%,transparent)}
+#magazineCamera .cgaMagazinePage{background:#fff;color:#161616;overflow:hidden;box-sizing:border-box;box-shadow:inset 0 0 1px #aaa}
+#magazineCamera .cgaMagazineContent{position:absolute;inset:0;margin:auto;overflow:hidden;background:#fff}
+#magazineCamera .cgaMagazineImage{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;-webkit-user-drag:none}
+#magazineCamera .cgaMagazinePlaceholder{position:absolute;inset:0;display:grid;place-content:center;font:500 13px/1.4 system-ui,sans-serif;color:#555;padding:12px}
+#magazineCamera .cgaMagazineLinks{position:absolute;inset:0;pointer-events:none}
+#magazineCamera .cgaMagazineLinks a{position:absolute;display:block;pointer-events:auto}
+#magazineCamera .cgaMagazineLinks a:is(:hover,:focus-visible){outline:2px solid var(--cga-focus);background:color-mix(in srgb,var(--cga-accent) 12%,transparent)}
 #magazineMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;box-shadow:inset 0 0 0 1px var(--cga-focus);font-weight:700}
 @media(max-width:820px){#magazineStage,#pageStage{padding:4px}}
 @media(prefers-reduced-motion:reduce){#magazineMode{transition:none}}
@@ -45,8 +45,16 @@
 #magazineBook{cursor:grab}
 #magazineBook:active,#magazineStage.cgaCameraFocused:active{cursor:grabbing}
 #magazineStage.cgaCameraFocused{cursor:grab}
-#magazineBook .cgaMagazineLinks a{cursor:pointer}
+#magazineCamera .cgaMagazineLinks a{cursor:pointer}
 #magazineHint{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--cga-muted);pointer-events:none;white-space:nowrap;z-index:4}
 #focusMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;background:var(--cga-accent-soft)!important}
 @media(max-width:520px){#magazineHint{font-size:10px}}
 @media(prefers-reduced-motion:reduce){#magazineCamera{transition:none!important}}
+
+/* Reading mode has no animated leaves or native HTML drag ghost. */
+#magazineStage.cgaCameraFocused #magazineBook{visibility:hidden;pointer-events:none}
+#magazineReadingPlane{position:absolute;inset:0;display:flex;align-items:stretch;justify-content:flex-start;user-select:none;-webkit-user-select:none;touch-action:none}
+#magazineReadingPlane[hidden]{display:none!important}
+#magazineReadingPlane .cgaMagazinePage,#magazineReadingPlane .cgaReadingBlank{position:relative;flex:0 0 50%;height:100%;overflow:hidden}
+#magazineReadingPlane img,#magazineReadingPlane a{-webkit-user-drag:none;user-select:none}
+#magazineReadingPlane .cgaMagazineLinks a{touch-action:none}
