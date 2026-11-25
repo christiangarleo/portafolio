@@ -73,9 +73,7 @@ async function notifyNewLead(lead: NotificationLead): Promise<void> {
   console.error("lead_notification_failed", id, "retry_exhausted");
 }
 
-// Confirmation email: controlled pilot, never send to an unverified arbitrary address.
-// The public form still accepts and saves every valid lead; external receipts remain disabled.
-const CONFIRMATION_TEST_RECIPIENT = "hola@christianarleo.com";
+// Confirmation email: only for server-verified new submissions. No historical replay.
 type ConfirmationLead = NotificationLead & { email: string; contact_name: string; language: string };
 function confirmationPayload(lead: ConfirmationLead) {
   const en = lead.language === "en";
@@ -109,16 +107,16 @@ function confirmationPayload(lead: ConfirmationLead) {
     + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="500" style="width:100%;max-width:500px;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;"><tr><td class="signature-name" style="font-size:23px;font-weight:400;color:#161616;line-height:1.3;padding:0 0 10px">Christian Gabriel Arleo</td></tr><tr><td style="padding:0 0 6px"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:linear-gradient(90deg,#DF3E89,#FCD200);"><tr>'+gradient+'</tr></table></td></tr>'
     + '<tr><td class="signature-role" style="font-size:15px;line-height:1.45;color:#666666;padding:0">'+esc(role)+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link(whatsapp,"WhatsApp")+" | "+link(linkedin,"LinkedIn")+" | "+link(portfolio,en?"Professional portfolio":"Portafolio profesional")+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link("mailto:hola@christianarleo.com","hola@christianarleo.com")+'</td></tr></table><p class="auto-note" style="font-size:12px;line-height:1.5;color:#666666;font-style:italic;margin:28px 0 0">'+esc(note)+'</p></div></body></html>';
   const plain = [greeting,thanks,receipt,next,before+"christianarleo.com"+after,regards,"Christian Gabriel Arleo\n"+role+"\nWhatsApp: "+whatsapp+"\nLinkedIn: "+linkedin+"\n"+portfolio+"\nhola@christianarleo.com",note].join("\n\n");
-  return {from:"Christian Gabriel Arleo <alertas@notificaciones.christianarleo.com>",to:[CONFIRMATION_TEST_RECIPIENT],reply_to:"hola@christianarleo.com",subject,html,text:plain};
+  return {from:"Christian Gabriel Arleo <alertas@notificaciones.christianarleo.com>",to:[lead.email],reply_to:"hola@christianarleo.com",subject,html,text:plain};
 }
 async function notifyRequester(lead: ConfirmationLead): Promise<void> {
   const id = lead.id;
-  if (lead.email !== CONFIRMATION_TEST_RECIPIENT) { console.log("lead_confirmation_skipped",id,"pilot_recipient"); return; }
+  if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(lead.email)) { console.warn("lead_confirmation_skipped",id,"invalid_recipient"); return; }
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) { console.error("lead_confirmation_failed",id,"missing_secret"); return; }
-  // Cap the pilot even if someone repeatedly submits the public form with the owner's address.
-  const {count,error} = await supabase.from("portfolio_cv_leads").select("id",{count:"exact",head:true}).eq("email",CONFIRMATION_TEST_RECIPIENT).gte("created_at",new Date(Date.now()-15*60*1000).toISOString());
-  if(error || count === null || count > 2) { console.warn("lead_confirmation_skipped",id,error?"rate_check_error":"pilot_rate_limit"); return; }
+  // Count persisted submissions in the rolling window; fail closed on query error.
+  const {count,error} = await supabase.from("portfolio_cv_leads").select("id",{count:"exact",head:true}).eq("email",lead.email).gte("created_at",new Date(Date.now()-24*60*60*1000).toISOString());
+  if(error || count === null || count > 2) { console.warn("lead_confirmation_skipped",id,error?"rate_check_error":"recipient_rate_limit"); return; }
   const body = JSON.stringify(confirmationPayload(lead));
   for(let attempt=1;attempt<=3;attempt++){
     try{
@@ -136,14 +134,49 @@ async function notifyRequester(lead: ConfirmationLead): Promise<void> {
   console.error("lead_confirmation_failed",id,"retry_exhausted");
 }
 
-function scheduleLeadNotification(lead: ConfirmationLead) {
-  if (!lead?.id) { console.error("lead_notification_failed", "missing_lead_id"); return; }
-  try {
-    const task = notifyNewLead(lead).catch(() => console.error("lead_notification_failed", lead.id, "unexpected"));
-    EdgeRuntime.waitUntil(task);
-    EdgeRuntime.waitUntil(notifyRequester(lead).catch(() => console.error("lead_confirmation_failed",lead.id,"unexpected")));
-  } catch { console.error("lead_notification_failed", lead.id, "schedule_error"); }
+
+type SecurityResult = "verified" | "required" | "unavailable" | "legacy";
+async function verifyTurnstile(input: Record<string, unknown>): Promise<SecurityResult> {
+  // During rollout cached clients may save leads, but no unverified submission may send mail.
+  if (input.turnstile_token === undefined) return "legacy";
+  const token=input.turnstile_token;
+  if(typeof token!=="string"||!token||token.length>2048)return "required";
+  const secret=Deno.env.get("TURNSTILE_SECRET_KEY");
+  if(!secret){console.error("lead_security_unavailable","missing_secret");return "unavailable";}
+  try{
+    const response=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
+      method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body:"secret="+encodeURIComponent(secret)+"&response="+encodeURIComponent(token),signal:AbortSignal.timeout(8000)
+    });
+    if(!response.ok){console.error("lead_security_unavailable","http",response.status);return "unavailable";}
+    const result=await response.json();
+    if(result?.success===true && ["christianarleo.com","www.christianarleo.com"].includes(result.hostname) && result.action==="portfolio_lead")return "verified";
+    const codes=Array.isArray(result?.["error-codes"])?result["error-codes"]:[];
+    if(codes.some((c: string)=>["missing-input-secret","invalid-input-secret","internal-error"].includes(c))){console.error("lead_security_unavailable","provider_config");return "unavailable";}
+    console.warn("lead_security_rejected","invalid_challenge");return "required";
+  }catch{console.error("lead_security_unavailable","network_or_parse");return "unavailable";}
 }
+async function dispatchLeadNotifications(lead: ConfirmationLead,security: SecurityResult) {
+  if(security!=="verified"){console.warn("lead_notifications_skipped",lead.id,"legacy_unverified");return;}
+  const now=Date.now();
+  const [daily,burst]=await Promise.all([
+    supabase.from("portfolio_cv_leads").select("id",{count:"exact",head:true}).gte("created_at",new Date(now-86400000).toISOString()),
+    supabase.from("portfolio_cv_leads").select("id",{count:"exact",head:true}).gte("created_at",new Date(now-900000).toISOString())
+  ]);
+  if(daily.error||burst.error||daily.count===null||burst.count===null||daily.count>30||burst.count>8){
+    console.warn("lead_notifications_skipped",lead.id,daily.error||burst.error?"rate_check_error":"global_rate_limit");return;
+  }
+  await Promise.allSettled([
+    notifyNewLead(lead).catch(()=>console.error("lead_notification_failed",lead.id,"unexpected")),
+    notifyRequester(lead).catch(()=>console.error("lead_confirmation_failed",lead.id,"unexpected"))
+  ]);
+}
+function scheduleLeadNotification(lead: ConfirmationLead,security: SecurityResult) {
+  if (!lead?.id) { console.error("lead_notification_failed", "missing_lead_id"); return; }
+  try {EdgeRuntime.waitUntil(dispatchLeadNotifications(lead,security).catch(()=>console.error("lead_notifications_failed",lead.id,"unexpected")));}
+  catch {console.error("lead_notification_failed",lead.id,"schedule_error");}
+}
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(req) });
@@ -248,6 +281,9 @@ Deno.serve(async (req: Request) => {
         otro:"Otro proyecto / asesoramiento"
       }[need] || "Propuesta de proyecto";
     }
+    const security=await verifyTurnstile(input);
+    if(security==="required")return reply(req,{error:"No se pudo verificar la seguridad. Reintentá la verificación.",code:"security_required"},400);
+    if(security==="unavailable")return reply(req,{error:"La verificación no está disponible temporalmente.",code:"security_unavailable"},503);
     const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, ruc, contact_name: contactName || "Equipo de " + company.slice(0, 120),
       email, phone: phone || null, position_or_project: position,
@@ -259,7 +295,7 @@ Deno.serve(async (req: Request) => {
       intake_data: intake, intake_version: 3, language
     }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
-    scheduleLeadNotification(savedLead as ConfirmationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead,security);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead_v2") {
@@ -361,6 +397,9 @@ Deno.serve(async (req: Request) => {
 
     // Datos enviados por los formularios nuevos: se mantienen estructurados
     // sin romper registros históricos del endpoint "lead" anterior.
+    const security=await verifyTurnstile(input);
+    if(security==="required")return reply(req,{error:"No se pudo verificar la seguridad. Reintentá la verificación.",code:"security_required"},400);
+    if(security==="unavailable")return reply(req,{error:"La verificación no está disponible temporalmente.",code:"security_unavailable"},503);
     const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, ruc, contact_name: name, email,
       phone: phone || null, position_or_project: position,
@@ -375,7 +414,7 @@ Deno.serve(async (req: Request) => {
       console.error("lead_v2_insert", error.message);
       return reply(req, { error: "No se pudo registrar la propuesta." }, 503);
     }
-    scheduleLeadNotification(savedLead as ConfirmationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead,security);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead") {
@@ -391,13 +430,16 @@ Deno.serve(async (req: Request) => {
       (ruc && !validCompanyId(ruc))) {
       return reply(req, { error: "Revisa los datos obligatorios" }, 400);
     }
+    const security=await verifyTurnstile(input);
+    if(security==="required")return reply(req,{error:"No se pudo verificar la seguridad. Reintentá la verificación.",code:"security_required"},400);
+    if(security==="unavailable")return reply(req,{error:"La verificación no está disponible temporalmente.",code:"security_unavailable"},503);
     const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, contact_name: name, email, ruc: ruc || null,
       phone: text(input.phone, 65), position_or_project: text(input.position_or_project, 180),
       details: text(input.details, 1600)
     }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) { console.error("cv_lead", error.message); return reply(req, { error: "No se pudo registrar la solicitud" }, 503); }
-    scheduleLeadNotification(savedLead as ConfirmationLead);
+    scheduleLeadNotification(savedLead as ConfirmationLead,security);
     return reply(req, { status: "received" });
   }
   return reply(req, { error: "Accion invalida" }, 400);

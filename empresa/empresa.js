@@ -110,7 +110,7 @@
       body:JSON.stringify(body),cache:"no-store"
     });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok) throw new Error(data.error||"No se pudo consultar el servicio");
+    if(!response.ok) throw new Error(data.code==="security_required"?securityText("No se pudo verificar la seguridad. Reintentá la verificación.","Security verification failed. Please retry."):(data.code==="security_unavailable"?securityText("La verificación no está disponible temporalmente. Reintentá o contactame por correo.","Security verification is temporarily unavailable. Retry or contact me by email."):(data.error||"No se pudo consultar el servicio")));
     return data;
   }
   function displayCompany(data) {
@@ -172,6 +172,48 @@
     if(button)downloadCv(button);
   });
   const form=by("leadForm");
+
+  const securitySiteKey="0x4AAAAAAGS2dS2Weiufk6-5";
+  const securityStatus=by("leadSecurityStatus"),securityRetry=by("leadSecurityRetry"),securityContainer=by("leadTurnstile");
+  const securityText=(es,en)=>locale==="es"?es:en;
+  securityRetry.textContent=securityText("Reintentar verificación","Retry verification");
+  securityContainer.setAttribute("aria-label",securityText("Verificación de seguridad","Security verification"));
+  let securityLoad=null,securityWidget=null,securityToken="",securityGeneration=0,leadSubmitting=false;
+  function loadSecurity(){
+    if(window.turnstile?.render)return Promise.resolve(window.turnstile);
+    if(securityLoad)return securityLoad;
+    securityLoad=new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;
+      const timer=setTimeout(fail,15000);
+      function fail(){clearTimeout(timer);script.remove();reject(Error("turnstile_load"));}
+      script.onload=()=>{clearTimeout(timer);if(window.turnstile?.render)resolve(window.turnstile);else fail();};
+      script.onerror=fail;document.head.append(script);
+    }).catch(error=>{securityLoad=null;throw error;});
+    return securityLoad;
+  }
+  function securityPending(message,retry=false){securityToken="";securityStatus.textContent=message;securityRetry.hidden=!retry;}
+  async function prepareSecurity(){
+    const generation=++securityGeneration;
+    securityPending(securityText("Cargando verificación de seguridad…","Loading security verification…"));
+    if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
+    securityContainer.replaceChildren();
+    try{
+      const ts=await loadSecurity();
+      if(generation!==securityGeneration||form.hidden)return;
+      securityWidget=ts.render(securityContainer,{
+        sitekey:securitySiteKey,action:"portfolio_lead",language:locale,
+        theme:document.documentElement.dataset.theme==="dark"?"dark":"light",
+        size:"flexible",appearance:"interaction-only",retry:"never",
+        callback:token=>{if(generation!==securityGeneration)return;securityToken=token;securityStatus.textContent="";securityRetry.hidden=true;},
+        "error-callback":()=>{if(generation!==securityGeneration)return;securityPending(securityText("No pudimos verificar la seguridad. Volvé a intentarlo.","Security verification failed. Please retry."),true);},
+        "expired-callback":()=>{if(generation!==securityGeneration)return;securityPending(securityText("La verificación venció. Volvé a intentarlo.","Verification expired. Please retry."),true);},
+        "timeout-callback":()=>{if(generation!==securityGeneration)return;securityPending(securityText("La verificación tardó demasiado. Volvé a intentarlo.","Verification timed out. Please retry."),true);}
+      });
+    }catch{if(generation===securityGeneration)securityPending(securityText("No se pudo cargar la verificación. Reintentá o contactame por correo.","Could not load verification. Retry or contact me by email."),true);}
+  }
+  securityRetry.addEventListener("click",()=>{if(!leadSubmitting)void prepareSecurity();});
+
   const titles={
     in_house:["Invitar a una entrevista","Dejame la vacante y tus datos de contacto."],
     proyecto:["Conversemos sobre tu proyecto","Contame qué necesitás con un par de clics."]
@@ -192,7 +234,7 @@
   }
   by("choices").addEventListener("click",event=>{
     const button=event.target.closest("button[data-kind]");
-    if(!button||!titles[button.dataset.kind])return;
+    if(!button||!titles[button.dataset.kind]||leadSubmitting)return;
     const kind=button.dataset.kind;
     form.reset();
     by("leadKind").value=kind;
@@ -213,6 +255,7 @@
     by("leadMessage").textContent="";
     contactVisibility();
     form.hidden=false;
+    void prepareSecurity();
     by("companyName").focus({preventScroll:true});
     form.scrollIntoView({block:"start",behavior:"smooth"});
   });
@@ -221,6 +264,7 @@
   );
   form.addEventListener("submit",async event=>{
     event.preventDefault();
+    if(leadSubmitting)return;
     formError("");
     const values=new FormData(form);
     const get=key=>String(values.get(key)||"").trim();
@@ -251,19 +295,26 @@
     if(preference==="contactame" && (!method || ((method==="whatsapp"||method==="llamada")&&phone.length<6))){
       formError("Seleccioná cómo contactarte y completá el teléfono si corresponde.");return;
     }
+    if(!securityToken){
+      formError(securityText("Completá la verificación de seguridad antes de enviar.","Complete the security verification before submitting."));
+      if(!securityRetry.hidden||securityWidget===null)void prepareSecurity();
+      return;
+    }
     const payload={
-      action:"lead_v3",kind,language:locale,
+      action:"lead_v3",kind,language:locale,turnstile_token:securityToken,
       website:get("website"),company_name:get("company_name"),ruc,
       contact_name:get("contact_name"),email:get("email"),phone,
       contact_preference:preference,contact_method:method,
       observations:get("observations"),intake
     };
-    const submit=by("submitLead");submit.disabled=true;
+    const submit=by("submitLead");submit.disabled=true;leadSubmitting=true;securityToken="";
     setMessage(by("leadMessage"),"Registrando propuesta…");
     try{
       const reply=await api(payload);
       if(reply.status!=="received")throw Error("No se pudo registrar la propuesta.");
       form.hidden=true;
+      ++securityGeneration;
+      if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
       by("choices").hidden=true;
       by("requestHeading").textContent=t("Propuesta recibida");
       by("requestIntro").textContent=t("Gracias. Tu propuesta quedó registrada correctamente.");
@@ -288,9 +339,10 @@
       by("emptySection").scrollIntoView({block:"nearest",behavior:"smooth"});
     }catch(error){
       setMessage(by("leadMessage"),"",false);
-      formError(error.message||"No se pudo enviar la propuesta. Intentá nuevamente.");
+      formError(error.message||securityText("No se pudo enviar la propuesta. Intentá nuevamente.","Could not submit your proposal. Please try again."));
+      void prepareSecurity();
     }finally{
-      submit.disabled=false;
+      leadSubmitting=false;submit.disabled=false;
     }
   });
   async function init(){

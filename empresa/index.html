@@ -126,6 +126,9 @@
     .moreInfo textarea{min-height:74px;}
     .quickSubmit{margin:21px 0 4px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
     .quickSubmit button{min-width:190px;}
+    .leadTurnstile{width:100%;max-width:100%;min-width:0;}
+    #leadSecurityStatus:empty{display:none;}
+    #leadSecurityRetry{min-height:44px;}
     .privacyNote{font-size:11px;color:#777;margin:0;max-width:580px;}
     @media(max-width:660px){.formGrid{grid-template-columns:1fr}.choices{gap:8px}.choices button{padding:11px;font-size:12px;min-height:74px}.chip{flex:1 1 auto;justify-content:center;font-size:12px;padding:11px 9px}.quickSubmit button{width:100%}.quickForm h3{font-size:17px}}
 
@@ -298,6 +301,9 @@
         <input id="contactName" name="contact_name" maxlength="140" placeholder="Tu nombre">
       </details>
       <div class="quickSubmit">
+        <div id="leadTurnstile" class="leadTurnstile" aria-label="Verificación de seguridad"></div>
+        <p id="leadSecurityStatus" class="privacyNote" role="status" aria-live="polite"></p>
+        <button id="leadSecurityRetry" type="button" class="secondary" hidden>Reintentar verificación</button>
         <button id="submitLead" type="submit" class="action" data-cga-icon="send">Enviar propuesta</button>
         <p class="privacyNote">Tus datos se utilizan únicamente para gestionar la propuesta y respetar la preferencia de contacto que elijas.</p>
       </div>
@@ -341,7 +347,7 @@
     <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
   </div>
 </main>
-<script src="./empresa.js?v=20261125-success-social1" defer></script>
+<script src="./empresa.js?v=20261125-turnstile1" defer></script>
   <script src="/theme/theme.js?v=20261124-switch1" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>
 </body></html>
