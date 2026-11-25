@@ -296,23 +296,28 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-vis
   html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){transform:none}
 }
 
-/* HOME responsive: one centered column, compact glass cards, no emoji dependency. */
+/* HOME responsive: shared alignment and proportional scale for the entire hero. */
 @media(max-width:900px){
- html.cgaModern body:has(.languageGrid) main{width:min(440px,calc(100% - 48px));padding:clamp(28px,6svh,64px) 0}
- html.cgaModern body:has(.languageGrid) h1{font-size:clamp(31px,5.5vw,48px);line-height:1.1;letter-spacing:-.047em}
- html.cgaModern body:has(.languageGrid) .kicker{letter-spacing:.12em;margin-bottom:18px}
- html.cgaModern body:has(.languageGrid) .languageGrid{grid-template-columns:minmax(0,1fr);width:min(calc(100% - 24px),290px);margin-inline:auto;gap:14px}
- html.cgaModern body:has(.languageGrid) .languageCard{min-height:112px;padding:18px 16px;gap:12px;border-radius:18px}
- html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:21px;letter-spacing:-.025em}
+ html.cgaModern body:has(.languageGrid) main{width:min(360px,calc(100% - 56px));margin:0 auto;flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;padding:clamp(28px,5svh,60px) 0 clamp(44px,15svh,170px)}
+ html.cgaModern body:has(.languageGrid) .kicker{font-size:10px;line-height:1.5;letter-spacing:.12em;margin-bottom:16px}
+ html.cgaModern body:has(.languageGrid) h1{font-size:clamp(32px,6vw,42px);line-height:1.09;letter-spacing:-.045em;margin-bottom:18px}
+ html.cgaModern body:has(.languageGrid) .languageGrid{grid-template-columns:minmax(0,1fr);width:100%;margin:0;gap:12px}
+ html.cgaModern body:has(.languageGrid) .languageCard{width:100%;min-height:100px;padding:18px;gap:14px;border-radius:16px}
+ html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:23px;letter-spacing:-.025em}
  html.cgaModern body:has(.languageGrid) .languageCard .description{font-size:12px;line-height:1.4;margin-top:5px}
- html.cgaModern body:has(.languageGrid) .languageCard .arrow{font-size:18px}
- html.cgaModern body:has(.languageGrid) .languageCard .flag{width:34px}
- html.cgaModern body:has(.languageGrid) .accent{width:min(76%,230px);margin-bottom:26px}
+ html.cgaModern body:has(.languageGrid) .languageCard .flag{width:36px}
+ html.cgaModern body:has(.languageGrid) .languageCard .arrow{font-size:19px}
+ html.cgaModern body:has(.languageGrid) .accent{width:56%;max-width:200px;margin-bottom:24px}
+ html.cgaModern body:has(.languageGrid) >header{padding:15px 22px}
 }
 @media(max-width:360px){
- html.cgaModern body:has(.languageGrid) main{width:calc(100% - 40px)}
- html.cgaModern body:has(.languageGrid) .languageCard{gap:10px;padding:16px 13px}
+ html.cgaModern body:has(.languageGrid) main{width:calc(100% - 48px)}
+ html.cgaModern body:has(.languageGrid) .languageCard{gap:11px;padding:16px 14px}
  html.cgaModern body:has(.languageGrid) .languageCard .flag{width:30px}
+ html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:21px}
+}
+@media(max-width:900px) and (max-height:560px){
+ html.cgaModern body:has(.languageGrid) main{padding:26px 0 32px}
 }
 @media(hover:none){
  html.cgaModern body:has(.languageGrid) .languageCard:hover{transform:none}

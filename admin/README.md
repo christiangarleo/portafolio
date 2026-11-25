@@ -225,3 +225,8 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - Solicitud del titular: tarjetas de cristal más compactas y centradas, una columna en móvil incluso en pantallas anchas, banderas gráficas GB/ES y línea degradada más corta.
 - Se modifica exclusivamente la HOME mediante `index.html` y reglas acotadas de `theme/modern.css`. Decisión de diseño: breakpoint de 900 px; tarjetas de hasta 290 px en móvil, con iconos SVG integrados sin dependencia de fuentes emoji ni servicios externos; línea de hasta 420 px (230 px en móvil). Se conservan enlaces, tema, glass effect, foco y reducción de movimiento.
 - Validación estática de estructura y alcance; QA visual en dispositivos pendiente. Base: `c6aec4833634d67dcee8fdce34e1aa0d3461db23`. Reversión: revertir este commit.
+
+## HOME — equilibrio de escala móvil (segunda iteración)
+- Evidencia: captura del titular en dispositivo real; título y tarjetas de anchos diferentes, contenido reducido en relación con la pantalla y espacio superior excesivo.
+- Se alinea el título, acento y tarjetas en un único bloque de hasta 360 px, con márgenes laterales adaptativos de 24–28 px, tarjetas de altura mínima 100 px y tipografía jerarquizada. Se desplaza el centro visual ligeramente hacia arriba sin fijar alturas ni cortar contenido. Se conservan SVG, cristal, navegación, contraste y escritorio. Cambios solo en HOME; base `af2177f217d686618b7c623ddd06e9abe3fb79c8`; reversión mediante revert del commit.
+- Verificación estática de estructura, anchos calculados y reglas responsive; validación visual real pendiente.
