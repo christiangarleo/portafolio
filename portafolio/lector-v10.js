@@ -323,6 +323,7 @@
 
   // Keyboard navigation mirrors the side arrows, but never hijacks form fields.
   document.addEventListener("keydown", event => {
+    if(event.key==="Escape"&&magazineActive&&magazine?.isFocused()&&!focusDialog.open&&!document.querySelector("dialog[open]")){event.preventDefault();magazine.leave();return;}
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
         event.shiftKey || nativeMode || !pdfDocument || focusDialog.open) return;
     const focused = event.target;
@@ -423,7 +424,20 @@
     byId("focusPageLabel").textContent=focusNumber+" / "+totalPages;
     focusDialog.showModal();void renderFocus();
   }
-  focusButton.addEventListener("click",()=>openFocus(activePage));
+  function setFocusControl(focused=false){
+    if(magazineActive){
+      focusButton.textContent=focused?(locale==="en"?"View spread":"Ver pliego"):(locale==="en"?"Read closer":"Acercar");
+      focusButton.removeAttribute("aria-haspopup");
+      focusButton.setAttribute("aria-controls","magazineStage");
+      focusButton.setAttribute("aria-pressed",String(focused));
+    }else{
+      focusButton.textContent=locale==="en"?"Reading mode":"Modo lectura";
+      focusButton.setAttribute("aria-haspopup","dialog");
+      focusButton.setAttribute("aria-controls","focusDialog");
+      focusButton.removeAttribute("aria-pressed");
+    }
+  }
+  focusButton.addEventListener("click",()=>{if(magazineActive)magazine?.toggleFocus(activePage);else openFocus(activePage);});
   byId("focusClose").addEventListener("click",()=>focusDialog.close());
   focusDialog.addEventListener("close",()=>{cancelFocus();focusPageNode.replaceChildren();focusButton.focus({preventScroll:true});});
   // One gesture owner: a horizontal swipe turns pages, a tap opens focus.
@@ -431,7 +445,7 @@
   let swipe=null,suppressClickUntil=0;
   const touches=new Set();
   viewportBox.addEventListener("pointerdown",e=>{
-    if(!pdfDocument||nativeMode||magazineOpening||focusDialog.open||e.button!==0)return;
+    if(!pdfDocument||nativeMode||magazineActive||magazineOpening||focusDialog.open||e.button!==0)return;
     touches.add(e.pointerId);
     if(touches.size!==1){swipe=null;return;}
     swipe={id:e.pointerId,x:e.clientX,y:e.clientY};
@@ -454,9 +468,10 @@
   window.addEventListener("pointerup",endSwipe,true);
   window.addEventListener("pointercancel",endSwipe,true);
   viewportBox.addEventListener("click",e=>{
+    if(magazineActive)return;
     if(performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();return;}
     if(e.target.closest?.("a,button")||nativeMode||magazineOpening)return;
-    const leaf=e.target.closest?.("[data-reader-page],[data-magazine-page]");
+    const leaf=e.target.closest?.("[data-reader-page]");
     if(!leaf)return;
     const page=Number(leaf.dataset.readerPage||leaf.dataset.magazinePage);
     const visible=spreads.spreadSlots(activePage,totalPages,spreads.singlePage());
@@ -510,6 +525,7 @@
     magazineButton.setAttribute("aria-pressed",String(active));magazineButton.textContent=magazineLabel(active);
     viewerModeButton.setAttribute("aria-pressed",String(!active));
     viewerModeButton.title=locale==="en"?"Classic reader":"Lectura convencional";
+    setFocusControl(active&&magazine?.isFocused());
   }
   function closeMagazine(render=true){
     magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
@@ -529,6 +545,7 @@
       magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),viewport:viewportBox,locale,
         onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
         onInternal:page=>{if(validPage(page))magazine.go(page);},
+        onFocus:focused=>setFocusControl(focused),
         onError:error=>{console.warn("Magazine page",error);showMessage(locale==="en"?"Page could not load. Exit magazine to retry.":"No se pudo cargar la página. Salí de revista para reintentar.");}
       });
       await magazine.open(initial);if(magazineActive){setMagazineControls(true);viewportBox.scrollLeft=Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2);viewportBox.scrollTop=0;}

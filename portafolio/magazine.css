@@ -1,5 +1,5 @@
 /* Magazine prototype, scoped exclusively to the portfolio viewer. */
-/* Automatic fitted single-page / double-page layout; no custom zoom. */
+/* Classic adapts to orientation; magazine preserves the original two-page book and independent camera. */
 #pageViewport{overflow:hidden;overflow-anchor:none;scroll-behavior:auto;touch-action:pan-y pinch-zoom}
 #pageStage,#magazineStage{box-sizing:border-box;display:flex;align-items:center;justify-content:center;position:relative;width:100%;height:100%;min-width:0;min-height:0;padding:4px 42px;overflow:hidden;overflow:clip;contain:layout paint}
 #magazineBook{position:relative;flex:0 0 auto;width:100%;height:100%;max-width:none;max-height:none;min-width:0!important;min-height:0!important;isolation:isolate;transition:none!important}
@@ -25,7 +25,7 @@
 @media(prefers-reduced-motion:reduce){#magazineMode{transition:none}}
 
 /* Page tapping is a reading action; actual PDF links remain interactive. */
-#pageViewport .cgaClassicSheet:not(.cgaClassicSheet--blank),#pageViewport .cgaMagazinePage{cursor:pointer}
+#pageViewport .cgaClassicSheet:not(.cgaClassicSheet--blank){cursor:pointer}
 #focusDialog{position:fixed;inset:0;margin:auto;width:100%;height:100%;max-width:none;max-height:none;border:0;padding:0;background:var(--cga-bg,#ededed);color:var(--cga-text,#161616);overflow:hidden}
 #focusDialog[open]{display:flex;flex-direction:column}
 #focusDialog::backdrop{background:var(--cga-bg,#161616)}
@@ -37,3 +37,16 @@
 #focusPage .cgaClassicSheet{flex:0 0 auto;box-shadow:0 4px 25px var(--cga-shadow,rgba(0,0,0,.16))}
 #focusStatus{margin:16px;text-align:center;font-size:13px;color:var(--cga-muted)}
 @media(max-width:600px){.cgaFocusHead{gap:8px;padding:8px 12px}#focusScroll{padding:4px 0 16px}}
+
+/* StPageFlip v0.5 camera. Native book geometry is unchanged by focus. */
+#pageViewport:has(#magazineStage:not([hidden])){touch-action:none}
+#magazineStage{display:block;padding:0;isolation:isolate;touch-action:none}
+#magazineCamera{position:absolute;transform-origin:0 0;will-change:transform}
+#magazineBook{cursor:grab}
+#magazineBook:active,#magazineStage.cgaCameraFocused:active{cursor:grabbing}
+#magazineStage.cgaCameraFocused{cursor:grab}
+#magazineBook .cgaMagazineLinks a{cursor:pointer}
+#magazineHint{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--cga-muted);pointer-events:none;white-space:nowrap;z-index:4}
+#focusMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;background:var(--cga-accent-soft)!important}
+@media(max-width:520px){#magazineHint{font-size:10px}}
+@media(prefers-reduced-motion:reduce){#magazineCamera{transition:none!important}}

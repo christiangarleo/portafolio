@@ -49,36 +49,148 @@
   function safeExternal(value){
     try{const url=new URL(value);return ["https:","http:","mailto:","tel:"].includes(url.protocol)?url.href:null;}catch{return null;}
   }
-  function create({pdf,host,viewport,locale,onPage,onInternal,onError}){
+  function create({pdf,host,viewport,locale,onPage,onInternal,onError,onFocus=()=>{}}){
     const count=pdf.numPages;
     const en=locale==="en";
     const msg={loading:en?"Loading page…":"Cargando página…",error:en?"Page unavailable":"Página no disponible",link:en?"Open portfolio link":"Abrir enlace del portafolio",page:en?"Page":"Página"};
     const cache=new Map(),failed=new Set(),originals=new Map();
     let book=null,active=false,desired=[],rendering=false,current=1,disposed=false,ratio=1,preparing=null;
     let geometry=null,quality=1500,resizing=false;
-    const stage=host.parentElement;
+    const camera=host.parentElement,stage=camera.parentElement,hint=stage.querySelector("#magazineHint");
+    let focused=false,scale=1,tx=0,ty=0,focusPage=1,left=0,top=0,transitionTimer=0,qualityTimer=0;
+    let press=null,lastTap=null,drag=null,panTap=null,suppressClickUntil=0,tapTimer=0;
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
-    function spreadSize(){return geometry?.single?1:2;}
+    function spreadSize(){return 2;}
     function applySize(){
-      const next=applyViewportLayout(viewport,stage,ratio,singlePage());
-      const changed=!geometry||next.width!==geometry.width||next.height!==geometry.height||next.single!==geometry.single;
-      geometry=next;
-      // StPageFlip stretch mode decides portrait from blockWidth < 2*minWidth.
-      // Set the actual threshold before update, without recreating the book.
-      if(book)book.getSettings().minWidth=geometry.single?geometry.width:1;
-      host.style.width=geometry.width*geometry.slots+"px";host.style.height=geometry.height+"px";
-      const px=Math.max(geometry.width,geometry.height)*Math.min(window.devicePixelRatio||1,2);
-      quality=Math.max(1500,Math.min(2600,Math.ceil(px/300)*300));
+      const W=viewport.clientWidth,H=viewport.clientHeight,pad=W<650?8:28;
+      const width=Math.max(1,Math.floor(Math.min(Math.max(2,W-2*pad)/2,Math.max(2,H-38)*ratio)));
+      const height=Math.max(1,Math.floor(width/ratio));
+      const changed=!geometry||width!==geometry.width||height!==geometry.height;
+      geometry={width,height,slots:2,single:false};
+      left=(W-2*width)/2;top=(H-height)/2-5;
+      viewport.style.overflowX="hidden";viewport.style.overflowY="hidden";
+      Object.assign(stage.style,{width:W+"px",height:H+"px",padding:"0"});
+      Object.assign(camera.style,{left:left+"px",top:top+"px",width:2*width+"px",height:height+"px"});
+      Object.assign(host.style,{width:2*width+"px",height:height+"px"});
+      const px=Math.max(width,height)*Math.min(window.devicePixelRatio||1,2);
+      quality=Math.max(quality,1500,Math.min(2600,Math.ceil(px/300)*300));
       return changed;
     }
-    function hasNext(){return spreadStep(current,1,count,Boolean(geometry?.single))!==spreadStart(current,Boolean(geometry?.single));}
+    function hasNext(){return spreadStep(current,1,count)!==spreadStart(current);}
     function sync(page){
       if(resizing)return;
       current=clamp(Number(page)||1,1,count);
       if(!active)return;
+      if(focused&&!spreadSlots(current,count).includes(focusPage))leave(false);
       onPage(current,{next:hasNext(),previous:current>1,spread:spreadSize()});
       queue(current);
     }
+    function label(){
+      hint.textContent=focused?(en?"Drag to read · Double tap to return":"Arrastrá para leer · Doble toque para volver"):(en?"Grab a corner · Double tap to read":"Agarrá una esquina · Doble toque para leer");
+      stage.classList.toggle("cgaCameraFocused",focused);
+      onFocus(focused);
+    }
+    function renderCamera(animate=false){
+      clearTimeout(transitionTimer);
+      camera.style.transition=animate&&!reduced.matches?"transform 320ms cubic-bezier(.22,.8,.2,1)":"none";
+      camera.style.transform=focused?`translate3d(${tx}px,${ty}px,0) scale(${scale})`:"none";
+      if(animate)transitionTimer=setTimeout(()=>camera.style.transition="none",350);
+    }
+    function bound(){
+      const W=stage.clientWidth,H=stage.clientHeight,bw=2*geometry.width*scale,bh=geometry.height*scale;
+      tx=bw<=W?(W-bw)/2-left:clamp(tx,W-left-bw,-left);
+      ty=bh<=H?(H-bh)/2-top:clamp(ty,H-top-bh,-top);
+    }
+    function pageAt(x){
+      const slots=spreadSlots(current,count),r=stage.getBoundingClientRect();
+      const half=x-r.left-left<geometry.width?0:1;
+      return slots[half]||slots[1-half]||current;
+    }
+    function enter(page,animate=true){
+      if(!active||!book||focused||!geometry)return false;
+      const state=book.getState();
+      if(state!=="read"&&state!=="fold_corner")return false;
+      const slots=spreadSlots(current,count);
+      focusPage=slots.includes(page)?page:slots.filter(Boolean)[0];
+      const i=slots[0]===focusPage?0:1,w=geometry.width,h=geometry.height,sw=stage.clientWidth,sh=stage.clientHeight;
+      // Exact midpoint formula approved in StPageFlip original v0.5.
+      scale=(Math.max(1.25,Math.min(5.5,Math.max(sw*.96,Math.min(950,sw*1.18))/w))+(sw<=600?1.9:sw<=900?1.7:1.5))/2;
+      focused=true;book.getSettings().showPageCorners=false;
+      tx=sw/2-left-(i+.5)*w*scale;ty=Math.max(0,(sh-h*scale)/2)-top;
+      bound();renderCamera(animate);label();
+      clearTimeout(qualityTimer);
+      qualityTimer=setTimeout(()=>{if(active&&focused&&quality<2600){quality=2600;queue(current);}},350);
+      return true;
+    }
+    function leave(animate=true){
+      if(!focused)return false;
+      clearTimeout(qualityTimer);
+      focused=false;scale=1;tx=ty=0;drag=null;panTap=null;press=null;lastTap=null;
+      if(book)book.getSettings().showPageCorners=true;
+      renderCamera(animate);label();return true;
+    }
+    function toggleFocus(page){return focused?leave():enter(page);}
+    // Observe native gestures without canceling StPageFlip's original paper fold.
+    function begin(x,y,target){
+      if(target?.closest?.("a,button")){press=null;lastTap=null;return;}
+      press={x,y,t:performance.now()};
+    }
+    function end(x,y){
+      if(!press)return;
+      const p=press;press=null;const now=performance.now();
+      if(Math.hypot(x-p.x,y-p.y)>12||now-p.t>450){lastTap=null;return;}
+      if(lastTap&&now-lastTap.t<330&&Math.hypot(x-lastTap.x,y-lastTap.y)<30){
+        lastTap=null;const page=pageAt(x);
+        clearTimeout(tapTimer);tapTimer=setTimeout(()=>{if(active&&!focused)enter(page);},45);
+      }else lastTap={x,y,t:now};
+    }
+    host.addEventListener("pointerdown",e=>{if(active&&!focused&&e.pointerType==="mouse"&&e.button===0)begin(e.clientX,e.clientY,e.target);},true);
+    window.addEventListener("pointerup",e=>{if(active&&!focused&&e.pointerType==="mouse")end(e.clientX,e.clientY);},true);
+    host.addEventListener("touchstart",e=>{
+      if(active&&!focused&&e.touches.length===1)begin(e.touches[0].clientX,e.touches[0].clientY,e.target);
+      else{press=null;lastTap=null;}
+    },{capture:true,passive:true});
+    window.addEventListener("touchend",e=>{if(active&&!focused&&e.changedTouches.length===1)end(e.changedTouches[0].clientX,e.changedTouches[0].clientY);},{capture:true,passive:true});
+    window.addEventListener("touchcancel",()=>{press=null;lastTap=null;},true);
+    // Camera drag is exclusively active while focused. Keep real PDF anchors
+    // clickable: no opaque overlay and no interception of stationary link taps.
+    for(const type of ["mousedown","touchstart"]){
+      stage.addEventListener(type,e=>{if(focused)e.stopPropagation();},{capture:true,passive:true});
+    }
+    stage.addEventListener("pointerdown",e=>{
+      if(!active||!focused||e.button!==0||drag)return;
+      camera.style.transition="none";
+      drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),moved:false,link:!!e.target.closest?.("a")};
+    },true);
+    window.addEventListener("pointermove",e=>{
+      if(!focused||!drag||drag.id!==e.pointerId)return;
+      if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){
+        drag.moved=true;try{stage.setPointerCapture(e.pointerId);}catch{}
+      }
+      if(drag.moved){
+        tx+=e.clientX-drag.x;ty+=e.clientY-drag.y;bound();renderCamera();e.preventDefault();
+      }
+      drag.x=e.clientX;drag.y=e.clientY;
+    },{capture:true,passive:false});
+    function stopPan(e){
+      if(!drag||drag.id!==e.pointerId)return;
+      const d=drag;drag=null;
+      if(d.moved){suppressClickUntil=performance.now()+350;panTap=null;return;}
+      if(e.type==="pointerup"&&!d.link&&performance.now()-d.t<450){
+        const now=performance.now();
+        if(panTap&&now-panTap.t<330&&Math.hypot(e.clientX-panTap.x,e.clientY-panTap.y)<30){
+          panTap=null;suppressClickUntil=now+350;leave();
+        }else panTap={t:now,x:e.clientX,y:e.clientY};
+      }else panTap=null;
+    }
+    window.addEventListener("pointerup",stopPan,true);
+    window.addEventListener("pointercancel",stopPan,true);
+    stage.addEventListener("click",e=>{if(performance.now()<suppressClickUntil&&e.detail!==0){e.preventDefault();e.stopImmediatePropagation();}},true);
+    stage.addEventListener("wheel",e=>{
+      if(!focused)return;
+      e.preventDefault();const units=e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1;
+      tx-=(e.deltaX+(e.shiftKey?e.deltaY:0))*units;ty-=(e.shiftKey?0:e.deltaY)*units;bound();renderCamera();
+    },{passive:false});
     function createLeaf(page){
       const leaf=document.createElement("div");
       leaf.className="cgaMagazinePage";leaf.dataset.magazinePage=String(page);
@@ -187,7 +299,7 @@
           const width=650,height=Math.round(width/ratio);
           const items=Array.from({length:count},(_,i)=>createLeaf(i+1));
           host.replaceChildren(...items);
-          book=new PageFlip(host,{width,height,size:"stretch",minWidth:geometry.single?geometry.width:1,maxWidth:10000,minHeight:1,maxHeight:10000,autoSize:false,usePortrait:true,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:false,useMouseEvents:false,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:true,swipeDistance:35});
+          book=new PageFlip(host,{width,height,size:"stretch",minWidth:1,maxWidth:10000,minHeight:1,maxHeight:10000,autoSize:false,usePortrait:false,showCover:true,startPage:page-1,drawShadow:!reduced.matches,maxShadowOpacity:.42,flippingTime:reduced.matches?1:720,showPageCorners:true,useMouseEvents:true,disableFlipByClick:true,clickEventForward:true,mobileScrollSupport:false,swipeDistance:35});
           book.on("flip",e=>sync(e.data+1));
           book.on("changeOrientation",()=>{if(active&&book)queue(current);});
           book.on("changeState",()=>{if(active)for(const p of desired)paint(p);});
@@ -198,32 +310,35 @@
         try{await preparing;}catch(error){preparing=null;active=false;throw error;}
       }
       if(!active||disposed)return;
-      applySize();book.update();book.turnToPage(page-1);sync(book.getCurrentPageIndex()+1);
+      applySize();book.update();book.turnToPage(page-1);sync(book.getCurrentPageIndex()+1);label();
     }
     function go(page){
       if(!active||!book)return;
-      book.turnToPage(clamp(page,1,count)-1);
+      leave(false);book.turnToPage(clamp(page,1,count)-1);
       sync(book.getCurrentPageIndex()+1);
     }
     function step(delta){
       if(!active||!book||!delta)return;
       if(delta>0&&!hasNext()||delta<0&&current===1)return;
+      leave(false);
       if(reduced.matches){delta>0?book.turnToNextPage():book.turnToPrevPage();return;}
       delta>0?book.flipNext("bottom"):book.flipPrev("bottom");
     }
-    function close(){active=false;desired=[];}
+    function close(){clearTimeout(tapTimer);clearTimeout(qualityTimer);leave(false);active=false;desired=[];press=null;lastTap=null;drag=null;panTap=null;}
     function resize(){
       if(active&&book){
-        const page=current;
+        const page=current,was=focused,p=focusPage;
+        if(was)leave(false);
         resizing=true;
         try{if(applySize()){book.update();book.turnToPage(page-1);}}
         finally{resizing=false;}
         sync(book.getCurrentPageIndex()+1);
+        if(was)enter(p,false);
       }
       return geometry;
     }
     function dispose(){disposed=true;close();for(const entry of cache.values())URL.revokeObjectURL(entry.url);cache.clear();if(book)try{book.destroy();}catch{}}
-    return {open,close,go,step,resize,dispose};
+    return {open,close,go,step,resize,dispose,toggleFocus,leave,isFocused:()=>focused};
   }
   window.CGAMagazine={create,layout,applyViewportLayout,pageRatio,spreadStart,spreadSlots,spreadStep,singlePage};
 })();
