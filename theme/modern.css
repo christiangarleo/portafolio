@@ -181,7 +181,6 @@ html.cgaModern body:has(.languageGrid) h1{font-size:clamp(35px,6vw,67px);letter-
 html.cgaModern body:has(.languageGrid) .languageGrid{max-width:860px;gap:17px}
 html.cgaModern body:has(.languageGrid) .languageCard{border-radius:15px;min-height:152px;box-shadow:0 4px 24px rgba(0,0,0,.04);position:relative;overflow:hidden}
 html.cgaModern body:has(.languageGrid) .languageCard.primary{border-color:var(--cga-border-strong);background:var(--cga-surface)}
-html.cgaModern body:has(.languageGrid) .languageCard.primary:before{content:"";height:4px;background:var(--brand-gradient);left:0;top:0;right:0;position:absolute}
 html.cgaModern body:has(.languageGrid) .languageCard:hover{transform:translateY(-3px);border-color:var(--ux-action-text);box-shadow:0 14px 36px var(--cga-shadow)}
 html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:25px}
 html.cgaModern body:has(.languageGrid) .languageCard .description{font-size:13px;color:var(--cga-muted)}
@@ -244,7 +243,6 @@ html.cgaModern body:has(#loginPanel) .adminStat:nth-child(4)::before{background:
 html.cgaModern body:has(#loginPanel) .adminPriority{border-top-color:var(--brand-pink)}
 html.cgaModern body:has(#loginPanel) #status[data-error="true"]{color:var(--cga-text);background:var(--ux-danger-bg)}
 html.cgaModern .cgaAccentLine{background:var(--brand-gradient)}
-html.cgaModern body:has(.languageGrid) .languageCard.primary::before{background:var(--brand-gradient)}
 html.cgaModern .crmFilters button[aria-pressed=true]{border-bottom:3px solid var(--brand-pink)}
 html.cgaModern .publicPortfolioCard .publicPortfolioActions{display:flex;gap:8px;margin:8px 0}
 html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioActions button{padding:10px 14px}
@@ -253,31 +251,53 @@ html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioAction
  html.cgaModern .cgaMeta{color:var(--cga-text)}
 }
 
-/* Selector de idiomas: degradados oficiales independientes por tarjeta. */
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"],
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]{
-  border:2px solid transparent;
-  background:linear-gradient(var(--cga-surface),var(--cga-surface)) padding-box,
-    var(--language-card-gradient) border-box;
+/* HOME: cristal neutro, sin bordes cromáticos ni distinción ornamental por idioma. */
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+  --glass-fill:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.28) 58%,rgba(255,255,255,.44));
+  --glass-hover:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.43) 58%,rgba(255,255,255,.58));
+  --glass-border:rgba(22,22,22,.24);
+  --glass-edge:rgba(255,255,255,.83);
+  --glass-shadow:rgba(22,22,22,.17);
+  --glass-focus:#161616;
+  border:1px solid var(--glass-border);
+  border-top-color:var(--glass-edge);
+  background:var(--glass-fill);
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.10),0 9px 24px var(--glass-shadow);
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]{
-  --language-card-gradient:linear-gradient(110deg,#f6db0e,#e5007d);
+html.cgaModern[data-theme="dark"] body:has(.languageGrid) .languageCard[data-lang-choice]{
+  --glass-fill:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.045) 58%,rgba(255,255,255,.085));
+  --glass-hover:linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.075) 58%,rgba(255,255,255,.12));
+  --glass-border:rgba(255,255,255,.25);
+  --glass-edge:rgba(255,255,255,.42);
+  --glass-shadow:rgba(0,0,0,.38);
+  --glass-focus:#d7d7d5;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]{
-  --language-card-gradient:linear-gradient(110deg,#e5007d,#09b3dc);
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{
+  content:none;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]::before,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]::before{
-  content:"";position:absolute;top:0;left:0;right:0;height:4px;
-  background:var(--language-card-gradient);
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .recommended{
+  color:var(--cga-text);
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]:hover,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]:hover,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="en"]:focus-visible,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice="es"]:focus-visible{
-  border-color:transparent;
-  background:linear-gradient(var(--cga-surface-2),var(--cga-surface-2)) padding-box,
-    var(--language-card-gradient) border-box;
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){
+  background:var(--glass-hover);
+  border-color:var(--glass-border);
+  border-top-color:var(--glass-edge);
+  box-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.12),0 14px 32px var(--glass-shadow);
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-visible{
+  outline:2px solid var(--glass-focus);outline-offset:4px;
+}
+@media(prefers-contrast:more){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+    border:2px solid var(--cga-text);background:var(--cga-surface);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){transform:none}
 }
 
 /* Comunicación: primero editar, luego elegir canal, después confirmar envío. */

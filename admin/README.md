@@ -210,3 +210,8 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - **Corrección:** pista sol/luna con ancho explícito, centrado flex y tamaños existentes, referencias CSS actualizadas en las cuatro rutas; ajuste compacto del menú de contacto en móviles pequeños. Se preservan colores amarillo/cian, preferencias y accesibilidad del switch.
 - **Continuidad de lectura:** `lang/i18n.js` conserva `pagina`, `vista` y otros parámetros; el lector sincroniza la página al aceptar la navegación, antes del render. En una edición más corta se usa la última página válida; la portada es el valor por defecto si no hay página en el enlace. Se conserva el modo revista/clásico y el pliego, sin presumir equivalencia editorial entre ediciones.
 - **Validación:** sintaxis, URLs simuladas y comprobaciones estáticas; QA visual y publicación pendientes. Base: `621a94ac8f4eb81b051e6b597a1863bcdad63c24`. Reversión: revertir este commit. Sin cambios de PDF, backend, permisos ni diseño de pliegos.
+
+## HOME — tarjetas de idioma con efecto cristal
+- Solicitud del titular: sustituir bordes amarillo/rosa/cian de ambas tarjetas por vidrio neutro translúcido. Se conserva el degradado del título, los enlaces, la composición, el selector de tema y todas las demás rutas.
+- Implementación en `theme/modern.css` y actualización de caché de la HOME en `index.html`. Reflejos y sombras neutros, variantes claro/oscuro, foco visible, contraste reforzado y movimiento reducido. Sin dependencias nuevas ni cambios de backend. Base: `39bcc18d8960bd346392d9f56c6d93cbf066fa8d`; reversión: revertir este commit.
+- Validación estática de alcance, enlaces y CSS; comprobación visual en navegador pendiente.
