@@ -19,8 +19,11 @@
   --cga-border-strong:color-mix(in srgb,var(--brand-black) 36%,var(--brand-white));
   --cga-chip:color-mix(in srgb,var(--brand-white) 82%,white);
   --cga-hover:color-mix(in srgb,var(--brand-white) 72%,white);
-  --cga-primary:var(--brand-black);
-  --cga-primary-text:var(--brand-white);
+  --cga-accent:var(--brand-yellow);
+  --cga-focus:#806600; /* Dark gold provides a visible focus boundary on light surfaces. */
+  --cga-accent-soft:color-mix(in srgb,var(--cga-surface) 91%,var(--cga-accent) 9%);
+  --cga-primary:var(--cga-accent);
+  --cga-primary-text:var(--brand-black);
   --cga-shadow:rgba(22,22,22,.13);
   color-scheme:light;
 }
@@ -34,7 +37,9 @@
   --cga-border-strong:color-mix(in srgb,var(--brand-black) 38%,var(--brand-white));
   --cga-chip:color-mix(in srgb,var(--brand-black) 74%,var(--brand-white));
   --cga-hover:color-mix(in srgb,var(--brand-black) 72%,var(--brand-white));
-  --cga-primary:var(--brand-cyan);
+  --cga-accent:var(--brand-cyan);
+  --cga-focus:var(--brand-cyan);
+  --cga-primary:var(--cga-accent);
   --cga-primary-text:var(--brand-black);
   --cga-shadow:rgba(0,0,0,.42);
   color-scheme:dark;
@@ -73,14 +78,14 @@
 .cgaThemeSwitch[aria-checked="false"] .cgaThemeSymbol--sun,
 .cgaThemeSwitch[aria-checked="true"] .cgaThemeSymbol--moon{color:var(--brand-black)}
 .cgaThemeSwitch:hover .cgaThemeTrack{border-color:var(--cga-text)}
-.cgaThemeSwitch:focus-visible{outline:2px solid var(--brand-pink)!important;outline-offset:2px}
+.cgaThemeSwitch:focus-visible{outline:2px solid var(--cga-focus)!important;outline-offset:2px}
 
 :root[data-theme="dark"] body{background:var(--cga-bg);color:var(--cga-text)}
 :root[data-theme="dark"] body>header:not(.siteHeader){border-bottom-color:var(--cga-border)}
 :root[data-theme="dark"] body>footer{border-top-color:var(--cga-border);color:var(--cga-muted)}
 :root[data-theme="dark"] .label,:root[data-theme="dark"] body>main>p{color:var(--cga-muted)}
 :root[data-theme="dark"] a.cta{background:var(--cga-primary);border-color:var(--cga-primary);color:var(--cga-primary-text)}
-:root[data-theme="dark"] a.cta:hover{background:#c9cdd4}
+:root[data-theme="dark"] a.cta:hover{background:color-mix(in srgb,var(--cga-primary) 90%,var(--brand-black))}
 /* Empresa */
 :root[data-theme="dark"] body>header{background:var(--cga-surface);border-bottom-color:var(--cga-border)}
 :root[data-theme="dark"] body>header small,:root[data-theme="dark"] body>header a{color:var(--cga-muted)}
@@ -119,10 +124,10 @@
 }
 :root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:#a3aab5;opacity:1}
 :root[data-theme="dark"] button.action,:root[data-theme="dark"] .actionLink{background:var(--cga-primary);border-color:var(--cga-primary);color:var(--cga-primary-text)}
-:root[data-theme="dark"] button.action:hover:not(:disabled){background:#c9cdd4}
+:root[data-theme="dark"] button.action:hover:not(:disabled){background:color-mix(in srgb,var(--cga-primary) 90%,var(--brand-black))}
 :root[data-theme="dark"] button.action:disabled{background:var(--cga-chip);border-color:var(--cga-border);color:var(--cga-muted)}
 :root[data-theme="dark"] button.secondary{background:var(--cga-surface-2);color:var(--cga-text);border-color:var(--cga-border)}
-:root[data-theme="dark"] a:not(.actionLink):focus-visible{outline-color:var(--brand-pink)}
+:root[data-theme="dark"] a:not(.actionLink):focus-visible{outline-color:var(--cga-focus)}
 /* Administración privada */
 :root[data-theme="dark"] body:has(#loginPanel)>header{background:var(--cga-surface);color:var(--cga-text)}
 :root[data-theme="dark"] body:has(#loginPanel)>header a{color:var(--cga-text)}
@@ -188,7 +193,7 @@
 :root[data-theme="dark"] .siteActions .download,
 :root[data-theme="dark"] .siteActions .download.iconOnly{color:var(--cga-primary-text);background:var(--cga-primary);border-color:var(--cga-primary)}
 :root[data-theme="dark"] .siteActions .download:hover,
-:root[data-theme="dark"] .siteActions .download.iconOnly:hover{background:#c9cdd4}
+:root[data-theme="dark"] .siteActions .download.iconOnly:hover{background:color-mix(in srgb,var(--cga-primary) 90%,var(--brand-black))}
 :root[data-theme="dark"] .cvDialog{background:var(--cga-surface);color:var(--cga-text);border-color:var(--cga-border)}
 :root[data-theme="dark"] .cvDialog p,:root[data-theme="dark"] .cvCompanySub{color:var(--cga-muted)}
 :root[data-theme="dark"] .cvDialog input,:root[data-theme="dark"] .cvDialog textarea{background:var(--cga-surface-2);color:var(--cga-text);border-color:var(--cga-border)}

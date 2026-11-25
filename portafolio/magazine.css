@@ -10,8 +10,8 @@
 .cgaClassicPaper canvas{display:block}
 .cgaClassicLinks{position:absolute;inset:0;pointer-events:none}
 .cgaClassicLinks a{position:absolute;display:block;pointer-events:auto}
-.cgaClassicLinks a:is(:hover,:focus-visible){outline:2px solid #09b3dc;background:rgba(9,179,220,.12)}
-#viewerMode[aria-pressed="true"]{border-color:var(--brand-pink)!important;box-shadow:inset 0 0 0 1px var(--brand-pink);font-weight:700}
+.cgaClassicLinks a:is(:hover,:focus-visible){outline:2px solid var(--cga-focus);background:color-mix(in srgb,var(--cga-accent) 12%,transparent)}
+#viewerMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;box-shadow:inset 0 0 0 1px var(--cga-focus);font-weight:700}
 #magazineBook .stf__wrapper{height:100%!important;padding-bottom:0!important}
 #magazineBook .cgaMagazinePage{background:#fff;color:#161616;overflow:hidden;box-sizing:border-box;box-shadow:inset 0 0 1px #aaa}
 #magazineBook .cgaMagazineContent{position:absolute;inset:0;margin:auto;overflow:hidden;background:#fff}
@@ -19,7 +19,7 @@
 #magazineBook .cgaMagazinePlaceholder{position:absolute;inset:0;display:grid;place-content:center;font:500 13px/1.4 system-ui,sans-serif;color:#555;padding:12px}
 #magazineBook .cgaMagazineLinks{position:absolute;inset:0;pointer-events:none}
 #magazineBook .cgaMagazineLinks a{position:absolute;display:block;pointer-events:auto}
-#magazineBook .cgaMagazineLinks a:is(:hover,:focus-visible){outline:2px solid #09b3dc;background:rgba(9,179,220,.12)}
-#magazineMode[aria-pressed="true"]{border-color:var(--brand-pink)!important;box-shadow:inset 0 0 0 1px var(--brand-pink);font-weight:700}
+#magazineBook .cgaMagazineLinks a:is(:hover,:focus-visible){outline:2px solid var(--cga-focus);background:color-mix(in srgb,var(--cga-accent) 12%,transparent)}
+#magazineMode[aria-pressed="true"]{border-color:var(--cga-focus)!important;box-shadow:inset 0 0 0 1px var(--cga-focus);font-weight:700}
 @media(max-width:820px){#magazineStage,#pageStage{padding:4px}}
 @media(prefers-reduced-motion:reduce){#magazineMode{transition:none}}

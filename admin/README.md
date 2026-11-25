@@ -215,3 +215,8 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - Solicitud del titular: sustituir bordes amarillo/rosa/cian de ambas tarjetas por vidrio neutro translúcido. Se conserva el degradado del título, los enlaces, la composición, el selector de tema y todas las demás rutas.
 - Implementación en `theme/modern.css` y actualización de caché de la HOME en `index.html`. Reflejos y sombras neutros, variantes claro/oscuro, foco visible, contraste reforzado y movimiento reducido. Sin dependencias nuevas ni cambios de backend. Base: `39bcc18d8960bd346392d9f56c6d93cbf066fa8d`; reversión: revertir este commit.
 - Validación estática de alcance, enlaces y CSS; comprobación visual en navegador pendiente.
+
+## Política cromática funcional — 24/11/2026
+- Decisión del titular: reducir saturación visual; cian en oscuro, amarillo en claro, rosa excepcional. Se conserva la paleta de marca y el degradado editorial de HOME. Superficies, botones secundarios y divisores neutros; foco accesible cian/ocre oscuro (derivado del amarillo) según tema. Rosa reservado a avisos de error, rechazo o acciones destructivas; estados mantienen etiquetas.
+- Se actualizan los tokens y estilos de HOME, portafolio, portal empresas y administración, incluyendo selector de CV, modalidad de contratación, diálogo sin CV y navegación. No se altera comportamiento, PDF, backend ni permisos. Base: `fab4e1c47d9e3729789d1a7b5d9c34a60097dd43`; reversión: revertir este commit.
+- Validación estática de tokens, referencias y alcance; pendiente revisión visual en ambos temas.

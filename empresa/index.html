@@ -50,7 +50,7 @@
     .tag.expired { color:#666; background:#e9e9e9; }
     .card small { color:#666; font-size:12px; }
     .card .action { margin-top:auto; align-self:flex-start; min-height:39px; }
-    .card.selectedCV{border:2px solid var(--brand-pink);box-shadow:0 0 0 3px rgba(223,62,137,.12);scroll-margin-top:110px;}
+    .card.selectedCV{border:2px solid var(--cga-focus);box-shadow:0 0 0 3px var(--cga-accent-soft);scroll-margin-top:110px;}
     button.action,.actionLink { background:#191919; color:#fff; border:1px solid #191919; border-radius:4px; cursor:pointer; font-size:12px; padding:11px 15px; text-decoration:none; font-weight:700; }
     button.action:disabled { cursor:not-allowed; background:#eee; border-color:#eee; color:#777; }
     button.action:hover:not(:disabled) { background:#333; }
@@ -109,8 +109,8 @@
     .chipRow{display:flex;flex-wrap:wrap;gap:7px;}
     .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #d5d5d5;border-radius:6px;padding:11px 12px;min-height:42px;background:#fff;cursor:pointer;font-size:13px;margin:0;font-weight:500;}
     .chip:has(input:checked){background:#191919;border-color:#191919;color:#fff;}
-    .chip:has(input:focus-visible){outline:2px solid var(--brand-pink);outline-offset:2px;}
-    .chip input{width:15px;min-height:0;height:15px;margin:0;accent-color:var(--brand-pink);cursor:pointer;}
+    .chip:has(input:focus-visible){outline:2px solid var(--cga-focus);outline-offset:2px;}
+    .chip input{width:15px;min-height:0;height:15px;margin:0;accent-color:var(--cga-accent);cursor:pointer;}
     .chip:has(input:checked) input{accent-color:#fff;}
     .contactMethods{margin-top:11px;padding:12px;border-radius:6px;background:#f7f7f7;border:1px solid #e6e6e6;}
     .contactMethods .fieldChoice{margin:0;}
@@ -146,7 +146,7 @@
 .companyMissingDialog{width:min(510px,calc(100vw - 28px));max-width:510px;max-height:85dvh;overflow:auto;padding:0;border:1px solid var(--cga-border);border-radius:16px;background:var(--cga-surface);color:var(--cga-text);box-shadow:0 26px 80px rgba(0,0,0,.32)}
 .companyMissingDialog::backdrop{background:rgba(0,0,0,.62)}
 .companyMissingBody{padding:clamp(21px,4vw,31px)}
-.companyMissingIcon{display:grid;place-items:center;width:36px;height:36px;background:color-mix(in srgb,var(--brand-cyan) 20%,var(--cga-surface));border:2px solid var(--brand-cyan);border-radius:50%;color:var(--cga-text);font-weight:800;margin-bottom:15px}
+.companyMissingIcon{display:grid;place-items:center;width:36px;height:36px;background:color-mix(in srgb,var(--cga-accent) 20%,var(--cga-surface));border:2px solid var(--cga-accent);border-radius:50%;color:var(--cga-text);font-weight:800;margin-bottom:15px}
 .companyMissingDialog h2{font-size:clamp(19px,3vw,25px);line-height:1.28;margin:0 0 12px;color:var(--cga-text)}
 .companyMissingDialog p{font-size:13px;line-height:1.5;color:var(--cga-muted)}
 .companyMissingIdentifier{display:inline-block;padding:7px 12px;background:var(--cga-surface-2);border:1px solid var(--cga-border);border-radius:7px;font-weight:700;overflow-wrap:anywhere}
@@ -157,8 +157,8 @@
 #missingCVEdit input{display:block;width:100%;min-height:44px;margin:8px 0 12px;padding:10px 12px;background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border-strong);border-radius:8px}
 #missingCVEditForm button{background:var(--cga-primary);color:var(--cga-primary-text)}
 </style>
-  <link rel="stylesheet" href="/theme/theme.css?v=20261124-switch2">
-<link rel="stylesheet" href="/theme/modern.css?v=20261124-switch1">
+  <link rel="stylesheet" href="/theme/theme.css?v=20261124-palette1">
+<link rel="stylesheet" href="/theme/modern.css?v=20261124-palette1">
 
 </head>
 <body>
