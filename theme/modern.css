@@ -296,6 +296,28 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-vis
   html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){transform:none}
 }
 
+/* HOME responsive: one centered column, compact glass cards, no emoji dependency. */
+@media(max-width:900px){
+ html.cgaModern body:has(.languageGrid) main{width:min(440px,calc(100% - 48px));padding:clamp(28px,6svh,64px) 0}
+ html.cgaModern body:has(.languageGrid) h1{font-size:clamp(31px,5.5vw,48px);line-height:1.1;letter-spacing:-.047em}
+ html.cgaModern body:has(.languageGrid) .kicker{letter-spacing:.12em;margin-bottom:18px}
+ html.cgaModern body:has(.languageGrid) .languageGrid{grid-template-columns:minmax(0,1fr);width:min(calc(100% - 24px),290px);margin-inline:auto;gap:14px}
+ html.cgaModern body:has(.languageGrid) .languageCard{min-height:112px;padding:18px 16px;gap:12px;border-radius:18px}
+ html.cgaModern body:has(.languageGrid) .languageCard .name{font-size:21px;letter-spacing:-.025em}
+ html.cgaModern body:has(.languageGrid) .languageCard .description{font-size:12px;line-height:1.4;margin-top:5px}
+ html.cgaModern body:has(.languageGrid) .languageCard .arrow{font-size:18px}
+ html.cgaModern body:has(.languageGrid) .languageCard .flag{width:34px}
+ html.cgaModern body:has(.languageGrid) .accent{width:min(76%,230px);margin-bottom:26px}
+}
+@media(max-width:360px){
+ html.cgaModern body:has(.languageGrid) main{width:calc(100% - 40px)}
+ html.cgaModern body:has(.languageGrid) .languageCard{gap:10px;padding:16px 13px}
+ html.cgaModern body:has(.languageGrid) .languageCard .flag{width:30px}
+}
+@media(hover:none){
+ html.cgaModern body:has(.languageGrid) .languageCard:hover{transform:none}
+}
+
 /* Comunicación: primero editar, luego elegir canal, después confirmar envío. */
 html.cgaModern .crmDeliveryButtons{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:14px 0 16px}
 html.cgaModern .crmDeliveryButtons :is(button,a){min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 15px;font-weight:700;border-radius:8px;text-decoration:none;font-size:13px}

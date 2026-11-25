@@ -220,3 +220,8 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 - Decisión del titular: reducir saturación visual; cian en oscuro, amarillo en claro, rosa excepcional. Se conserva la paleta de marca y el degradado editorial de HOME. Superficies, botones secundarios y divisores neutros; foco accesible cian/ocre oscuro (derivado del amarillo) según tema. Rosa reservado a avisos de error, rechazo o acciones destructivas; estados mantienen etiquetas.
 - Se actualizan los tokens y estilos de HOME, portafolio, portal empresas y administración, incluyendo selector de CV, modalidad de contratación, diálogo sin CV y navegación. No se altera comportamiento, PDF, backend ni permisos. Base: `fab4e1c47d9e3729789d1a7b5d9c34a60097dd43`; reversión: revertir este commit.
 - Validación estática de tokens, referencias y alcance; pendiente revisión visual en ambos temas.
+
+## HOME — composición móvil y banderas SVG
+- Solicitud del titular: tarjetas de cristal más compactas y centradas, una columna en móvil incluso en pantallas anchas, banderas gráficas GB/ES y línea degradada más corta.
+- Se modifica exclusivamente la HOME mediante `index.html` y reglas acotadas de `theme/modern.css`. Decisión de diseño: breakpoint de 900 px; tarjetas de hasta 290 px en móvil, con iconos SVG integrados sin dependencia de fuentes emoji ni servicios externos; línea de hasta 420 px (230 px en móvil). Se conservan enlaces, tema, glass effect, foco y reducción de movimiento.
+- Validación estática de estructura y alcance; QA visual en dispositivos pendiente. Base: `c6aec4833634d67dcee8fdce34e1aa0d3461db23`. Reversión: revertir este commit.
