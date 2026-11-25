@@ -67,12 +67,13 @@
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
     function spreadSize(){return 2;}
     function applySize(){
-      const W=viewport.clientWidth,H=viewport.clientHeight,pad=W<650?8:28;
-      const width=Math.max(1,Math.floor(Math.min(Math.max(2,W-2*pad)/2,Math.max(2,H-38)*ratio)));
+      const W=viewport.clientWidth,H=viewport.clientHeight,mobileLandscape=document.body.classList.contains("cgaMobileLandscape"),pad=mobileLandscape?4:W<650?8:28;
+      const verticalReserve=mobileLandscape?22:38;
+      const width=Math.max(1,Math.floor(Math.min(Math.max(2,W-2*pad)/2,Math.max(2,H-verticalReserve)*ratio)));
       const height=Math.max(1,Math.floor(width/ratio));
       const changed=!geometry||width!==geometry.width||height!==geometry.height;
       geometry={width,height,slots:2,single:false};
-      left=(W-2*width)/2;top=(H-height)/2-5;
+      left=(W-2*width)/2;top=(H-height)/2-(mobileLandscape?8:5);
       viewport.style.overflowX="hidden";viewport.style.overflowY="hidden";
       Object.assign(stage.style,{width:W+"px",height:H+"px",padding:"0"});
       Object.assign(camera.style,{left:left+"px",top:top+"px",width:2*width+"px",height:height+"px"});
