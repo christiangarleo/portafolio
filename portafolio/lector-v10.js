@@ -115,9 +115,10 @@
   let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
   refreshSectionLinks();
   let zoomMode="page",manualZoom=1,currentScale=1,nativeMode=false,ratioPromise=null;
+  let classicRatio=null,classicGeometry=null,classicRenderedWidth=0,zoomRenderTimer=0;
   const {MIN_ZOOM,MAX_ZOOM}=spreads;
   const classicStart=page=>spreads.spreadStart(page);
-  function updateZoom(factor){currentScale=factor;zoomText.textContent=Math.round(factor*100)+"%";byId("zoomOut").disabled=factor<=MIN_ZOOM+.001;byId("zoomIn").disabled=factor>=MAX_ZOOM-.001;}
+  function updateZoom(factor){currentScale=factor;viewportBox.classList.toggle("cgaZoomPan",viewportBox.scrollWidth>viewportBox.clientWidth+2||viewportBox.scrollHeight>viewportBox.clientHeight+2);zoomText.textContent=Math.round(factor*100)+"%";byId("zoomOut").disabled=factor<=MIN_ZOOM+.001;byId("zoomIn").disabled=factor>=MAX_ZOOM-.001;}
   function getRatio(){return ratioPromise ||= spreads.pageRatio(pdfDocument);}
   const pageLink = page => SHARE_URL + "&pagina=" + page;
   const validPage = value => /^\d+$/.test(String(value)) && Number(value) >= 1 && Number(value) <= totalPages;
@@ -257,15 +258,16 @@
     if(!group.cancelled)await drawPageLinks(pdfPage,cssViewport,links);
     return sheet;
   }
-  async function navigate(page, updateURL=true) {
+  async function navigate(page, updateURL=true, zoomGeometry=null) {
     if(magazineOpening)return;
     if(magazineActive&&magazine){if(validPage(page))magazine.go(Number(page));else showMessage("Elegí una página entre 1 y "+totalPages);return;}
     if(!validPage(page)){showMessage("Elegí una página entre 1 y "+totalPages);return;}
+    clearTimeout(zoomRenderTimer);
     const id=++ticket,previous=activePage;
     const priorX=viewportBox.scrollLeft,priorY=viewportBox.scrollTop;
     activePage=Number(page);updateToolbar();
     if(updateURL)history.replaceState(null,"","/portafolio/?lang="+locale+(activePage===1?"":"&pagina="+activePage));
-    resetView();setLoading("Cargando página "+page+"…");
+    if(!zoomGeometry){classicGeometry=null;classicRenderedWidth=0;pageContainer.style.transform="";resetView();setLoading("Cargando página "+page+"…");}
     if(activeRender){activeRender.cancel();activeRender=null;}
     const group={tasks:[],cancelled:false,promise:null,cancel(){this.cancelled=true;for(const t of this.tasks)t.cancel();}};
     activeRender=group;
@@ -275,17 +277,22 @@
       const slots=spreads.spreadSlots(activePage,totalPages);
       const [ratio,pdfPages]=await Promise.all([getRatio(),Promise.all(slots.map(p=>p?pdfDocument.getPage(p):null))]);
       if(id!==ticket||group.cancelled)return;
-      const geometry=spreads.applyViewportLayout(viewportBox,pageStage,ratio,zoomMode,manualZoom);
+      classicRatio=ratio;
+      const geometry=zoomGeometry||spreads.applyViewportLayout(viewportBox,pageStage,ratio,zoomMode,manualZoom);
       updateZoom(geometry.factor);
       group.promise=Promise.all(pdfPages.map(p=>renderSheet(p,geometry,group)));
       const sheets=await group.promise;
       if(id!==ticket||group.cancelled)return;
-      pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
-      viewportBox.scrollTop=geometry.scrollY&&previous===activePage?priorY:0;
-      viewportBox.scrollLeft=geometry.scrollX?(previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2)):0;
+      pageContainer.replaceChildren(...sheets);pageContainer.style.transform="";pageContainer.hidden=false;pageStatus.hidden=true;
+      classicRenderedWidth=geometry.width;classicGeometry=geometry;
+      if(!zoomGeometry){
+        viewportBox.scrollTop=geometry.scrollY&&previous===activePage?priorY:0;
+        viewportBox.scrollLeft=geometry.scrollX?(previous===activePage?priorX:Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2)):0;
+      }
+      updateZoom(geometry.factor);
     }catch(error){
       if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
-      console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
+      console.error("Falló renderizado de pliego",error);if(zoomGeometry){showMessage(locale==="en"?"Could not sharpen the zoomed page.":"No se pudo mejorar la nitidez de la página ampliada.");}else setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
     }finally{if(activeRender===group)activeRender=null;}
   }
 
@@ -386,26 +393,133 @@
     document.body.appendChild(frame);
     frame.src = verifiedPdfBlobUrl + "#toolbar=0&navpanes=0";
   });
-  function refreshZoom(){
+  // Zoom is relative to the fitted spread, not the browser UI.
+  const clampZoom=n=>Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,n));
+  const readingNode=()=>magazineActive?byId("magazineBook"):pageContainer;
+  const centerPoint=()=>{const r=viewportBox.getBoundingClientRect();return {x:r.left+viewportBox.clientWidth/2,y:r.top+viewportBox.clientHeight/2};};
+  function captureAnchor(point){
+    const r=readingNode().getBoundingClientRect();
+    if(!r.width||!r.height)return null;
+    return {x:Math.max(0,Math.min(1,(point.x-r.left)/r.width)),y:Math.max(0,Math.min(1,(point.y-r.top)/r.height))};
+  }
+  function restoreAnchor(anchor,point,geometry){
+    if(!anchor||!geometry)return;
+    const r=readingNode().getBoundingClientRect();
+    viewportBox.scrollLeft=geometry.scrollX?viewportBox.scrollLeft+r.left+anchor.x*r.width-point.x:0;
+    viewportBox.scrollTop=geometry.scrollY?viewportBox.scrollTop+r.top+anchor.y*r.height-point.y:0;
+    viewportBox.classList.toggle("cgaZoomPan",geometry.scrollX||geometry.scrollY);
+  }
+  function refreshZoom(from=centerPoint(),to=from){
     if(magazineOpening||!pdfDocument||nativeMode)return;
+    const anchor=captureAnchor(from);
     if(magazineActive&&magazine){
-      const oldWidth=viewportBox.scrollWidth,oldHeight=viewportBox.scrollHeight;
-      const fx=(viewportBox.scrollLeft+viewportBox.clientWidth/2)/Math.max(1,oldWidth);
-      const fy=(viewportBox.scrollTop+viewportBox.clientHeight/2)/Math.max(1,oldHeight);
       const geometry=magazine.resize(zoomMode,manualZoom);
-      if(geometry)updateZoom(geometry.factor);
-      viewportBox.scrollLeft=geometry?.scrollX?Math.max(0,fx*viewportBox.scrollWidth-viewportBox.clientWidth/2):0;
-      viewportBox.scrollTop=geometry?.scrollY?Math.max(0,fy*viewportBox.scrollHeight-viewportBox.clientHeight/2):0;
+      if(geometry){updateZoom(geometry.factor);restoreAnchor(anchor,to,geometry);}
+    }else if(classicRatio&&classicRenderedWidth&&!pageContainer.hidden){
+      // Keep the currently visible raster and its links on screen during gestures.
+      // Render sharp PDF.js canvases once the gesture settles, without a blank flash.
+      clearTimeout(zoomRenderTimer);
+      if(activeRender){ticket++;activeRender.cancel();activeRender=null;}
+      const geometry=spreads.applyViewportLayout(viewportBox,pageStage,classicRatio,zoomMode,manualZoom);
+      pageContainer.style.transform="scale("+geometry.width/classicRenderedWidth+")";
+      classicGeometry=geometry;updateZoom(geometry.factor);restoreAnchor(anchor,to,geometry);
+      const page=activePage;
+      zoomRenderTimer=setTimeout(()=>{if(!magazineActive&&!magazineOpening&&page===activePage)void navigate(page,false,geometry);},180);
     }else void navigate(activePage,false);
   }
-  function adjustZoom(factor){
-    if(magazineOpening||nativeMode)return;
-    zoomMode="manual";manualZoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,currentScale*factor));refreshZoom();
+  let pendingZoom=null,zoomFrame=0;
+  function flushZoom(){
+    if(zoomFrame)cancelAnimationFrame(zoomFrame);zoomFrame=0;
+    const pending=pendingZoom;pendingZoom=null;if(!pending)return;
+    if(magazineOpening||nativeMode||!pdfDocument)return;
+    zoomMode="manual";manualZoom=clampZoom(currentScale*pending.factor);
+    refreshZoom(pending.from,pending.to);
   }
+  function requestZoom(factor,from=centerPoint(),to=from){
+    if(magazineOpening||nativeMode||!pdfDocument||!Number.isFinite(factor)||factor<=0)return;
+    if(pendingZoom){pendingZoom.factor*=factor;pendingZoom.to=to;}
+    else pendingZoom={factor,from,to};
+    if(!zoomFrame)zoomFrame=requestAnimationFrame(flushZoom);
+  }
+  function discardZoom(){if(zoomFrame)cancelAnimationFrame(zoomFrame);zoomFrame=0;pendingZoom=null;clearTimeout(zoomRenderTimer);}
+  function adjustZoom(factor){flushZoom();requestZoom(factor);flushZoom();}
   byId("zoomOut").addEventListener("click",()=>adjustZoom(.8));
   byId("zoomIn").addEventListener("click",()=>adjustZoom(1.25));
-  byId("fitPage").addEventListener("click",()=>{if(magazineOpening)return;zoomMode="page";refreshZoom();});
-  byId("fitWidth").addEventListener("click",()=>{if(magazineOpening)return;zoomMode="width";refreshZoom();});
+  byId("fitPage").addEventListener("click",()=>{if(magazineOpening)return;discardZoom();zoomMode="page";refreshZoom();});
+  byId("fitWidth").addEventListener("click",()=>{if(magazineOpening)return;discardZoom();zoomMode="width";refreshZoom();});
+  // A wheel over the actual document zooms; Shift+wheel / horizontal trackpad pans.
+  viewportBox.addEventListener("wheel",event=>{
+    if(magazineOpening||nativeMode||!pdfDocument)return;
+    if(event.shiftKey||(!event.ctrlKey&&Math.abs(event.deltaX)>Math.abs(event.deltaY)))return;
+    if(!event.deltaY)return;
+    event.preventDefault();
+    const units=event.deltaMode===1?16:event.deltaMode===2?viewportBox.clientHeight:1;
+    const delta=Math.max(-180,Math.min(180,event.deltaY*units));
+    requestZoom(Math.exp(-delta*.003),{x:event.clientX,y:event.clientY});
+  },{passive:false});
+  // Touch gestures are isolated from StPageFlip's touch handlers. At fit, a
+  // horizontal swipe turns the spread; when enlarged, dragging pans instead.
+  const pointers=new Map();
+  let gesture=null,suppressClickUntil=0;
+  const pos=e=>({x:e.clientX,y:e.clientY});
+  const midpoint=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const canPan=()=>viewportBox.scrollWidth>viewportBox.clientWidth+2||viewportBox.scrollHeight>viewportBox.clientHeight+2;
+  function capture(id){try{viewportBox.setPointerCapture(id);}catch{}}
+  function startGesture(e){
+    if(magazineOpening||nativeMode||!pdfDocument||e.button!==0||e.target.closest?.("#nativeFallback"))return;
+    const touch=e.pointerType==="touch"||e.pointerType==="pen";
+    if(!touch&&(!canPan()||e.target.closest?.("a")))return;
+    pointers.set(e.pointerId,pos(e));
+    if(pointers.size===1){
+      gesture={start:pos(e),last:pos(e),pan:canPan(),pinched:false,moved:false,touch};
+      if(!touch){e.preventDefault();capture(e.pointerId);}
+    }else if(pointers.size===2){
+      const [a,b]=pointers.values();gesture.pinched=true;gesture.moved=true;gesture.pinchDistance=distance(a,b);gesture.mid=midpoint(a,b);
+      for(const id of pointers.keys())capture(id);
+    }
+    if(touch)e.stopPropagation();
+  }
+  function moveGesture(e){
+    if(!gesture||!pointers.has(e.pointerId))return;
+    const p=pos(e);pointers.set(e.pointerId,p);
+    if(pointers.size>=2){
+      const [a,b]=pointers.values(),d=distance(a,b),mid=midpoint(a,b);
+      if(gesture.pinchDistance>0&&d>0)requestZoom(d/gesture.pinchDistance,gesture.mid,mid);
+      gesture.pinchDistance=d;gesture.mid=mid;gesture.pinched=true;gesture.moved=true;
+    }else{
+      if(distance(p,gesture.start)>7){gesture.moved=true;capture(e.pointerId);}
+      if(gesture.pan||gesture.pinched){viewportBox.scrollLeft-=p.x-gesture.last.x;viewportBox.scrollTop-=p.y-gesture.last.y;viewportBox.classList.add("cgaZoomDragging");}
+      gesture.last=p;
+    }
+    if(gesture.moved){e.preventDefault();e.stopPropagation();}
+  }
+  function finishGesture(e){
+    if(!gesture||!pointers.has(e.pointerId))return;
+    pointers.delete(e.pointerId);
+    if(gesture.pinched)flushZoom();
+    if(pointers.size){
+      const [p]=pointers.values();gesture.last=p;gesture.start=p;gesture.pinchDistance=0;gesture.pan=true;return;
+    }
+    const g=gesture;gesture=null;viewportBox.classList.remove("cgaZoomDragging");
+    if(g.moved||g.pinched){
+      suppressClickUntil=performance.now()+350;
+      if(e.type==="pointerup"&&g.touch&&!g.pan&&!g.pinched){
+        const dx=e.clientX-g.start.x,dy=e.clientY-g.start.y;
+        if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)stepPage(dx<0?1:-1);
+      }
+      e.preventDefault();e.stopPropagation();
+    }
+  }
+  viewportBox.addEventListener("pointerdown",startGesture,true);
+  viewportBox.addEventListener("pointermove",moveGesture,true);
+  viewportBox.addEventListener("pointerup",finishGesture,true);
+  viewportBox.addEventListener("pointercancel",finishGesture,true);
+  viewportBox.addEventListener("lostpointercapture",finishGesture,true);
+  for(const type of ["touchstart","touchmove","touchend","touchcancel"]){
+    viewportBox.addEventListener(type,e=>{if(!nativeMode&&pdfDocument)e.stopPropagation();},{capture:true,passive:true});
+  }
+  viewportBox.addEventListener("click",e=>{if(e.detail!==0&&performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
   viewerModeButton.addEventListener("click",()=>{
     if(magazineOpening||!pdfDocument)return;
     if(magazineActive)closeMagazine();
@@ -427,10 +541,9 @@
   });
 
   window.addEventListener("resize", () => {
-    if(magazineActive){refreshZoom();return;}
-    if (!pdfDocument || nativeMode) return;
+    if (!pdfDocument || nativeMode || magazineOpening) return;
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => navigate(activePage,false), 320);
+    resizeTimer = setTimeout(() => refreshZoom(), 180);
   });
   document.addEventListener("fullscreenchange", () => {
     // Keep the controls accessible: request fullscreen on the whole application.
@@ -457,14 +570,15 @@
     if(active){const geometry=magazine?.resize(zoomMode,manualZoom);if(geometry)updateZoom(geometry.factor);}
   }
   function closeMagazine(render=true){
+    discardZoom();
     magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
     pageStage.hidden=false;setMagazineControls(false);syncMagazineURL();updateToolbar();
     if(render&&pdfDocument)void navigate(activePage,false);
   }
   async function openMagazine(){
     if(!pdfDocument||magazineOpening||magazineActive)return;
-    if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");return;}
-    magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
+    if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");void navigate(activePage,false);return;}
+    discardZoom();magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
     const initial=activePage;
     try{
       ticket++; // Cancel pending getPage/render work before switching modes.
@@ -526,9 +640,10 @@
       // Shorter editions retain the nearest valid page instead of resetting.
       const target=requested&&/^\d+$/.test(requested)?Math.max(1,Math.min(totalPages,Number(requested))):1;
       if(requested&&String(target)!==requested){const url=new URL(location.href);url.searchParams.set("pagina",String(target));history.replaceState(null,"",url.pathname+url.search+url.hash);}
-      await navigate(target,false);
       magazineButton.disabled=false;
-      if(new URLSearchParams(location.search).get("vista")==="revista")void openMagazine();
+      if(new URLSearchParams(location.search).get("vista")==="revista"){
+        activePage=target;updateToolbar();await openMagazine();
+      }else await navigate(target,false);
     } catch (error) {
       console.error("Error del visor PDF", error);
       pageStage.hidden = true;
@@ -556,7 +671,7 @@
 
   window.addEventListener("pagehide", event => {
     if(event.persisted)return;
-    magazine?.dispose();
+    discardZoom();magazine?.dispose();
     if (verifiedPdfBlobUrl) URL.revokeObjectURL(verifiedPdfBlobUrl);
   });
 

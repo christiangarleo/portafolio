@@ -26,7 +26,7 @@
     const p=spreadStart(page),next=delta>0?(p===1?2:p+2):(p<=2?1:p-2);
     return next>=1&&next<=count?next:p;
   }
-  const MIN_ZOOM=.5,MAX_ZOOM=3;
+  const MIN_ZOOM=.5,MAX_ZOOM=6;
   function layout(viewport,ratio,mode="page",manual=1){
     const narrow=viewport.clientWidth<=820;
     const padX=narrow?4:42,padY=4;
