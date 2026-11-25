@@ -27,6 +27,59 @@ const companyId = (v: unknown) => typeof v === "string" ? v.trim().replace(/\s+/
 const validCompanyId = (id: string) => id.length >= 1 && id.length <= 64 &&
   /^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]*$/u.test(id);
 const text = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
+// Internal notifications: fixed recipient, no private CV or contact details in email.
+type NotificationLead = { id: string; kind: string; company_name: string; created_at: string };
+async function notifyNewLead(lead: NotificationLead): Promise<void> {
+  const key = Deno.env.get("RESEND_API_KEY");
+  const id = lead.id;
+  if (!key) { console.error("lead_notification_failed", id, "missing_secret"); return; }
+  const category = ({ solicitud_cv: "Solicitud de CV", in_house: "Contratación In-house", proyecto: "Contratación por proyecto" } as Record<string, string>)[lead.kind] || "Nueva solicitud";
+  const company = lead.company_name.replace(/[\r\n\t\u0000-\u001f\u007f]/g, " ").trim().slice(0, 160);
+  const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c));
+  const crm = "https://christianarleo.com/admin/";
+  const body = JSON.stringify({
+    from: "Portafolio CGA <alertas@notificaciones.christianarleo.com>",
+    to: ["hola@christianarleo.com"],
+    subject: "[Portafolio] " + category + " · " + company,
+    text: "Nueva solicitud registrada en el portafolio.\nTipo: " + category + "\nEmpresa: " + company + "\nFecha (UTC): " + lead.created_at + "\nReferencia: " + id + "\n\nConsultá los datos completos en el CRM: " + crm,
+    html: '<div style="font:15px/1.6 Arial,sans-serif;color:#222;max-width:560px;margin:auto;padding:24px"><p style="font-size:12px;letter-spacing:1px;color:#555">CHRISTIANARLEO.COM · CRM</p><h2 style="margin:12px 0">Nueva solicitud registrada</h2><p><strong>Tipo:</strong> ' + escape(category) + '<br><strong>Empresa:</strong> ' + escape(company) + '<br><strong>Fecha (UTC):</strong> ' + escape(lead.created_at) + '</p><p>Los datos de contacto y la propuesta completa están disponibles en el panel privado.</p><p><a href="' + crm + '" style="display:inline-block;padding:12px 20px;background:#161616;color:#fff;border-radius:6px;text-decoration:none">Abrir CRM</a></p><p style="font-size:12px;color:#666">Referencia: ' + escape(id) + ' · Notificación interna automática.</p></div>'
+  });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    let retry = false;
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json", "Idempotency-Key": "portfolio-lead/" + id },
+        body, signal: AbortSignal.timeout(8000)
+      });
+      if (res.ok) {
+        const accepted = await res.json().catch(() => null);
+        if (typeof accepted?.id === "string" && accepted.id) {
+          console.log("lead_notification_accepted", id, accepted.id, attempt); return;
+        }
+        retry = true;
+        console.warn("lead_notification_retry", id, attempt, "missing_message_id");
+      } else {
+        retry = res.status === 408 || res.status === 429 || res.status >= 500;
+        console.warn("lead_notification_http", id, attempt, res.status);
+        if (!retry) { console.error("lead_notification_failed", id, "permanent_http", res.status); return; }
+      }
+    } catch {
+      retry = true;
+      console.warn("lead_notification_retry", id, attempt, "network_or_timeout");
+    }
+    if (retry && attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+  }
+  console.error("lead_notification_failed", id, "retry_exhausted");
+}
+function scheduleLeadNotification(lead: NotificationLead) {
+  if (!lead?.id) { console.error("lead_notification_failed", "missing_lead_id"); return; }
+  try {
+    const task = notifyNewLead(lead).catch(() => console.error("lead_notification_failed", lead.id, "unexpected"));
+    EdgeRuntime.waitUntil(task);
+  } catch { console.error("lead_notification_failed", lead.id, "schedule_error"); }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(req) });
   if (req.method !== "POST") return reply(req, { error: "Metodo no permitido" }, 405);
@@ -130,7 +183,7 @@ Deno.serve(async (req: Request) => {
         otro:"Otro proyecto / asesoramiento"
       }[need] || "Propuesta de proyecto";
     }
-    const { error } = await supabase.from("portfolio_cv_leads").insert({
+    const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, ruc, contact_name: contactName || "Equipo de " + company.slice(0, 120),
       email, phone: phone || null, position_or_project: position,
       details: observations,
@@ -139,8 +192,9 @@ Deno.serve(async (req: Request) => {
       contact_time: null,
       observations: observations || null,
       intake_data: intake, intake_version: 3, language
-    });
+    }).select("id,kind,company_name,created_at").single();
     if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
+    scheduleLeadNotification(savedLead as NotificationLead);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead_v2") {
@@ -242,7 +296,7 @@ Deno.serve(async (req: Request) => {
 
     // Datos enviados por los formularios nuevos: se mantienen estructurados
     // sin romper registros históricos del endpoint "lead" anterior.
-    const { error } = await supabase.from("portfolio_cv_leads").insert({
+    const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, ruc, contact_name: name, email,
       phone: phone || null, position_or_project: position,
       details: kind === "in_house" ? String(intake.responsibilities || "") : String(intake.problem || ""),
@@ -251,11 +305,12 @@ Deno.serve(async (req: Request) => {
       contact_time: contactPreference === "contactame" ? contactTime || null : null,
       observations: observations || null,
       intake_data: intake, intake_version: 2
-    });
+    }).select("id,kind,company_name,created_at").single();
     if (error) {
       console.error("lead_v2_insert", error.message);
       return reply(req, { error: "No se pudo registrar la propuesta." }, 503);
     }
+    scheduleLeadNotification(savedLead as NotificationLead);
     return reply(req, { status: "received" });
   }
   if (input.action === "lead") {
@@ -271,12 +326,13 @@ Deno.serve(async (req: Request) => {
       (ruc && !validCompanyId(ruc))) {
       return reply(req, { error: "Revisa los datos obligatorios" }, 400);
     }
-    const { error } = await supabase.from("portfolio_cv_leads").insert({
+    const { data: savedLead, error } = await supabase.from("portfolio_cv_leads").insert({
       kind, company_name: company, contact_name: name, email, ruc: ruc || null,
       phone: text(input.phone, 65), position_or_project: text(input.position_or_project, 180),
       details: text(input.details, 1600)
-    });
+    }).select("id,kind,company_name,created_at").single();
     if (error) { console.error("cv_lead", error.message); return reply(req, { error: "No se pudo registrar la solicitud" }, 503); }
+    scheduleLeadNotification(savedLead as NotificationLead);
     return reply(req, { status: "received" });
   }
   return reply(req, { error: "Accion invalida" }, 400);
