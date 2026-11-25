@@ -326,7 +326,8 @@
       const note=element("p",contactMessage,"sub");
       note.id="requestSuccess";
       const actions=by("requestSuccessActions");
-      by("emptySection").insertBefore(note,actions);
+      const successLayout=by("requestSuccessLayout");
+      by("emptySection").insertBefore(note,successLayout);
       by("successBackPortfolio").textContent=t("Volver al portafolio");
       by("successWhatsApp").textContent=locale==="es"?"Contacta por WhatsApp":"Contact me on WhatsApp";
       by("successLinkedIn").textContent=locale==="es"?"Sígueme en LinkedIn":"Follow me on LinkedIn";
@@ -336,7 +337,9 @@
         by("successWhatsApp").href=wa.toString();
       }
       actions.hidden=false;
-      by("emptySection").scrollIntoView({block:"nearest",behavior:"smooth"});
+      successLayout.hidden=false;
+      try{showSuccessVideo();}catch{ /* The saved request remains confirmed even if video initialization fails. */ }
+      by("emptySection").scrollIntoView({block:"start",behavior:window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?"auto":"smooth"});
     }catch(error){
       setMessage(by("leadMessage"),"",false);
       formError(error.message||securityText("No se pudo enviar la propuesta. Intentá nuevamente.","Could not submit your proposal. Please try again."));
@@ -345,6 +348,56 @@
       leadSubmitting=false;submit.disabled=false;
     }
   });
+
+  const successVideoSources=Object.freeze({
+    es:"https://gprhevdotoykofrxbufv.supabase.co/storage/v1/object/public/portafolio-videos/confirmacion-solicitud-es.mp4"
+  });
+  // Presentation only: never throw into the submission flow after CRM has accepted the lead.
+  function showSuccessVideo(){
+    const layout=by("requestSuccessLayout"),video=by("requestSuccessVideo"),sound=by("requestVideoSound"),status=by("requestVideoStatus"),languageNote=by("requestVideoLanguage");
+    layout.hidden=false;
+    if(video.dataset.loaded==="true")return;
+    video.dataset.loaded="true";
+    const source=successVideoSources[locale]||successVideoSources.es;
+    const videoLang=successVideoSources[locale]?locale:"es";
+    video.lang=videoLang;
+    video.setAttribute("aria-label",securityText("Video de agradecimiento","Thank-you video"));
+    languageNote.textContent=securityText("Video en español.","Video in Spanish.");
+    languageNote.hidden=videoLang===locale;
+    const say=(es,en)=>{status.textContent=securityText(es,en);status.hidden=false;};
+    const clear=()=>{status.hidden=true;status.textContent="";};
+    const syncSound=()=>{
+      sound.hidden=!!video.error||!(video.muted||video.volume===0||video.paused&&!video.ended);
+      sound.textContent=video.paused&&!video.ended?securityText("Reproducir video con sonido","Play video with sound"):securityText("Activar sonido","Enable sound");
+    };
+    video.addEventListener("play",()=>{clear();syncSound();});
+    video.addEventListener("volumechange",syncSound);
+    video.addEventListener("pause",syncSound);
+    video.addEventListener("ended",syncSound);
+    video.addEventListener("error",()=>{
+      sound.hidden=true;
+      say("No se pudo reproducir el video. Tu solicitud ya quedó registrada.","The video could not be played. Your request has been recorded.");
+    });
+    sound.addEventListener("click",async()=>{
+      try{video.muted=false;if(video.volume===0)video.volume=1;await video.play();clear();}
+      catch{say("Usá los controles del video para reproducirlo.","Use the video controls to play it.");}
+      syncSound();
+    });
+    video.src=source;
+    // Respect reduced-motion and data-saving preferences; otherwise try audible playback first.
+    if(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||navigator.connection?.saveData){
+      syncSound();return;
+    }
+    void (async()=>{
+      try{video.muted=false;await video.play();clear();syncSound();}
+      catch{
+        if(video.error)return;
+        try{video.muted=true;await video.play();clear();syncSound();}
+        catch{if(!video.error)say("Tocá reproducir para ver el mensaje de agradecimiento.","Press play to watch the thank-you message.");syncSound();}
+      }
+    })();
+  }
+
   async function init(){
     if(!companyIdValid(ruc)){show("invalidSection");return;}
     by("rucField").value=ruc;
