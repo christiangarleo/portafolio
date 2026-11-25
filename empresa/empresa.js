@@ -277,6 +277,13 @@
       const actions=by("requestSuccessActions");
       by("emptySection").insertBefore(note,actions);
       by("successBackPortfolio").textContent=t("Volver al portafolio");
+      by("successWhatsApp").textContent=locale==="es"?"Contacta por WhatsApp":"Contact me on WhatsApp";
+      by("successLinkedIn").textContent=locale==="es"?"Sígueme en LinkedIn":"Follow me on LinkedIn";
+      if(locale==="en"){
+        const wa=new URL(by("successWhatsApp").href);
+        wa.searchParams.set("text","Hi, Christian. I saw your portfolio and would like to contact you.");
+        by("successWhatsApp").href=wa.toString();
+      }
       actions.hidden=false;
       by("emptySection").scrollIntoView({block:"nearest",behavior:"smooth"});
     }catch(error){

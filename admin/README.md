@@ -284,3 +284,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ### Portal empresa — regreso después de propuesta (2026-11-25)
 - En la confirmación exitosa se muestra «Volver al portafolio» / «Back to portfolio», con enlace al lector y el idioma activo. Acción oculta antes de éxito; accesible por teclado y con área de 44 px. No cambia el formulario, el backend ni las notificaciones. Archivos: empresa/index.html y empresa/empresa.js (cache bust success-back1). Verificación sintáctica JS y de ramas DOM; comprobación visual en producción pendiente.
+
+### Portal empresa — acciones sociales de confirmación (2026-11-25)
+- Se amplía el bloque de regreso con «Contacta por WhatsApp» y «Sígueme en LinkedIn» (ES/EN). Enlaces del portafolio existente, apertura en nueva pestaña con noopener/noreferrer; mensaje de WhatsApp localizado. Acciones secundarias con tokens de tema, 44 px y disposición vertical móvil. Solo tras éxito, sin cambios en CRM, DNS o Edge Functions. Verificación sintáctica y de enlaces; QA visual en producción pendiente. Base 7d9ff4bf29ead44ab8c84bf28d94c482e6c7c36e.

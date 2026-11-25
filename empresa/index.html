@@ -87,6 +87,9 @@
     .formActions .secondary { min-height:42px; }
     #requestSuccessActions .actionLink{display:inline-flex;align-items:center;justify-content:center;min-height:44px;}
     #requestSuccessActions .actionLink:focus-visible{outline:2px solid var(--cga-focus,#222);outline-offset:3px;}
+    #requestSuccessActions .successSecondary{background:var(--cga-surface-2,#fff);color:var(--cga-text,#191919);border-color:var(--cga-border-strong,#aaa);}
+    #requestSuccessActions .successSecondary:hover{border-color:var(--cga-focus,#191919);background:var(--cga-hover,#eee);}
+    @media(max-width:480px){#requestSuccessActions{align-items:stretch;flex-direction:column;}#requestSuccessActions .actionLink{width:100%;text-align:center;}}
     .errorBox { font-size:13px;color:#a21d35;min-height:18px;margin:8px 0;}
     .inlineCheck { display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:400; }
     .inlineCheck input {width:auto;min-height:0;margin:0;}
@@ -303,6 +306,8 @@
     </form>
     <div id="requestSuccessActions" class="formActions" hidden>
       <a id="successBackPortfolio" class="actionLink" href="/portafolio/?lang=es">Volver al portafolio</a>
+      <a id="successWhatsApp" class="actionLink successSecondary" href="https://wa.me/51902163225?text=Hola%2C%20Christian.%20Vi%20tu%20portafolio%20y%20quisiera%20contactarte." target="_blank" rel="noopener noreferrer">Contacta por WhatsApp</a>
+      <a id="successLinkedIn" class="actionLink successSecondary" href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer">Sígueme en LinkedIn</a>
     </div>
   </section>
     <section id="invalidSection" class="panel" hidden>
@@ -336,7 +341,7 @@
     <span><a href="mailto:hola@christianarleo.com">Contacto por correo</a></span>
   </div>
 </main>
-<script src="./empresa.js?v=20261125-success-back1" defer></script>
+<script src="./empresa.js?v=20261125-success-social1" defer></script>
   <script src="/theme/theme.js?v=20261124-switch1" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>
 </body></html>
