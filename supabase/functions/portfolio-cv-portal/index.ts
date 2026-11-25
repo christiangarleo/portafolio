@@ -29,50 +29,6 @@ const validCompanyId = (id: string) => id.length >= 1 && id.length <= 64 &&
 const text = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
 // Internal notifications: fixed recipient, no private CV or contact details in email.
 type NotificationLead = { id: string; kind: string; company_name: string; created_at: string };
-async function notifyNewLead(lead: NotificationLead): Promise<void> {
-  const key = Deno.env.get("RESEND_API_KEY");
-  const id = lead.id;
-  if (!key) { console.error("lead_notification_failed", id, "missing_secret"); return; }
-  const category = ({ solicitud_cv: "Solicitud de CV", in_house: "Contratación In-house", proyecto: "Contratación por proyecto" } as Record<string, string>)[lead.kind] || "Nueva solicitud";
-  const company = lead.company_name.replace(/[\r\n\t\u0000-\u001f\u007f]/g, " ").trim().slice(0, 160);
-  const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c));
-  const crm = "https://christianarleo.com/admin/";
-  const body = JSON.stringify({
-    from: "Portafolio CGA <alertas@notificaciones.christianarleo.com>",
-    to: ["hola@christianarleo.com"],
-    subject: "[Portafolio] " + category + " · " + company,
-    text: "Nueva solicitud registrada en el portafolio.\nTipo: " + category + "\nEmpresa: " + company + "\nFecha (UTC): " + lead.created_at + "\nReferencia: " + id + "\n\nConsultá los datos completos en el CRM: " + crm,
-    html: '<div style="font:15px/1.6 Arial,sans-serif;color:#222;max-width:560px;margin:auto;padding:24px"><p style="font-size:12px;letter-spacing:1px;color:#555">CHRISTIANARLEO.COM · CRM</p><h2 style="margin:12px 0">Nueva solicitud registrada</h2><p><strong>Tipo:</strong> ' + escape(category) + '<br><strong>Empresa:</strong> ' + escape(company) + '<br><strong>Fecha (UTC):</strong> ' + escape(lead.created_at) + '</p><p>Los datos de contacto y la propuesta completa están disponibles en el panel privado.</p><p><a href="' + crm + '" style="display:inline-block;padding:12px 20px;background:#161616;color:#fff;border-radius:6px;text-decoration:none">Abrir CRM</a></p><p style="font-size:12px;color:#666">Referencia: ' + escape(id) + ' · Notificación interna automática.</p></div>'
-  });
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    let retry = false;
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json", "Idempotency-Key": "portfolio-lead/" + id },
-        body, signal: AbortSignal.timeout(8000)
-      });
-      if (res.ok) {
-        const accepted = await res.json().catch(() => null);
-        if (typeof accepted?.id === "string" && accepted.id) {
-          console.log("lead_notification_accepted", id, accepted.id, attempt); return;
-        }
-        retry = true;
-        console.warn("lead_notification_retry", id, attempt, "missing_message_id");
-      } else {
-        retry = res.status === 408 || res.status === 429 || res.status >= 500;
-        console.warn("lead_notification_http", id, attempt, res.status);
-        if (!retry) { console.error("lead_notification_failed", id, "permanent_http", res.status); return; }
-      }
-    } catch {
-      retry = true;
-      console.warn("lead_notification_retry", id, attempt, "network_or_timeout");
-    }
-    if (retry && attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-  }
-  console.error("lead_notification_failed", id, "retry_exhausted");
-}
-
 // Confirmation email: only for server-verified new submissions. No historical replay.
 type ConfirmationLead = NotificationLead & { email: string; contact_name: string; language: string };
 function confirmationPayload(lead: ConfirmationLead) {
@@ -107,7 +63,14 @@ function confirmationPayload(lead: ConfirmationLead) {
     + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="500" style="width:100%;max-width:500px;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;"><tr><td class="signature-name" style="font-size:23px;font-weight:400;color:#161616;line-height:1.3;padding:0 0 10px">Christian Gabriel Arleo</td></tr><tr><td style="padding:0 0 6px"><table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:linear-gradient(90deg,#DF3E89,#FCD200);"><tr>'+gradient+'</tr></table></td></tr>'
     + '<tr><td class="signature-role" style="font-size:15px;line-height:1.45;color:#666666;padding:0">'+esc(role)+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link(whatsapp,"WhatsApp")+" | "+link(linkedin,"LinkedIn")+" | "+link(portfolio,en?"Professional portfolio":"Portafolio profesional")+'</td></tr><tr><td style="font-size:15px;line-height:1.6;padding:0">'+link("mailto:hola@christianarleo.com","hola@christianarleo.com")+'</td></tr></table><p class="auto-note" style="font-size:12px;line-height:1.5;color:#666666;font-style:italic;margin:28px 0 0">'+esc(note)+'</p></div></body></html>';
   const plain = [greeting,thanks,receipt,next,before+"christianarleo.com"+after,regards,"Christian Gabriel Arleo\n"+role+"\nWhatsApp: "+whatsapp+"\nLinkedIn: "+linkedin+"\n"+portfolio+"\nhola@christianarleo.com",note].join("\n\n");
-  return {from:"Christian Gabriel Arleo <alertas@notificaciones.christianarleo.com>",to:[lead.email],reply_to:"hola@christianarleo.com",subject,html,text:plain};
+  // Keep the private mailbox out of this public repository. Never duplicate To in BCC.
+  const personal=(Deno.env.get("PORTFOLIO_PERSONAL_BCC_EMAIL")||"").trim().toLowerCase();
+  const validAddress=(value:string)=>/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(value);
+  const bcc=[...new Set(["hola@christianarleo.com",personal].filter(value=>validAddress(value)&&value!==lead.email.trim().toLowerCase()))];
+  // Root-domain sender requires verified domain and a compatible Resend API key.
+  const fromAddress=Deno.env.get("PORTFOLIO_FROM_EMAIL")==="hola@christianarleo.com"
+    ?"hola@christianarleo.com":"alertas@notificaciones.christianarleo.com";
+  return {from:"Christian Gabriel Arleo <"+fromAddress+">",to:[lead.email],...(bcc.length?{bcc}:{}),reply_to:"hola@christianarleo.com",subject,html,text:plain};
 }
 async function notifyRequester(lead: ConfirmationLead): Promise<void> {
   const id = lead.id;
@@ -166,10 +129,7 @@ async function dispatchLeadNotifications(lead: ConfirmationLead,security: Securi
   if(daily.error||burst.error||daily.count===null||burst.count===null||daily.count>30||burst.count>8){
     console.warn("lead_notifications_skipped",lead.id,daily.error||burst.error?"rate_check_error":"global_rate_limit");return;
   }
-  await Promise.allSettled([
-    notifyNewLead(lead).catch(()=>console.error("lead_notification_failed",lead.id,"unexpected")),
-    notifyRequester(lead).catch(()=>console.error("lead_confirmation_failed",lead.id,"unexpected"))
-  ]);
+  await notifyRequester(lead).catch(()=>console.error("lead_confirmation_failed",lead.id,"unexpected"));
 }
 function scheduleLeadNotification(lead: ConfirmationLead,security: SecurityResult) {
   if (!lead?.id) { console.error("lead_notification_failed", "missing_lead_id"); return; }
