@@ -636,3 +636,61 @@ html.cgaModern body:has(#loginPanel) .adminPriority{border-top-color:var(--cga-b
 html.cgaModern body:has(#loginPanel) .adminNavigation button[aria-selected="true"]{color:var(--cga-text)!important}
 html.cgaModern .cgaActionButton{background:var(--cga-surface-2)!important;border-color:var(--cga-border-strong)!important}
 html.cgaModern .cgaActionButton:hover:not(:disabled){border-color:var(--cga-focus)!important}
+
+/* HOME · CGA glass microinteraction. Brand accent only during interaction.
+   Native CSS; intentionally scoped away from video and form cards. */
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+  --cga-glass-glow:color-mix(in srgb,var(--cga-accent) 32%,transparent);
+  --cga-glass-tint:color-mix(in srgb,var(--cga-accent) 28%,transparent);
+  --cga-glass-rest-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.10),0 9px 24px var(--glass-shadow);
+  isolation:isolate;
+  touch-action:manipulation;
+  transition:transform .6s cubic-bezier(.2,.75,.25,1),box-shadow .6s ease,border-color .6s ease,background .6s ease;
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{
+  content:"";
+  position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:0;
+  background:linear-gradient(270deg,transparent 0%,var(--cga-glass-tint) 60%,transparent 100%);
+  opacity:0;
+  transition:opacity .6s ease;
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] > *{position:relative;z-index:1;}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow{transition:transform .6s cubic-bezier(.2,.75,.25,1);}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-visible,
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:active{
+  border-color:var(--cga-focus);
+  box-shadow:inset 0 1px 1px var(--glass-edge),0 10px 26px var(--glass-shadow),0 0 28px var(--cga-glass-glow);
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:focus-visible,:active)::before{opacity:1;}
+@media(hover:hover) and (pointer:fine){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover{
+    transform:translateY(-3px);
+    border-color:var(--cga-focus);
+    box-shadow:inset 0 1px 1px var(--glass-edge),0 10px 26px var(--glass-shadow),0 0 36px var(--cga-glass-glow);
+    -webkit-box-reflect:below 7px linear-gradient(to bottom,transparent 82%,rgba(0,0,0,.10));
+  }
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover::before{opacity:1;}
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible) .arrow{transform:translate(3px,-3px);}
+}
+@media(hover:none),(pointer:coarse){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover:not(:active):not(:focus-visible){
+    transform:none;background:var(--glass-fill);border-color:var(--glass-border);border-top-color:var(--glass-edge);box-shadow:var(--cga-glass-rest-shadow);
+  }
+}
+html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:active{
+  transform:scale(.92);
+  transition:transform .12s ease-out,box-shadow .15s ease,border-color .15s ease;
+  -webkit-box-reflect:none;
+}
+@media(prefers-reduced-motion:reduce){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice],
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible,:active){transition:none;transform:none;-webkit-box-reflect:none;}
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before,html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow{transition:none;transform:none;}
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible) .arrow{transform:none;}
+}
+@media(prefers-contrast:more),(forced-colors:active){
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice],
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible,:active){background:var(--cga-surface);box-shadow:none;border:2px solid currentColor;-webkit-box-reflect:none;}
+  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{display:none;}
+}
