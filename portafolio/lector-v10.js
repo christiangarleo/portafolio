@@ -81,14 +81,12 @@
   byId("focusTitle").textContent=readingLabel;
   byId("focusClose").textContent=locale==="en"?"← Back":"← Volver";
   focusScroll.setAttribute("aria-label",locale==="en"?"Page in reading mode":"Página en modo lectura");
-  const viewerModeButton = byId("viewerMode");
   const nativeFallback = byId("nativeFallback");
   const magazineButton=byId("magazineMode"), magazineStage=byId("magazineStage");
   let magazine=null, magazineActive=false, magazineOpening=false, magazineNav=null;
   const magazineLabel=active=>locale==="en"?(active?"Exit magazine":"Magazine view"):(active?"Salir de revista":"Vista revista");
   const magazineButtonLabel=magazineButton.querySelector(".cgaReaderControlLabel");
-  const viewerButtonLabel=viewerModeButton.querySelector(".cgaReaderControlLabel");
-  magazineButtonLabel.textContent=magazineLabel(false); magazineStage.setAttribute("aria-label",locale==="en"?"Magazine view":"Vista revista");
+  magazineButtonLabel.textContent=magazineLabel(false);magazineButton.title=magazineLabel(false);magazineStage.setAttribute("aria-label",locale==="en"?"Magazine view":"Vista revista");
   const totalPagesText = byId("totalPages");
   const previousButton = byId("previousPage");
   const nextButton = byId("nextPage");
@@ -571,11 +569,6 @@
     const visible=spreads.spreadSlots(activePage,totalPages,spreads.singlePage());
     if(visible.includes(page))openFocus(page);
   },true);
-  viewerModeButton.addEventListener("click",()=>{
-    if(magazineOpening||!pdfDocument)return;
-    if(magazineActive)closeMagazine();
-    else if(nativeMode){nativeMode=false;nativeFallback.hidden=true;void navigate(activePage,false);}
-  });
   // Copy the page actually displayed, not an unconfirmed value typed in the page selector.
   byId("sendPage").addEventListener("click", async () => {
     await copyText(pageLink(activePage));
@@ -619,8 +612,7 @@
   }
   function setMagazineControls(active){
     magazineButton.setAttribute("aria-pressed",String(active));magazineButtonLabel.textContent=magazineLabel(active);
-    viewerModeButton.setAttribute("aria-pressed",String(!active));
-    viewerModeButton.title=locale==="en"?"Classic reader":"Lectura convencional";
+    magazineButton.title=magazineLabel(active);
     setFocusControl(active&&magazine?.isFocused());
   }
   function closeMagazine(render=true){
@@ -631,13 +623,13 @@
   async function openMagazine(){
     if(!pdfDocument||magazineOpening||magazineActive)return;
     if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");void navigate(activePage,false);return;}
-    magazineOpening=true;readerBusy(true);magazineButton.disabled=true;viewerModeButton.disabled=true;
+    magazineOpening=true;readerBusy(true);magazineButton.disabled=true;
     const initial=activePage;
     try{
       ticket++; // Cancel pending getPage/render work before switching modes.
       if(activeRender){const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
       nativeMode=false;nativeFallback.hidden=true;pageStage.hidden=true;pageStatus.hidden=true;
-      viewerButtonLabel.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
+      magazineStage.hidden=false;magazineActive=true;
       magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),viewport:viewportBox,locale,
         onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
         onInternal:page=>{if(validPage(page))magazine.go(page);},
@@ -649,9 +641,9 @@
     }catch(error){
       magazineOpening=false;
       console.warn("Magazine unavailable",error);closeMagazine();showMessage(locale==="en"?"Magazine unavailable. PDF reader restored.":"Vista revista no disponible. Se restauró el lector PDF.");
-    }finally{magazineOpening=false;magazineButton.disabled=false;viewerModeButton.disabled=false;updateToolbar();}
+    }finally{magazineOpening=false;magazineButton.disabled=false;updateToolbar();}
   }
-  magazineButton.addEventListener("click",()=>{if(magazineActive)closeMagazine();else void openMagazine();});
+  magazineButton.addEventListener("click",()=>{if(magazineOpening||!pdfDocument)return;if(magazineActive)closeMagazine();else void openMagazine();});
   async function start() {
     setLoading("Preparando el portafolio…",true,"startup");
     updateToolbar();
@@ -713,14 +705,14 @@
         setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.",false);
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";
-        viewerButtonLabel.textContent=t("Visor PDF clásico");
+        setMagazineControls(false);magazineButton.disabled=!pdfDocument;
       } else {
         const missingEnglish=locale==="en" && /(?:HTTP 404|HTTP 400)/.test(String(error.message));
         setLoading(missingEnglish
           ? "English portfolio not published yet. Please check back soon or switch to Español."
           : "No se pudo obtener la versión actual del PDF. Probá «Actualizar PDF» o «Descargar PDF».",false);
         nativeFallback.hidden = true;
-        viewerModeButton.disabled = true;
+        magazineButton.disabled = true;
       }
     }
   }
