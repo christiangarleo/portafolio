@@ -238,3 +238,10 @@ Se preparan cuatro slots independientes (ES/EN × A4 web/A3 descarga) conservand
 ### Decisión cromática aprobada — 26/11/2026
 
 El titular confirma que sus referencias amarillas son #F6C928, #FDD500 y #FCD406 y aprueba #F6C928 como acento UI Premium Glass. Sustituye la propuesta provisional #D6B84B de la rama no publicada. Se conservan el contraste del foco #806600, las mezclas translúcidas, los degradados de marca existentes y los PDF. Se actualiza la referencia de caché de theme.css en las cinco páginas reales. Aprobación cromática registrada; integración y publicación del PR completo pendientes de autorización expresa.
+
+
+### Portal privado: Mis solicitudes (26/11/2026)
+
+Se prepara historial real de solicitudes por correo verificado + identificador empresarial; no se amplía resolve público. Enlace HMAC de 24 h enviado al correo almacenado, token en fragmento retirado del URL y sesión de navegador, alcance vinculado a correo/RUC. Consulta de campos permitidos, estados públicos pendiente/en revisión/contactada/cerrada, sin motivo interno, teléfonos, correos ni información de otros contactos. Formulario repetido compacto tras verificar historial o recibir confirmación en sesión. ES/EN y estilos compartidos. No se modificó base de datos, ni se envió correo real.
+
+Bloqueo de producción: configurar PORTFOLIO_REQUEST_HISTORY_SECRET aleatorio (mínimo 32 caracteres, nunca en Git), provisionar RPC reserve_portfolio_history_email(recipient_key text) → boolean exclusivo service_role, con reserva atómica por destinatario (1/hora, 3/día) y global (10/hora, 30/día), sin correo en claro. La función falla cerrada si falta RPC/secreto. Pendiente verificar permisos y realizar QA en Supabase/navegador: expiración, token alterado, cruce correo/RUC, límites, registro existente, confirmación de nuevo envío, ES/EN, móvil. No publicar frontend/backend hasta resolver bloqueos y recibir autorización. Reversión: revertir PR y mantener resolve previo.

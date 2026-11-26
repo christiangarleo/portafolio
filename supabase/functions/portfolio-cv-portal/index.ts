@@ -138,6 +138,45 @@ function scheduleLeadNotification(lead: ConfirmationLead,security: SecurityResul
 }
 
 
+// Private access: signed scoped link sent to the stored contact email, never public RUC lookup.
+const historySecret=()=>Deno.env.get("PORTFOLIO_REQUEST_HISTORY_SECRET")||"";
+const b64=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64=(s:string)=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+const encoder=new TextEncoder();
+async function historyKey(){
+ const secret=historySecret();if(secret.length<32)throw Error("history_not_configured");
+ return crypto.subtle.importKey("raw",encoder.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"]);
+}
+async function historyDigest(value:string){return b64(new Uint8Array(await crypto.subtle.sign("HMAC",await historyKey(),encoder.encode(value))));}
+async function makeHistoryToken(id:string,ruc:string,email:string){
+ const payload=b64(encoder.encode(JSON.stringify({v:1,scope:"request-history",id,bind:await historyDigest("scope:"+JSON.stringify([ruc,email])),exp:Math.floor(Date.now()/1000)+86400})));
+ return payload+"."+await historyDigest(payload);
+}
+async function readHistoryToken(token:string){
+ if(!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)||token.length>2048)return null;
+ try{const [payload,signature]=token.split(".");
+  if(!await crypto.subtle.verify("HMAC",await historyKey(),unb64(signature),encoder.encode(payload)))return null;
+  const v=JSON.parse(new TextDecoder().decode(unb64(payload)));
+  if(v.v!==1||v.scope!=="request-history"||!Number.isSafeInteger(v.exp)||v.exp<=Math.floor(Date.now()/1000)||!/^[0-9a-f-]{36}$/i.test(v.id)||typeof v.bind!=="string")return null;
+  return {id:v.id as string,bind:v.bind as string};
+ }catch{return null;}
+}
+function publicHistoryState(row:{decision_status:string,status:string}){
+ if(row.decision_status==="rechazada"||row.status==="cerrado")return "closed";
+ if(row.status==="contactado")return "contacted";
+ if(row.decision_status==="avanzar"||row.status==="en_evaluacion")return "review";
+ return "pending";
+}
+async function sendHistoryLink(ruc:string,email:string,en:boolean,key:string){
+ const {data,error}=await supabase.from("portfolio_cv_leads").select("id,email").eq("ruc",ruc).eq("email",email).order("created_at",{ascending:false}).limit(1);
+ if(error){console.error("history_lookup_failed");return;}
+ const lead=data?.[0];if(!lead)return;
+ const url=new URL("https://christianarleo.com/empresa/");url.searchParams.set("ruc",ruc);url.searchParams.set("lang",en?"en":"es");
+ url.hash="request_access="+await makeHistoryToken(lead.id,ruc,lead.email);
+ const sender=Deno.env.get("PORTFOLIO_FROM_EMAIL")==="hola@christianarleo.com"?"hola@christianarleo.com":"alertas@notificaciones.christianarleo.com";
+ const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({from:"Christian Gabriel Arleo <"+sender+">",to:[lead.email],subject:en?"Private access to your requests":"Acceso privado a tus solicitudes",text:(en?"Use this private link. It expires in 24 hours; do not forward it.":"Usá este enlace privado. Vence en 24 horas; no lo compartas.")+"\n\n"+url.href,reply_to:"hola@christianarleo.com"}),signal:AbortSignal.timeout(8000)});
+ if(!response.ok)console.error("history_mail_failed",response.status);
+}
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(req) });
   if (req.method !== "POST") return reply(req, { error: "Metodo no permitido" }, 405);
@@ -157,6 +196,26 @@ Deno.serve(async (req: Request) => {
       .createSignedUrl(row.storage_path, 90, { download: row.original_filename });
     if (error || !data?.signedUrl) throw Error(error?.message || "Signed URL missing");
     return data.signedUrl;
+  }
+  if(input.action==="request_history_link"){
+    const ruc=companyId(input.ruc),email=text(input.email,200).toLowerCase(),en=input.language==="en";
+    if(!validCompanyId(ruc)||!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email)||await verifyTurnstile(input)!=="verified")return reply(req,{error:"Verificación requerida"},400);
+    const key=Deno.env.get("RESEND_API_KEY");
+    if(!key||historySecret().length<32)return reply(req,{error:"Acceso temporalmente no disponible"},503);
+    // Durable atomic rate reservation is mandatory; fail closed if not provisioned.
+    const limiter=await supabase.rpc("reserve_portfolio_history_email",{recipient_key:await historyDigest("rate:"+email)});
+    if(limiter.error)return reply(req,{error:"Acceso temporalmente no disponible"},503);
+    if(limiter.data===true)EdgeRuntime.waitUntil(sendHistoryLink(ruc,email,en,key).catch(()=>console.error("history_mail_failed")));
+    return reply(req,{status:"accepted"});
+  }
+  if(input.action==="request_history"){
+    const ruc=companyId(input.ruc),token=await readHistoryToken(text(input.token,2048));
+    if(!validCompanyId(ruc)||!token)return reply(req,{error:"Acceso no válido"},403);
+    const anchor=await supabase.from("portfolio_cv_leads").select("email,ruc").eq("id",token.id).eq("ruc",ruc).maybeSingle();
+    if(anchor.error||!anchor.data||token.bind!==await historyDigest("scope:"+JSON.stringify([ruc,anchor.data.email])))return reply(req,{error:"Acceso no válido"},403);
+    const {data,error}=await supabase.from("portfolio_cv_leads").select("kind,position_or_project,created_at,status,decision_status,observations,intake_data").eq("ruc",ruc).eq("email",anchor.data.email).order("created_at",{ascending:false}).limit(100);
+    if(error)return reply(req,{error:"Consulta temporalmente no disponible"},503);
+    return reply(req,{status:"verified",requests:(data||[]).map(row=>({kind:row.kind,position:row.position_or_project,created_at:row.created_at,state:publicHistoryState(row),observations:row.observations,intake:{dedication:row.intake_data?.dedication,work_mode:row.intake_data?.work_mode,project_need:row.intake_data?.project_need,project_timing:row.intake_data?.project_timing}}))});
   }
   if (input.action === "resolve") {
     const identifier = companyId(input.ruc);
