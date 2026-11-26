@@ -211,3 +211,8 @@ Solicitud del titular: retirar el botón redundante Visor PDF clásico. Se elimi
 ### CTA de propuestas — acabado Glass HOME (26/11/2026)
 
 Se reemplaza el relleno sólido del botón Enviar invitación / Proponer proyecto por el mismo conjunto de reglas Glass de las tarjetas de idiomas, con acento de tema en interacción, borde suave, blur, reflejo y animaciones. Se mantiene el icono de envío, etiqueta dinámica ES/EN, ancho móvil, estados disabled, formulario y verificación de seguridad. Cambio visual localizado en #submitLead, sin alterar el flujo de envío. Validación estática; pendiente QA visual y autorización de producción.
+
+
+### Microinteracciones CV y acceso HOME (26/11/2026)
+
+Autorización explícita del titular para mejoras anteriores y actuales. Se incorporan al PR #7: tarjetas de vacantes con entrada y elevación discreta, badge con shimmer de una sola pasada (sin animación perpetua), botón Descargar CV reutilizando Glass HOME con icono local y estado busy real, filtros con contraste activo y feedback de pulsación, contador con transición breve. El nombre del titular en /empresa/ (incluido estado de confirmación) y /video/ es un enlace al HOME, con tipografía de 15 px (+1 px). Se preservan IDs de botones, validación, endpoints, datos, permisos e idiomas; no se modifican backend ni PDF. Validación estática y revisión de diferencias; QA visual real pendiente.
