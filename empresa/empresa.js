@@ -48,11 +48,12 @@
         return;
       }
       if(found.status!=="not_found")throw Error(t("No pudimos verificar ese identificador."));
-      ruc=proposed;
+      ++historyGeneration;historyToken="";historyVerified=false;receipt=null;ruc=proposed;
       history.replaceState(null,"",url.pathname+url.search);
       by("rucField").value=ruc;
       by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
       show("emptySection");
+      showRequests();
       showNoCVDialog();
       by("missingCVContinue").focus();
     }catch(error){
@@ -66,6 +67,105 @@
     if(!missingDialog.open)missingDialog.showModal();
   }
 
+  const lang=(es,en)=>locale==="es"?es:en;
+  const receiptKey=()=> "cga:received:"+ruc, tokenKey=()=> "cga:history:"+ruc;
+  const store=(key,value)=>{try{sessionStorage.setItem(key,value);}catch{}};
+  const getStored=key=>{try{return sessionStorage.getItem(key)||"";}catch{return "";}};
+  const removeStored=key=>{try{sessionStorage.removeItem(key);}catch{}};
+  let historyToken="",historyVerified=false,receipt=null,receivedHere=false,accessWidget=null,accessChallenge="",accessPending=false,historyGeneration=0;
+  const incoming=new URLSearchParams(location.hash.slice(1)).get("request_access");
+  if(incoming){history.replaceState(null,"",location.pathname+location.search);if(incoming.length<=2048)historyToken=incoming;}
+  function compactProposal(){
+    if(by("emptySection").classList.contains("cgaRequestComplete"))return;
+    by("emptySection").classList.add("cgaRequestCompact");
+    by("requestHeading").textContent=lang("¿Querés enviar una nueva solicitud?","Would you like to submit another request?");
+    by("requestIntro").textContent=lang("Podés iniciar otra propuesta cuando lo necesites.","You can submit another proposal whenever you need to.");
+    by("choices").hidden=true;by("leadForm").hidden=true;by("newRequestToggle").hidden=false;by("newRequestToggle").setAttribute("aria-expanded","false");
+  }
+  function regularProposal(){
+    by("emptySection").classList.remove("cgaRequestCompact");
+    by("requestHeading").textContent=t("¿Querés contratarme o conversar sobre un proyecto?");
+    by("requestIntro").textContent=t("Elegí una opción y dejame los datos esenciales. Los detalles los conversamos después.");
+    by("newRequestToggle").hidden=true;by("choices").hidden=false;
+  }
+  function renderRequests(rows,verified){
+    const list=by("companyRequestsList");list.replaceChildren();
+    const states={pending:lang("Pendiente de revisión","Pending review"),review:lang("En revisión","Under review"),contacted:lang("Contactada","Contacted"),closed:lang("Cerrada","Closed"),received:lang("Solicitud recibida","Request received")};
+    const labels={full_time:"Full-time",part_time:"Part-time",por_horas:lang("Por horas","Hourly"),remoto:lang("Remoto","Remote"),presencial:lang("Presencial","On-site"),hibrido:lang("Híbrido","Hybrid"),mas_clientes:lang("Conseguir más clientes","Acquire more customers"),marketing_contenido:lang("Marketing y contenido","Marketing and content"),automatizacion_ia:lang("Automatización e IA","Automation and AI"),solucion_digital:lang("Solución digital","Digital solution"),otro:lang("Otro proyecto","Other project"),urgente:lang("Urgente","Urgent"),este_mes:lang("Este mes","This month"),mas_adelante:lang("Más adelante","Later"),a_definir:lang("A definir","To be defined")};
+    for(const x of rows){
+      const card=document.createElement("article");card.className="cgaRequestReceipt";
+      const head=document.createElement("div");head.className="cgaRequestReceiptTop";
+      const title=document.createElement("h3");title.textContent=(x.kind==="proyecto"&&labels[x.intake?.project_need])||x.position||lang("Propuesta","Proposal");
+      const badge=document.createElement("span");badge.className="cgaRequestState";badge.dataset.state=x.state;badge.textContent=states[x.state]||states.received;
+      head.append(title,badge);card.append(head);
+      const meta=document.createElement("p");meta.className="sub";
+      const date=Date.parse(x.created_at||"");const kind=x.kind==="in_house"?lang("Contratación In-house","In-house hiring"):x.kind==="proyecto"?lang("Contratación por proyecto","Project-based hiring"):lang("Solicitud de CV","CV request");
+      meta.textContent=[kind,Number.isFinite(date)?new Date(date).toLocaleDateString(locale==="es"?"es-PE":"en-GB"):"",...["dedication","work_mode","project_timing"].map(k=>labels[x.intake?.[k]]||"")].filter(Boolean).join(" · ");card.append(meta);
+      if(x.observations){const detail=document.createElement("details"),summary=document.createElement("summary"),p=document.createElement("p");summary.textContent=lang("Ver observaciones enviadas","View submitted notes");p.textContent=x.observations;detail.append(summary,p);card.append(detail);}
+      list.append(card);
+    }
+    by("companyRequestsIntro").textContent=verified?lang("Solicitudes registradas con tu correo. Estado actualizado al consultar.","Requests registered with your email. Status updated when checked."):lang("Consultá el historial actualizado mediante un enlace privado.","View the current history using a private link.");
+    if(verified&&!rows.length)list.textContent=lang("No hay solicitudes disponibles.","No requests available.");
+  }
+  async function refreshHistory(){
+    if(!historyToken)return;
+    const generation=++historyGeneration,identifier=ruc,token=historyToken;
+    try{
+      const result=await api({action:"request_history",ruc:identifier,token});
+      if(generation!==historyGeneration||identifier!==ruc)return;
+      if(result.status!=="verified"||!Array.isArray(result.requests))throw Error("invalid");
+      historyVerified=true;store(tokenKey(),token);renderRequests(result.requests,true);
+      by("requestAccessToggle").hidden=true;by("requestAccessForm").hidden=true;by("requestAccessLogout").hidden=false;by("requestAccessStatus").textContent="";
+      if(result.requests.length&&by("leadForm").hidden)compactProposal();
+    }catch{if(generation!==historyGeneration)return;historyToken="";historyVerified=false;removeStored(tokenKey());renderRequests(receipt?[receipt]:[],false);by("requestAccessToggle").hidden=false;by("requestAccessLogout").hidden=true;by("requestAccessStatus").textContent=lang("No pudimos verificar el acceso. Solicitá un nuevo enlace.","Could not verify access. Request a new link.");}
+  }
+  function showRequests(){
+    by("companyRequests").hidden=false;receivedHere=getStored(receiptKey())==="1";
+    if(receivedHere){compactProposal();by("requestAccessStatus").textContent=lang("Registraste una solicitud en esta sesión. Verificá tu correo para ver el historial.","You submitted a request in this session. Verify your email to see the history.");}
+    if(!historyToken)historyToken=getStored(tokenKey());
+    if(historyToken)void refreshHistory();
+  }
+  by("newRequestToggle").addEventListener("click",()=>{
+    if(leadSubmitting)return;
+    if(by("emptySection").classList.contains("cgaRequestComplete")){
+      by("requestSuccessVideo").pause();by("requestSuccessLayout").hidden=true;by("requestSuccessActions").hidden=true;by("requestNextSteps").hidden=true;
+      by("emptySection").classList.remove("cgaRequestComplete");by("requestHeading").classList.remove("requestConfirmed");by("requestIntro").classList.remove("requestConfirmed");
+      compactProposal();
+    }
+    const toggle=by("newRequestToggle"),open=toggle.getAttribute("aria-expanded")!=="true";
+    toggle.setAttribute("aria-expanded",String(open));by("choices").hidden=!open;
+    if(!open){by("leadForm").hidden=true;++securityGeneration;if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}securityToken="";}
+    else by("choices").querySelector("button")?.focus();
+  });
+  by("requestAccessLogout").addEventListener("click",()=>{
+    ++historyGeneration;historyToken="";historyVerified=false;removeStored(tokenKey());receipt=null;renderRequests([],false);
+    by("requestAccessToggle").hidden=false;by("requestAccessLogout").hidden=true;by("requestAccessStatus").textContent=lang("Acceso privado cerrado.","Private access closed.");
+    if(!receivedHere&&!by("emptySection").classList.contains("cgaRequestComplete"))regularProposal();
+  });
+  function clearAccessChallenge(){accessChallenge="";if(accessWidget!==null){try{window.turnstile?.remove(accessWidget);}catch{}accessWidget=null;}}
+  async function prepareAccessChallenge(){
+    clearAccessChallenge();by("requestAccessTurnstile").replaceChildren();
+    try{const ts=await loadSecurity();if(by("requestAccessForm").hidden)return;
+      accessWidget=ts.render(by("requestAccessTurnstile"),{sitekey:securitySiteKey,action:"portfolio_lead",language:locale,theme:document.documentElement.dataset.theme==="dark"?"dark":"light",size:"flexible",appearance:"interaction-only",callback:token=>{accessChallenge=token;},"expired-callback":()=>{accessChallenge="";},"error-callback":()=>{accessChallenge="";}});
+    }catch{by("requestAccessStatus").textContent=lang("No se pudo cargar la verificación. Volvé a intentarlo.","Verification could not load. Try again.");}
+  }
+  by("requestAccessToggle").addEventListener("click",()=>{
+    if(accessPending)return;
+    const f=by("requestAccessForm"),open=f.hidden;f.hidden=!open;by("requestAccessToggle").setAttribute("aria-expanded",String(open));
+    if(open){by("requestAccessEmail").focus();void prepareAccessChallenge();}else clearAccessChallenge();
+  });
+  by("requestAccessForm").addEventListener("submit",async event=>{
+    event.preventDefault();if(accessPending)return;
+    if(!accessChallenge){by("requestAccessStatus").textContent=lang("Completá la verificación de seguridad.","Complete security verification.");void prepareAccessChallenge();return;}
+    accessPending=true;by("requestAccessSend").disabled=true;
+    try{const result=await api({action:"request_history_link",ruc,email:by("requestAccessEmail").value.trim(),language:locale,turnstile_token:accessChallenge});
+      if(result.status!=="accepted")throw Error("unavailable");
+      by("requestAccessStatus").textContent=lang("Si existen solicitudes con ese correo, recibirás un enlace privado. Revisá también Spam.","If requests exist for that email, you will receive a private link. Check spam too.");
+      by("requestAccessForm").reset();by("requestAccessForm").hidden=true;by("requestAccessToggle").setAttribute("aria-expanded","false");clearAccessChallenge();
+    }catch{by("requestAccessStatus").textContent=lang("No pudimos procesar el acceso. Intentá más tarde.","We could not process access. Try again later.");}
+    finally{accessPending=false;by("requestAccessSend").disabled=false;if(!by("requestAccessForm").hidden)void prepareAccessChallenge();}
+  });
+  for(const [id,es,en] of [["companyRequestsTitle","Mis solicitudes","My requests"],["companyRequestsIntro","Consultá tus propuestas de forma privada.","Check your proposals privately."],["requestAccessToggle","Consultar solicitudes","View requests"],["requestAccessLogout","Cerrar acceso","Close private access"],["requestAccessEmailLabel","Correo utilizado en la solicitud","Email used for the request"],["requestAccessSend","Enviar enlace privado","Send private link"],["newRequestToggle","Enviar nueva solicitud","Submit another request"]])by(id).textContent=lang(es,en);
   let items = [];
   let companyOnFile = "";
   let currentFilter="all";
@@ -100,6 +200,7 @@
   by("filterActiveCV").addEventListener("click",()=>{currentFilter="active";updateCVFilters();});
 
   function show(section) {
+    by("companyRequests").hidden=true;
     for (const id of ["loading","companySection","emptySection","invalidSection"]) by(id).hidden = id !== section;
   }
   function setMessage(where, text, error = false) {
@@ -327,6 +428,10 @@
       ++securityGeneration;
       if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
       by("choices").hidden=true;
+      receivedHere=true;store(receiptKey(),"1");receipt={position:position||lang("Propuesta de proyecto","Project proposal"),kind,intake,created_at:new Date().toISOString(),state:"received"};
+      by("companyRequests").hidden=false;renderRequests([receipt],false);
+      if(historyVerified)void refreshHistory();
+      by("newRequestToggle").hidden=false;by("newRequestToggle").setAttribute("aria-expanded","false");
       const copy=successCopy(locale,preference,method);
       for(const [id,value] of Object.entries(copy))by(id).textContent=value;
       by("emptySection").classList.add("cgaRequestComplete");
@@ -382,8 +487,9 @@
       else if(data.status==="not_found") {
         by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
         show("emptySection");
-        showNoCVDialog();
+        if(!historyToken&&!getStored(tokenKey())&&!getStored(receiptKey()))showNoCVDialog();
       } else throw Error("Respuesta del servicio no reconocida");
+      showRequests();
     } catch(error) {
       loading.textContent=locale==="en"?"Could not load the portal. Please try again. ":"No pudimos cargar el portal. "+(error.message||"Volvé a intentarlo.")+" ";
       const retry=element("button","Reintentar","secondary");

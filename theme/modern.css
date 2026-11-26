@@ -1067,3 +1067,22 @@ html.cgaModern #leadCRM .crmAdvancedGrid{display:grid;grid-template-columns:repe
 html.cgaModern #leadCRM .crmAdvancedGrid label{display:grid;gap:6px;font-size:12px;font-weight:650;min-width:0}
 html.cgaModern #leadCRM .crmAdvancedGrid select{width:100%;min-height:42px;background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border-strong);border-radius:6px;padding:8px;font:inherit;font-weight:400}
 html.cgaModern #leadCRM .crmAdvancedFilters .cgaMeta{margin:10px 0 0}
+
+/* Private request history. */
+html.cgaModern .cgaRequestsPanel{margin-top:24px;margin-bottom:18px}
+html.cgaModern .cgaRequestsHead,html.cgaModern .cgaRequestReceiptTop{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+html.cgaModern .cgaRequestsHead h2{margin:0 0 7px;font-size:22px}
+html.cgaModern .cgaRequestsHead p{margin:0}
+html.cgaModern .cgaRequestsList{display:grid;gap:10px;margin-top:14px}
+html.cgaModern .cgaRequestReceipt{padding:14px 16px;border:1px solid var(--cga-border);background:var(--cga-surface-2);border-radius:12px;min-width:0}
+html.cgaModern .cgaRequestReceipt h3{font-size:15px;margin:0;overflow-wrap:anywhere}
+html.cgaModern .cgaRequestReceipt p{margin:8px 0 0;font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap}
+html.cgaModern .cgaRequestState{border-radius:6px;padding:5px 9px;font-size:12px;font-weight:650;background:var(--cga-accent-soft);color:var(--cga-text);border:1px solid var(--cga-border)}
+html.cgaModern .cgaRequestState[data-state="closed"]{background:var(--cga-surface);color:var(--cga-muted)}
+html.cgaModern #requestAccessForm{display:grid;gap:12px;margin-top:16px;padding:16px;max-width:550px}
+html.cgaModern #requestAccessForm input{width:100%;min-height:46px}
+html.cgaModern #emptySection.cgaRequestCompact{padding:18px 22px}
+html.cgaModern #emptySection.cgaRequestCompact #requestHeading{font-size:19px;margin-bottom:6px}
+html.cgaModern #newRequestToggle{margin-top:12px}
+html.cgaModern #companyRequests [hidden],html.cgaModern #companyRequests[hidden],html.cgaModern #newRequestToggle[hidden]{display:none!important}
+@media(max-width:660px){html.cgaModern .cgaRequestsHead button,html.cgaModern #newRequestToggle{width:100%}}

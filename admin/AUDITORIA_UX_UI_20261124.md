@@ -238,3 +238,35 @@ Se preparan cuatro slots independientes (ES/EN × A4 web/A3 descarga) conservand
 ### Decisión cromática aprobada — 26/11/2026
 
 El titular confirma que sus referencias amarillas son #F6C928, #FDD500 y #FCD406 y aprueba #F6C928 como acento UI Premium Glass. Sustituye la propuesta provisional #D6B84B de la rama no publicada. Se conservan el contraste del foco #806600, las mezclas translúcidas, los degradados de marca existentes y los PDF. Se actualiza la referencia de caché de theme.css en las cinco páginas reales. Aprobación cromática registrada; integración y publicación del PR completo pendientes de autorización expresa.
+
+
+### Portal privado: Mis solicitudes (26/11/2026)
+
+Se prepara historial real de solicitudes por correo verificado + identificador empresarial; no se amplía resolve público. Enlace HMAC de 24 h enviado al correo almacenado, token en fragmento retirado del URL y sesión de navegador, alcance vinculado a correo/RUC. Consulta de campos permitidos, estados públicos pendiente/en revisión/contactada/cerrada, sin motivo interno, teléfonos, correos ni información de otros contactos. Formulario repetido compacto tras verificar historial o recibir confirmación en sesión. ES/EN y estilos compartidos. No se modificó base de datos, ni se envió correo real.
+
+Bloqueo de producción: configurar PORTFOLIO_REQUEST_HISTORY_SECRET aleatorio (mínimo 32 caracteres, nunca en Git), provisionar RPC reserve_portfolio_history_email(recipient_key text) → boolean exclusivo service_role, con reserva atómica por destinatario (1/hora, 3/día) y global (10/hora, 30/día), sin correo en claro. La función falla cerrada si falta RPC/secreto. Pendiente verificar permisos y realizar QA en Supabase/navegador: expiración, token alterado, cruce correo/RUC, límites, registro existente, confirmación de nuevo envío, ES/EN, móvil. No publicar frontend/backend hasta resolver bloqueos y recibir autorización. Reversión: revertir PR y mantener resolve previo.
+
+
+### Aprobación funcional y preparación de seguridad del historial — 26/11/2026
+
+El titular aprueba el flujo de Mis solicitudes. Se incorpora SQL de revisión para la reserva atómica de correo, con esquema privado, RLS, SECURITY INVOKER, ejecución RPC restringida a service_role, límites por destinatario y globales, y borrado de reservas de más de 24 h en cada consulta. Se añade prueba transaccional para staging, no ejecutada. El cierre de acceso elimina también los datos de la confirmación local en pantalla. No se aplicó SQL ni se cambió Auth, RLS existente o secretos; no se desplegó Edge Function. El secreto PORTFOLIO_REQUEST_HISTORY_SECRET requiere configuración segura en el Dashboard; no debe transmitirse por chat o Git. Pendiente autorización explícita de cambios backend y producción, pruebas en staging y verificación de proveedor de correo. El CLI y PostgreSQL local no están disponibles; los scripts son propuestas de despliegue, no migraciones ejecutadas.
+
+
+### Autorización de seguridad y ejecución parcial — 26/11/2026
+
+El titular autoriza explícitamente cambios de seguridad y producción condicionada a pruebas. Se verifica que esquema/RPC no existían. Se ejecuta DDL y pruebas SQL en una transacción revertida en el proyecto de portafolio (sin staging independiente): límite horario por destinatario y global, límites diarios, caducidad de reservas, rechazo de clave inválida y permisos. Resultado positivo; rollback comprobado. Se aplica migración registrada portfolio_request_history_rate_limit. Verificación posterior: RLS activo, esquema privado, RPC exclusivo service_role, SECURITY INVOKER, 0 reservas. Advisor INFO sin políticas en tabla privada es intencional; WARN de protección de contraseñas filtradas es ajeno al cambio y no se modifica Auth. No se modifica ninguna solicitud existente ni se envía correo de prueba. No se verifica concurrencia real ni flujo extremo a extremo. Bloqueo: conector Supabase no ofrece gestión de secretos de Edge Functions; titular debe crear PORTFOLIO_REQUEST_HISTORY_SECRET mediante Dashboard con valor criptográfico aleatorio, sin compartirlo por chat. No se despliega Edge Function ni se fusiona PR #10 hasta completar verificación; autorización ya registrada. El acceso privado permanece no publicado.
+
+
+### Configuración del secreto y QA criptográfico — 26/11/2026
+
+El titular confirma haber guardado el secreto en Supabase, sin compartir su valor. Verificación SQL posterior: RLS y RPC service_role-only activos, 0 reservas. Edge Function activa coincide exactamente con fuente de main y verify_jwt=false preexistente. Se reproducen las funciones de firma/verificación en Node WebCrypto con datos sintéticos: 8 aserciones pasan (firma, vinculación RUC/correo, manipulación, formato, vencimiento y ámbito). Se añade acción request_history_check, sin acceso a registros ni envío de correo, que solo devuelve ready/unavailable y comprueba el secreto real y disponibilidad de configuración de Resend; no retorna claves, tokens ni datos. Pendiente ejecución real del diagnóstico, prueba de entrega y flujo navegador; navegador conectado no disponible. Autorización de seguridad y producción condicionada registrada previamente.
+
+
+### Despliegue backend para prueba de readiness — 26/11/2026
+
+Edge Function portfolio-cv-portal v16 ACTIVE desplegada con autorización previa, conservando verify_jwt=false y deno.json preexistentes. Fuente remota cotejada con commit b920ba7. Frontend permanece sin fusionar: falta ejecutar request_history_check (POST JSON, respuesta ready), verificar entrega de correo y navegación real. No se consultaron solicitudes privadas ni se enviaron correos durante este despliegue. El diagnóstico no altera datos ni devuelve el secreto. Reversión backend: redeploy de la fuente index.ts de main 6da9949 con el mismo deno.json si se detecta regresión.
+
+
+### Readiness confirmado por el titular — 26/11/2026
+
+El titular ejecutó POST request_history_check en el panel de Supabase y aportó captura con status ready. La función real confirma presencia de configuración de correo, firma/verificación HMAC, rechazo de token manipulado/vencido y separación de correo/RUC con datos sintéticos. No comprueba entrega efectiva de correo ni la experiencia completa. Se habilita la interfaz como piloto autorizado para poder realizar la prueba final desde el portal con correo propio del titular y solicitud existente de prueba; no se envían correos desde esta sesión. No se considera cierre funcional hasta verificar entrega, acceso e historial, plegado de formulario y cierre de acceso.
