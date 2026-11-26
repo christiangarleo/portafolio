@@ -167,8 +167,7 @@ html.cgaModern .cvDialog p{font-size:13px;line-height:1.55;color:var(--cga-muted
 html.cgaModern .cvDialog input{height:48px;border-radius:9px;border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);color:var(--cga-text);padding:12px}
 html.cgaModern .cvDialog button.primary{min-height:45px;border-radius:9px;font-size:14px;font-weight:700;gap:8px}
 html.cgaModern .cvDialog .cvDialogHead button{border-radius:8px;min-width:37px;min-height:37px}
-html.cgaModern .siteHeader .siteActions #cgaLangPicker{gap:3px!important}
-html.cgaModern .siteHeader .siteActions #cgaLangPicker button{border-radius:7px!important;font-weight:650}
+/* Language picker styling is consolidated with compact contact controls below. */
 /* ========== Language landing ========== */
 html.cgaModern body:has(.languageGrid){background:var(--cga-bg);color:var(--cga-text)}
 html.cgaModern body:has(.languageGrid)>header{background:var(--cga-bg)}
@@ -755,3 +754,51 @@ html.cgaModern body.cgaMobileLandscape .siteHeader .siteActions .cgaThemeSwitch{
  :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):is(:hover,:focus-visible) :is(.homeSocialIcon,.cgaContactIcon){animation:none}
 }
 @media(forced-colors:active){:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink)::before{border:1px solid ButtonText}}
+ 
+/* Idioma: banderas SVG locales, cuadrados discretos como los accesos de contacto. */
+#cgaLangPicker{display:flex;align-items:center;gap:3px!important;flex:0 0 auto;white-space:nowrap}
+:root body #cgaLangPicker button.cgaLangButton{
+ box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ position:relative;isolation:isolate;overflow:hidden;flex:0 0 auto;
+ --lang-size:30px;--lang-inset:0px;
+ width:var(--lang-size);height:var(--lang-size);min-width:var(--lang-size);min-height:var(--lang-size)!important;
+ padding:0!important;border:0;border-radius:0!important;
+ background:transparent;color:var(--cga-muted);box-shadow:none;cursor:pointer;
+ touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+ transition:transform .3s ease;
+}
+:root body #cgaLangPicker button.cgaLangButton::before{
+ content:"";position:absolute;inset:var(--lang-inset);z-index:-1;pointer-events:none;
+ border:1px solid color-mix(in srgb,var(--cga-text) 13%,transparent);border-radius:0;
+ background:color-mix(in srgb,var(--cga-text) 4%,transparent);
+ transition:background-color .3s ease,border-color .3s ease;
+}
+:root body #cgaLangPicker button.cgaLangButton .cgaLangFlag{display:block;width:20px;height:12px;object-fit:contain;pointer-events:none;opacity:.78;transition:opacity .3s ease}
+:root body #cgaLangPicker button.cgaLangButton[aria-pressed="true"]::before{border-color:var(--cga-focus)}
+:root body #cgaLangPicker button.cgaLangButton[aria-pressed="true"] .cgaLangFlag{opacity:1}
+:root body #cgaLangPicker button.cgaLangButton:is(:focus-visible,:active){background:transparent}
+:root body #cgaLangPicker button.cgaLangButton:is(:focus-visible,:active)::before{background:color-mix(in srgb,var(--cga-accent) 20%,transparent);border-color:var(--cga-focus)}
+:root body #cgaLangPicker button.cgaLangButton:is(:focus-visible,:active) .cgaLangFlag{opacity:1}
+:root body #cgaLangPicker button.cgaLangButton:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
+:root body #cgaLangPicker button.cgaLangButton:focus-visible .cgaLangFlag{animation:cgaHomeSocialSlideIn .3s both}
+@media(hover:hover) and (pointer:fine){
+ :root body #cgaLangPicker button.cgaLangButton:hover{background:transparent}
+ :root body #cgaLangPicker button.cgaLangButton:hover::before{background:color-mix(in srgb,var(--cga-accent) 20%,transparent);border-color:var(--cga-focus)}
+ :root body #cgaLangPicker button.cgaLangButton:hover .cgaLangFlag{opacity:1;animation:cgaHomeSocialSlideIn .3s both}
+}
+:root body #cgaLangPicker button.cgaLangButton:active{transform:scale(.9)}
+@media(max-width:900px),(pointer:coarse){
+ :root body #cgaLangPicker button.cgaLangButton{--lang-size:36px;--lang-inset:3px}
+}
+html.cgaModern body.cgaMobileLandscape .siteActions #cgaLangPicker button.cgaLangButton{
+ width:42px!important;min-width:42px!important;height:36px;min-height:36px!important;padding:0!important;--lang-inset:2px 5px;
+}
+@media(prefers-reduced-motion:reduce){
+ :root body #cgaLangPicker button.cgaLangButton,:root body #cgaLangPicker button.cgaLangButton::before,:root body #cgaLangPicker button.cgaLangButton .cgaLangFlag{transition:none}
+ :root body #cgaLangPicker button.cgaLangButton:active{transform:none}
+ :root body #cgaLangPicker button.cgaLangButton:is(:hover,:focus-visible) .cgaLangFlag{animation:none}
+}
+@media(forced-colors:active){
+ :root body #cgaLangPicker button.cgaLangButton::before{border:1px solid ButtonText}
+ :root body #cgaLangPicker button.cgaLangButton[aria-pressed="true"]::before{border:2px solid Highlight}
+}

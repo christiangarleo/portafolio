@@ -296,16 +296,25 @@
     if(location.pathname==="/"||location.pathname==="/index.html")return;
     const container=document.createElement("div");
     container.id="cgaLangPicker";
-    container.style.cssText="display:flex;align-items:center;gap:5px;flex:0 0 auto;white-space:nowrap;";
+    container.className="cgaLangPicker";
+    container.setAttribute("role","group");
+    container.setAttribute("aria-label",locale==="en"?"Language":"Idioma");
     const enButton=document.createElement("button"),esButton=document.createElement("button");
-    for(const [button,mode,label] of [[enButton,"en","🇬🇧 EN"],[esButton,"es","🇪🇸 ES"]]){
+    for(const [button,mode,flag] of [[enButton,"en","gb"],[esButton,"es","es"]]){
       button.type="button";
-      button.textContent=label;
+      button.className="cgaLangButton";
+      const image=document.createElement("img");
+      image.className="cgaLangFlag";
+      image.src="/assets/flags/"+flag+".svg";
+      image.alt="";
+      image.width=20;
+      image.height=12;
+      image.draggable=false;
+      button.append(image);
       button.setAttribute("lang",mode);
       button.setAttribute("aria-label",mode==="en"?"Switch to English":"Cambiar a español");
       button.setAttribute("aria-pressed",String(mode===locale));
-      button.style.cssText="border:1px solid var(--cga-border,#ddd);border-radius:5px;background:var(--cga-surface,#fff);color:var(--cga-text,#222);font:inherit;font-size:12px;padding:7px 8px;min-height:35px;cursor:pointer;";
-      if(mode===locale){button.style.fontWeight="700";button.style.borderColor="var(--cga-border-strong,#555)";}
+      button.title=mode==="en"?"English":"Español";
       button.addEventListener("click",()=>go(mode));
       container.append(button);
     }
