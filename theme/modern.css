@@ -155,7 +155,7 @@ html.cgaModern body:has(#companySection) .quickForm{border-color:var(--cga-borde
 html.cgaModern body:has(#companySection) .quickForm .action{border-radius:9px;min-height:47px;font-weight:750}
 html.cgaModern body:has(#companySection) #companySearchInput{border-radius:9px}
 html.cgaModern body:has(#companySection) .companyFilters button{border-radius:8px;font-weight:650}
-html.cgaModern body:has(#companySection) .companyFilters button[aria-pressed="true"]{background:var(--cga-primary);color:var(--cga-primary-text);border-color:var(--cga-primary)}
+html.cgaModern body:has(#companySection) .companyFilters button[aria-pressed="true"]{background:var(--cga-accent-soft);color:var(--cga-text);border-color:var(--cga-focus)}
 html.cgaModern body:has(#companySection) #emptySection{border-top:4px solid var(--cga-focus)}
 html.cgaModern body:has(#companySection) #emptySection h2{font-size:clamp(20px,2.6vw,25px)}
 html.cgaModern body:has(#companySection) .privacyNote{font-size:11px;color:var(--cga-muted)}
@@ -809,7 +809,7 @@ html.cgaModern :is(.cgaGlassForm,.cgaFormControls){
  --form-highlight:rgba(255,255,255,.60);
  --form-inset:rgba(22,22,22,.09);
  --form-glow:color-mix(in srgb,var(--cga-accent) 17%,transparent);
- --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-pink),var(--brand-yellow));
+ --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-pink),var(--cga-accent));
  --form-error:#A31249;
 }
 html.cgaModern .cgaGlassForm{
@@ -1050,3 +1050,20 @@ html.cgaModern #companySection #count{animation:cgaVacancyEnter .3s ease-out bot
  html.cgaModern #companySection .companyFilters button[aria-pressed="true"]{border:2px solid Highlight;box-shadow:none}
  html.cgaModern #companySection #vacancies .tag.current::after{display:none}
 }
+
+/* Admin dialogs and progressive inbox filtering. */
+html.cgaModern .cgaAdminDialog{width:min(480px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;padding:24px}
+html.cgaModern .cgaAdminDialog form{display:grid;gap:15px;margin:0}
+html.cgaModern .cgaAdminDialog h2{font-size:21px;line-height:1.25;margin:0}
+html.cgaModern .cgaAdminDialog p{font-size:14px;line-height:1.5;margin:0;color:var(--cga-text);overflow-wrap:anywhere}
+html.cgaModern .cgaAdminDialog :is(input,textarea){width:100%;min-height:46px;border-radius:6px;padding:12px;border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);color:var(--cga-text);font:inherit}
+html.cgaModern .cgaAdminDialog .cgaDialogActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+html.cgaModern .cgaAdminDialog .cgaDialogActions button{width:auto;flex:1 1 110px;border-radius:9px}
+html.cgaModern .cgaAdminDialog .cgaDialogConfirm{border-color:var(--cga-focus);background:var(--cga-accent-soft)}
+html.cgaModern .cgaAdminDialog .cgaDialogDanger{border-color:var(--brand-pink)}
+html.cgaModern #leadCRM .crmAdvancedFilters{margin:0 0 12px;border:1px solid var(--cga-border);border-radius:10px;padding:12px;background:var(--cga-surface)}
+html.cgaModern #leadCRM .crmAdvancedFilters summary{font-size:13px;font-weight:650;cursor:pointer}
+html.cgaModern #leadCRM .crmAdvancedGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px;align-items:end;margin-top:12px}
+html.cgaModern #leadCRM .crmAdvancedGrid label{display:grid;gap:6px;font-size:12px;font-weight:650;min-width:0}
+html.cgaModern #leadCRM .crmAdvancedGrid select{width:100%;min-height:42px;background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border-strong);border-radius:6px;padding:8px;font:inherit;font-weight:400}
+html.cgaModern #leadCRM .crmAdvancedFilters .cgaMeta{margin:10px 0 0}

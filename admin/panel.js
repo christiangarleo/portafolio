@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=16-glass-forms";
+import { createLeadCRM } from "./solicitudes.js?v=17-crm-filters";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -275,7 +275,7 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
     const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
     if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
     const exists=publishedPortfolios.has(path);
-    if(exists&&!confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará este idioma. Guardá una copia del anterior.")){
+    if(exists&&!await window.CGADialog.confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará este idioma. Guardá una copia del anterior.")){
       return;
     }
     const button=el(display.button);
@@ -417,7 +417,7 @@ el("documents").addEventListener("click",async e=>{
       const {data,error}=await sb.storage.from(bucket).createSignedUrl(x.storage_path,60,{download:x.original_filename});
       if(error)throw error;window.open(data.signedUrl,"_blank","noopener");
     }else if(action==="edit"){
-      const newName=prompt("Nombre de la vacante o puesto",x.role_name);
+      const newName=await window.CGADialog.edit("Nombre de la vacante o puesto",x.role_name);
       if(newName===null)return;
       const value=newName.trim();
       if(!value || value.length>180){notice("Ingresá una vacante de 1 a 180 caracteres.",true);return;}
@@ -434,7 +434,7 @@ el("documents").addEventListener("click",async e=>{
       const a=await sb.from("portfolio_cv_documents").update({is_active:!x.is_active}).eq("id",x.id);
       if(a.error)throw a.error;notice(x.is_active?"CV desactivado.":"CV activado.");await loadDocuments();
     }else if(action==="delete"){
-      if(!confirm("¿Eliminar definitivamente este CV y su archivo?"))return;
+      if(!await window.CGADialog.confirm("¿Eliminar definitivamente este CV y su archivo?",{danger:true}))return;
       const a=await sb.storage.from(bucket).remove([x.storage_path]);if(a.error)throw a.error;
       const b=await sb.from("portfolio_cv_documents").delete().eq("id",x.id);if(b.error)throw b.error;
       notice("CV eliminado.");await loadDocuments();

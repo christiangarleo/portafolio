@@ -186,8 +186,8 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
  #documentsFilter{width:100%}
 }
 </style>
-  <link rel="stylesheet" href="/theme/theme.css?v=20261126-svg-morph2">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261126-glass-audit1">
+  <link rel="stylesheet" href="/theme/theme.css?v=20261126-crm-dialog1">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261126-crm-dialog1">
 </head><body>
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
@@ -258,6 +258,20 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
     <input id="leadSearch" type="search" placeholder="Buscar empresa, contacto o vacante…" autocomplete="off">
   </div>
   <div id="leadFilters" class="crmFilters" role="group" aria-label="Filtrar solicitudes por decisión"></div>
+  <details class="crmAdvancedFilters">
+    <summary>Filtros avanzados y orden</summary>
+    <div class="crmAdvancedGrid">
+      <label>Tipo de solicitud<select id="leadKindFilter"><option value="">Todas</option><option value="in_house">In-house</option><option value="proyecto">Por proyecto</option><option value="solicitud_cv">Solicitud histórica</option></select></label>
+      <label>Etapa<select id="leadStageFilter"><option value="">Todas</option><option value="nuevo">Nueva</option><option value="en_evaluacion">En evaluación</option><option value="contactado">Contactada</option><option value="cerrado">Cerrada</option></select></label>
+      <label>Modalidad<select id="leadModeFilter"><option value="">Todas</option><option value="remoto">Remoto</option><option value="hibrido">Híbrido</option><option value="presencial">Presencial</option><option value="unknown">Sin indicar</option></select></label>
+      <label>Antigüedad<select id="leadAgeFilter"><option value="">Todas</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option></select></label>
+      <label>Respuesta por correo<select id="leadMailFilter"><option value="">Todas</option><option value="yes">Envío confirmado</option><option value="no">Sin confirmar</option><option value="blocked">Contacto no autorizado</option></select></label>
+      <label>Reunión<select id="leadMeetingFilter"><option value="">Todas</option><option value="future">Próxima reunión</option><option value="past">Reunión pasada</option><option value="none">Sin reunión</option></select></label>
+      <label>Ordenar por<select id="leadSort"><option value="newest">Más recientes</option><option value="oldest">Más antiguas</option><option value="company">Empresa A–Z</option><option value="position">Vacante A–Z</option><option value="meeting">Próxima reunión</option></select></label>
+      <button id="resetLeadAdvanced" class="cgaSoftButton" type="button" data-cga-icon="refresh">Limpiar filtros</button>
+    </div>
+    <p class="cgaMeta">Filtros aplicados a las últimas 200 solicitudes cargadas. El estado del correo es el registro manual existente.</p>
+  </details>
   <div id="leadSummary" class="crmSummary" role="status" aria-live="polite"></div>
   <div id="leads" class="cgaFormControls">Cargando solicitudes…</div>
 </section></div>
@@ -340,7 +354,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=20261126-glass-forms3"></script>
-<script src="/theme/modern.js?v=20261126-glass-audit1" defer></script>
+<script type="module" src="./panel.js?v=20261126-crm-dialog1"></script>
+<script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
