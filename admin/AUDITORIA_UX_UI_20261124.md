@@ -233,3 +233,8 @@ Se reemplazan confirm/prompt nativos del admin por un diálogo accesible compart
 ### Separación de ediciones públicas del portafolio — 26/11/2026
 
 Se preparan cuatro slots independientes (ES/EN × A4 web/A3 descarga) conservando los dos nombres de A4 ya utilizados. Nuevas rutas A3: Christian_Arleo_Portafolio_ES_A3.pdf y Christian_Arleo_Portfolio_EN_A3.pdf. Se comprueba disponibilidad A3 mediante HEAD antes de ofrecer la descarga; si no está disponible, el A4 validado se identifica explícitamente como edición de lectura. Impresión y revista conservan A4. Las nuevas opciones de administración reutilizan el upload y las comprobaciones existentes. No se han cargado los PDF A3, no se ha verificado Storage/RLS para los nuevos nombres y no se afirma que los documentos existentes sean dimensionalmente A4 sin inspección. Pendiente autorización de publicación, validación de permisos y archivos reales. No se tocan CV personalizados por empresa.
+
+
+### Decisión cromática aprobada — 26/11/2026
+
+El titular confirma que sus referencias amarillas son #F6C928, #FDD500 y #FCD406 y aprueba #F6C928 como acento UI Premium Glass. Sustituye la propuesta provisional #D6B84B de la rama no publicada. Se conservan el contraste del foco #806600, las mezclas translúcidas, los degradados de marca existentes y los PDF. Se actualiza la referencia de caché de theme.css en las cinco páginas reales. Aprobación cromática registrada; integración y publicación del PR completo pendientes de autorización expresa.
