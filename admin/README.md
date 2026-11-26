@@ -373,3 +373,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ## Lector: corregir índice y presentación ES — 2026-11-25 (Lima)
 - Por indicación del titular: índice → página 4; presentación → página 6. Mantener proyectos → 10 y experiencias → 44. Resumen conserva provisionalmente página 5: requiere confirmación porque precede a presentación (6). Actualizar manifest ES y enlaces iniciales, cache-bust. Edición EN y navegación sin cambios. Verificados los cinco destinos HTML/manifest y configuración EN; prueba de navegador pendiente. Base 7aa1f9b788c0935e0e0e8375634271e2937cec5f; rollback revertir commit.
+
+## Lector: confirmar resumen ES — 2026-11-25 (Lima)
+- Titular confirma Resumen → página 8; mapa ES completo: índice 4, presentación 6, resumen 8, proyectos 10, experiencias 44. Manifest y cinco enlaces HTML concordantes; cache-bust actualizado. EN y lógica de navegación intactos. QA visual pendiente. Base de2ec5576f91ca22e177184f64841561b75b23df; rollback revertir commit.
