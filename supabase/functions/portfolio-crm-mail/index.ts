@@ -15,7 +15,7 @@ Deno.serve(async req=>{
  if(authError||!user?.email)return reply(401,{status:"unauthorized"});
  const member=await db.from("portfolio_cv_admins").select("approved_email").eq("user_id",user.id).maybeSingle();
  if(member.error||!member.data||member.data.approved_email.toLowerCase()!==user.email.toLowerCase())return reply(403,{status:"forbidden"});
- const key=Deno.env.get("RESEND_API_KEY");
+ const key=Deno.env.get("RESEND_CRM_API_KEY");
  // Never silently switch to an alternate From address.
  if(!key||Deno.env.get("PORTFOLIO_CRM_MAIL_ENABLED")!=="true")return reply(200,{status:"sender_not_configured"});
  let input;
@@ -25,9 +25,10 @@ Deno.serve(async req=>{
  const reserve=await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context});
  if(reserve.error||!reserve.data)return reply(503,{status:"storage_unavailable"});
  if(reserve.data.status!=="reserved")return reply(200,{status:reserve.data.status});
- let status="uncertain",providerId:string|null=null;
+ let status="uncertain",providerId:string|null=null,providerHttp:number|null=null;
  try{
    const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:"hola@christianarleo.com",subject,text:body}),signal:AbortSignal.timeout(10000)});
+   providerHttp=r.status;
    if(r.ok){const result=await r.json().catch(()=>null);if(typeof result?.id==="string"&&result.id){status="accepted";providerId=result.id;}}
    else if(r.status>=400&&r.status<500&&![408,409,429].includes(r.status))status="failed";
  }catch{/* ambiguous outcome: never retry automatically */}
@@ -39,5 +40,11 @@ Deno.serve(async req=>{
    if(context==="followup")await db.from("portfolio_cv_leads").update({email_sent_at:acceptedAt,status:"contactado"}).eq("id",lead).eq("decision_status","avanzar");
    await db.from("portfolio_cv_lead_activities").insert({lead_id:lead,event_type:context==="rejection"?"rechazo_correo_confirmado":"correo_confirmado_enviado",details:{channel:"email",source:"crm_resend",message_id:id}});
  }
- return reply(200,{status});
+ if(status!=="accepted"){
+   const eventType="correo_crm_error_"+(providerHttp===null?"network":String(providerHttp));
+   const audit=await db.from("portfolio_cv_lead_activities").insert({lead_id:lead,event_type:eventType,details:{channel:"email",source:"crm_resend",message_id:id,provider_http:providerHttp}});
+   if(audit.error)console.warn("crm_mail_diagnostic_write_failed");
+   console.warn("crm_mail_provider_result",status,providerHttp);
+ }
+ return reply(200,{status,provider_http:providerHttp});
 });
