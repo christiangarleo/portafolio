@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portafolio profesional | Christian Gabriel Arleo</title>
   <meta name="description" content="Portafolio profesional de Christian Gabriel Arleo: proyectos, experiencia y resultados en marketing, tecnología y negocios.">
-  <link rel="canonical" href="https://christianarleo.com/portafolio/?lang=en">
+  <link rel="canonical" href="https://christianarleo.com/portafolio/?lang=es">
   <link rel="alternate" hreflang="en" href="https://christianarleo.com/portafolio/?lang=en">
   <link rel="alternate" hreflang="es" href="https://christianarleo.com/portafolio/?lang=es">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale" content="es_PE">
   <meta property="og:site_name" content="Christian Gabriel Arleo">
   <meta property="og:title" content="Portafolio profesional | Christian Gabriel Arleo">
   <meta property="og:description" content="El trabajo detrás de los resultados. Conocé mi experiencia y proyectos profesionales.">
@@ -18,10 +18,17 @@
   <meta name="theme-color" content="#ffffff">
     <script>
     (() => {
+      // Direct Spanish entry: do not inherit a previous language or override explicit reader links.
+      const params=new URLSearchParams(location.search);
+      const requested=params.get("lang");
+      const explicitLanguage=requested==="es"||requested==="en";
+      if(!explicitLanguage){
+        params.set("lang","es");
+        if(!params.has("vista"))params.set("vista","revista");
+        history.replaceState(history.state,"",location.pathname+"?"+params.toString()+location.hash);
+      }
+      document.documentElement.lang=explicitLanguage?requested:"es";
       try {
-        const q=new URLSearchParams(location.search).get("lang");
-        const saved=localStorage.getItem("cga-site-language");
-        document.documentElement.lang=q==="es"?"es":q==="en"?"en":saved==="es"?"es":"en";
         const mode=localStorage.getItem("cga-appearance");
         const dark=mode==="dark"||(mode!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme=dark?"dark":"light";
