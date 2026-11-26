@@ -26,7 +26,14 @@ Deno.serve(async req=>{
  if(reserve.error||!reserve.data)return reply(503,{status:"storage_unavailable"});
  if(reserve.data.status!=="reserved")return reply(200,{status:reserve.data.status});
  let replyAddress="hola@christianarleo.com";
- if(Deno.env.get("PORTFOLIO_CRM_INBOUND_ENABLED")==="true"){
+ const inboundMode=Deno.env.get("PORTFOLIO_CRM_INBOUND_ENABLED");
+ const pilotRecipient=(Deno.env.get("PORTFOLIO_CRM_INBOUND_TEST_RECIPIENT")||"").trim().toLowerCase();
+ const pilot=inboundMode==="pilot"&&pilotRecipient!==""&&String(reserve.data.recipient).trim().toLowerCase()===pilotRecipient;
+ if(inboundMode==="true"||pilot){
+   if(!Deno.env.get("RESEND_CRM_INBOUND_WEBHOOK_SECRET")||!Deno.env.get("RESEND_CRM_INBOUND_API_KEY")){
+     await db.from("portfolio_crm_mail").update({status:"failed"}).eq("id",id).eq("status","pending");
+     return reply(200,{status:"sender_not_configured"});
+   }
    replyAddress="reply-"+crypto.randomUUID()+"@respuestas.christianarleo.com";
    const route=await db.from("portfolio_crm_mail").update({reply_address:replyAddress}).eq("id",id).eq("status","pending").select("id").maybeSingle();
    if(route.error||!route.data){await db.from("portfolio_crm_mail").update({status:"failed"}).eq("id",id).eq("status","pending");return reply(503,{status:"storage_unavailable"});}
