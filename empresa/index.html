@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="referrer" content="no-referrer">
   <title>Portal de postulaciones | Christian Gabriel Arleo</title>
   <script src="/lang/i18n.js?v=20261126-crm-dialog1" defer></script>
     <script>
@@ -174,7 +174,7 @@
 #missingCVEditForm button{background:var(--cga-primary);color:var(--cga-primary-text)}
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-<link rel="stylesheet" href="/theme/modern.css?v=20261126-crm-dialog1">
+<link rel="stylesheet" href="/theme/modern.css?v=20261126-private-tracking1">
 <link rel="stylesheet" href="/theme/message-video.css?v=20261126-controls-glass1">
 
 </head>
@@ -212,9 +212,31 @@
     <div class="message" id="downloadMessage" role="status" aria-live="polite"></div>
     <p class="sub" style="margin-top:20px;font-size:12px">Los documentos vencidos no están disponibles para descargar.</p>
   </section>
+  <section id="requestTracking" class="panel cgaRequestTracking" hidden aria-labelledby="trackingTitle">
+    <div class="trackingHeader">
+      <div><h2 id="trackingTitle">Mis solicitudes</h2><p id="trackingIntro" class="sub"></p></div>
+      <button id="trackingNew" type="button" class="cgaSoftButton" data-cga-icon="plus" aria-controls="emptySection" aria-expanded="false" hidden><span>Enviar nueva solicitud</span></button>
+    </div>
+    <div id="trackingReceipt" hidden></div>
+    <div id="trackingList" hidden></div>
+    <div class="trackingActions">
+      <button id="trackingOpen" type="button" class="cgaSoftButton" data-cga-icon="lock" aria-controls="trackingAccessForm" aria-expanded="false"><span>Consultar solicitudes anteriores</span></button>
+      <button id="trackingRefresh" type="button" class="cgaSoftButton" data-cga-icon="refresh" hidden><span>Actualizar estado</span></button>
+      <button id="trackingExit" type="button" class="cgaSoftButton" data-cga-icon="close" hidden><span>Cerrar acceso privado</span></button>
+    </div>
+    <form id="trackingAccessForm" class="cgaGlassForm cgaFormControls" hidden>
+      <label for="trackingEmail">Correo utilizado en la solicitud</label>
+      <input id="trackingEmail" type="email" autocomplete="email" maxlength="200" required>
+      <div id="trackingTurnstile"></div>
+      <button id="trackingRetry" type="button" class="cgaSoftButton" hidden>Reintentar verificación</button>
+      <button id="trackingSend" type="submit" class="cgaFormButton" data-cga-icon="mail"><span>Enviar enlace privado</span></button>
+    </form>
+    <p id="trackingStatus" role="status" aria-live="polite" class="sub"></p>
+  </section>
   <section id="emptySection" class="panel empty" hidden>
     <h2 id="requestHeading">¿Te interesa trabajar conmigo?</h2>
     <p id="requestIntro">Elegí el tipo de colaboración.</p>
+    <button id="trackingCancelNew" type="button" class="cgaSoftButton" data-cga-icon="close" hidden><span>Cancelar nueva solicitud</span></button>
     <div class="choices" id="choices" role="group" aria-label="Tipo de contratación">
       <button type="button" data-kind="in_house" aria-pressed="false" data-cga-icon="briefcase">Contratación In-house</button>
       <button type="button" data-kind="proyecto" aria-pressed="false" data-cga-icon="spark">Contratación por proyecto</button>
@@ -379,7 +401,7 @@
   </div>
 </main>
 <script src="/theme/message-video.js?v=20261125-1" defer></script>
-<script src="./empresa.js?v=20261126-company-premium2" defer></script>
+<script src="./empresa.js?v=20261126-private-tracking1" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 <script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
 </body></html>

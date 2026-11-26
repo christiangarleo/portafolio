@@ -238,3 +238,46 @@ Se preparan cuatro slots independientes (ES/EN × A4 web/A3 descarga) conservand
 ### Decisión cromática aprobada — 26/11/2026
 
 El titular confirma que sus referencias amarillas son #F6C928, #FDD500 y #FCD406 y aprueba #F6C928 como acento UI Premium Glass. Sustituye la propuesta provisional #D6B84B de la rama no publicada. Se conservan el contraste del foco #806600, las mezclas translúcidas, los degradados de marca existentes y los PDF. Se actualiza la referencia de caché de theme.css en las cinco páginas reales. Aprobación cromática registrada; integración y publicación del PR completo pendientes de autorización expresa.
+
+
+### Seguimiento privado de solicitudes de empresa — 26/11/2026
+
+Objetivo: priorizar solicitudes ya enviadas y mantener el formulario cerrado hasta elegir una nueva solicitud. El RUC público NO autentica. Auditoría de metadatos Supabase (solo lectura): las políticas vigentes de leads, actividades y documentos privados restringen acceso al administrador. Se preservan dichas políticas. Se propone en rama una interfaz ES/EN compacta con recepción de la última solicitud, lista verificada, fecha, tipo, puesto/proyecto, estado público, botón de nueva solicitud y cancelación; se conserva agradecimiento y video. El acceso histórico usa enlace por correo solicitado explícitamente, Turnstile con acción separada, firma HMAC con vigencia de una hora, token en fragmento retirado de URL y guardado solo en sessionStorage. El token está anclado a una solicitud y la consulta exige identificador exacto y correo de ese registro. No se exponen correos, teléfonos, motivos de rechazo ni notas internas; la respuesta de solicitud de acceso es genérica. Estados: pendiente, en revisión, respuesta registrada, cerrada solo cuando existe confirmación de contacto; un rechazo interno no se revela automáticamente. Se limita a 100 solicitudes recientes. Los correos automáticos actuales no cambian.
+
+**Dependencias pendientes (no ejecutadas):** autorización específica para backend y publicación; comprobar configuración de Turnstile y Resend; configurar un secreto aleatorio independiente PORTFOLIO_TRACKING_SECRET de al menos 32 caracteres en Edge Functions (nunca en repositorio); aplicar y auditar el siguiente DDL propuesto en entorno de prueba, generar migración formal con herramienta disponible, probar RPC y permisos; desplegar la función antes del frontend. CLI Supabase no disponible localmente; este bloque es propuesta de migración, no migración ejecutada. Si el RPC/secreto no existen, la recuperación falla cerrada. No se envió correo real ni se consultaron registros personales durante esta intervención.
+
+```sql
+begin;
+create table public.portfolio_tracking_access_rate (
+  id uuid primary key default gen_random_uuid(),
+  recipient_key text not null check (recipient_key ~ '^[a-f0-9]{64}$'),
+  created_at timestamptz not null default now()
+);
+alter table public.portfolio_tracking_access_rate enable row level security;
+revoke all on public.portfolio_tracking_access_rate from public, anon, authenticated;
+grant select, insert, delete on public.portfolio_tracking_access_rate to service_role;
+create index on public.portfolio_tracking_access_rate (created_at);
+create index on public.portfolio_tracking_access_rate (recipient_key, created_at);
+create function public.portfolio_tracking_access_reserve(recipient_key text)
+returns boolean language plpgsql security invoker set search_path = pg_catalog as $$
+declare
+  k text := recipient_key;
+  now_at timestamptz := clock_timestamp();
+begin
+  if k is null or k !~ '^[a-f0-9]{64}$' then return false; end if;
+  perform pg_advisory_xact_lock(hashtext('portfolio_tracking_access_v1')::bigint);
+  delete from public.portfolio_tracking_access_rate r where r.created_at < now_at - interval '24 hours';
+  if (select count(*) from public.portfolio_tracking_access_rate r) >= 30
+     or (select count(*) from public.portfolio_tracking_access_rate r where r.created_at >= now_at - interval '15 minutes') >= 8
+     or (select count(*) from public.portfolio_tracking_access_rate r where r.recipient_key = k and r.created_at >= now_at - interval '1 hour') >= 2
+  then return false; end if;
+  insert into public.portfolio_tracking_access_rate(recipient_key,created_at) values(k,now_at);
+  return true;
+end;
+$$;
+revoke all on function public.portfolio_tracking_access_reserve(text) from public, anon, authenticated;
+grant execute on function public.portfolio_tracking_access_reserve(text) to service_role;
+commit;
+```
+
+QA requerida: solicitudes nuevas e históricas, mismo RUC/correos distintos, token falsificado/vencido, otro RUC, CAPTCHA faltante, cuota concurrente, email inexistente sin enumeración, recuperación fallida, cierre de acceso, recarga, envío posterior, responsive ES/EN y Dark/Light. Rollback: desactivar feature/frontend y restaurar versión previa de Edge Function; conservar datos existentes, no borrar solicitudes.

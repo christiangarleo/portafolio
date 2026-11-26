@@ -1067,3 +1067,26 @@ html.cgaModern #leadCRM .crmAdvancedGrid{display:grid;grid-template-columns:repe
 html.cgaModern #leadCRM .crmAdvancedGrid label{display:grid;gap:6px;font-size:12px;font-weight:650;min-width:0}
 html.cgaModern #leadCRM .crmAdvancedGrid select{width:100%;min-height:42px;background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border-strong);border-radius:6px;padding:8px;font:inherit;font-weight:400}
 html.cgaModern #leadCRM .crmAdvancedFilters .cgaMeta{margin:10px 0 0}
+
+/* Private company request tracking: same brand surfaces, compact secondary actions. */
+html.cgaModern #requestTracking{margin:24px 0 18px;padding:clamp(16px,3vw,25px);border:1px solid var(--cga-border);border-radius:16px;background:var(--cga-surface)}
+html.cgaModern #requestTracking .trackingHeader{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+html.cgaModern #trackingTitle{margin:0;font-size:clamp(19px,2.5vw,23px)}
+html.cgaModern #trackingIntro{margin:5px 0 0;font-size:13px}
+html.cgaModern #trackingList,html.cgaModern #trackingReceipt{display:grid;gap:10px;margin:14px 0}
+html.cgaModern #requestTracking [hidden]{display:none!important}
+html.cgaModern #requestTracking .trackingCard{padding:15px;border:1px solid var(--cga-border);background:var(--cga-surface-2);border-radius:12px;animation:cgaVacancyEnter .24s ease-out both;min-width:0}
+html.cgaModern #requestTracking .trackingCardHead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+html.cgaModern #requestTracking .trackingCard h3{font-size:16px;margin:0;overflow-wrap:anywhere}
+html.cgaModern #requestTracking .trackingCard p{margin:6px 0 0;font-size:13px}
+html.cgaModern #requestTracking .trackingBadge{font-size:11px;font-weight:650;border:1px solid var(--cga-border);border-radius:999px;padding:5px 9px;color:var(--cga-text);background:var(--cga-accent-soft)}
+html.cgaModern #requestTracking .trackingBadge[data-state="closed"]{background:var(--cga-chip)}
+html.cgaModern #requestTracking .trackingActions{display:flex;flex-wrap:wrap;gap:8px}
+html.cgaModern #requestTracking .trackingActions button,html.cgaModern #trackingNew,html.cgaModern #trackingCancelNew{padding:9px 13px;display:inline-flex;align-items:center;gap:8px;font-size:13px}
+html.cgaModern #trackingAccessForm{margin-top:14px;padding:16px;display:grid;gap:12px;max-width:480px}
+html.cgaModern #trackingAccessForm label{font-size:13px;font-weight:650}
+html.cgaModern #trackingAccessForm input{min-width:0;width:100%;min-height:46px;border-radius:6px;border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);color:var(--cga-text);padding:10px;font:inherit}
+html.cgaModern #trackingStatus{margin:12px 0 0;overflow-wrap:anywhere}
+html.cgaModern #trackingStatus:empty{display:none}
+@media(max-width:660px){html.cgaModern #trackingNew{width:100%;justify-content:center}html.cgaModern #trackingAccessForm{max-width:none}}
+@media(prefers-reduced-motion:reduce){html.cgaModern #requestTracking .trackingCard{animation:none}}

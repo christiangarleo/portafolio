@@ -7,6 +7,14 @@
   const params = new URLSearchParams(location.search);
   let ruc = (params.get("ruc")||"").trim().replace(/\s+/g," ").toUpperCase();
   const selectedCV = params.get("cv") || "";
+  // Private bearer links use a fragment, never a query parameter or persistent localStorage.
+  const fragment=new URLSearchParams(location.hash.slice(1));
+  let inboundTrackingToken=fragment.get("seguimiento")||"";
+  if(fragment.has("seguimiento")){
+    fragment.delete("seguimiento");
+    const url=location.pathname+location.search+(fragment.size?"#"+fragment.toString():"");
+    history.replaceState(null,"",url);
+  }
   const loading = by("loading");
   const message = by("downloadMessage");
   const portfolioBack="/portafolio/?lang="+locale;
@@ -19,7 +27,7 @@
   const companyIdValid=id=>/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(id);
   by("missingCVContinue").addEventListener("click",()=>{
     missingDialog.close();
-    by("choices").querySelector("button")?.focus();
+    (hasVerifiedRequests()?by("trackingNew"):by("choices").querySelector("button"))?.focus();
   });
   by("missingCVModify").addEventListener("click",()=>{
     missingEdit.hidden=false;
@@ -48,13 +56,14 @@
         return;
       }
       if(found.status!=="not_found")throw Error(t("No pudimos verificar ese identificador."));
+      resetTrackingContext();
       ruc=proposed;
       history.replaceState(null,"",url.pathname+url.search);
       by("rucField").value=ruc;
       by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
       show("emptySection");
-      showNoCVDialog();
-      by("missingCVContinue").focus();
+      await initializeTracking();
+      if(!hasVerifiedRequests()){showNoCVDialog();by("missingCVContinue").focus();}else missingDialog.close();
     }catch(error){
       by("missingCVError").textContent=error.message||t("No pudimos verificar ese identificador.");
     }finally{submit.disabled=false;}
@@ -225,6 +234,170 @@
   }
   securityRetry.addEventListener("click",()=>{if(!leadSubmitting)void prepareSecurity();});
 
+  // Company request tracking: only verified mailbox + exact company identifier.
+  const tr=(es,en)=>locale==="en"?en:es;
+  const track=by("requestTracking"),accessForm=by("trackingAccessForm"),trackStatus=by("trackingStatus");
+  const label=(id,es,en)=>{const el=by(id);(el.querySelector("span")||el).textContent=tr(es,en);};
+  by("trackingTitle").textContent=tr("Mis solicitudes","My requests");
+  label("trackingNew","Enviar nueva solicitud","Send a new request");
+  label("trackingOpen","Consultar solicitudes anteriores","View previous requests");
+  label("trackingRefresh","Actualizar estado","Refresh status");
+  label("trackingExit","Cerrar acceso privado","Close private access");
+  label("trackingCancelNew","Cancelar nueva solicitud","Cancel new request");
+  label("trackingSend","Enviar enlace privado","Send private link");
+  label("trackingRetry","Reintentar verificación","Retry verification");
+  accessForm.querySelector("label").textContent=tr("Correo utilizado en la solicitud","Email used for your request");
+  let trackingToken="",verifiedRows=[],verifiedAccess=false,lastReceipt=null,trackingWidget=null,trackingCaptcha="",trackingGeneration=0,trackingContext=0,newRequestOpen=false;
+  const tokenKey=()=> "cga-request-tracking:"+encodeURIComponent(ruc);
+  function storeTracking(token){
+    trackingToken=token;
+    try{if(token)sessionStorage.setItem(tokenKey(),token);else sessionStorage.removeItem(tokenKey());}catch{}
+  }
+  function hasVerifiedRequests(){return verifiedAccess&&verifiedRows.length>0;}
+  function stopTrackingCaptcha(){
+    ++trackingGeneration;trackingCaptcha="";
+    if(trackingWidget!==null){try{window.turnstile?.remove(trackingWidget);}catch{}trackingWidget=null;}
+    by("trackingTurnstile").replaceChildren();
+  }
+  function resetTrackingContext(){
+    ++trackingContext;storeTracking("");verifiedRows=[];verifiedAccess=false;lastReceipt=null;newRequestOpen=false;inboundTrackingToken="";
+    stopTrackingCaptcha();accessForm.hidden=true;track.hidden=true;
+    by("trackingReceipt").replaceChildren();by("trackingList").replaceChildren();
+  }
+  function setTrackingStatus(es,en){trackStatus.textContent=tr(es,en);}
+  function publicLabel(state){
+    return ({received:tr("Pendiente de revisión","Pending review"),reviewing:tr("En revisión","Under review"),responded:tr("Respuesta registrada","Response recorded"),closed:tr("Cerrada","Closed")})[state]||tr("Pendiente de revisión","Pending review");
+  }
+  const projectLabels={
+    mas_clientes:tr("Conseguir más clientes","Acquire more customers"),
+    marketing_contenido:tr("Marketing y contenido","Marketing and content"),
+    automatizacion_ia:tr("Automatización e IA","Automation and AI"),
+    solucion_digital:tr("Solución digital","Digital solution"),
+    otro:tr("Otro proyecto / asesoramiento","Other project / consulting")
+  };
+  function trackingCard(row){
+    const article=document.createElement("article");article.className="trackingCard";
+    const head=document.createElement("div");head.className="trackingCardHead";
+    const h=document.createElement("h3");h.textContent=row.kind==="proyecto"&&projectLabels[row.project_need]?projectLabels[row.project_need]:String(row.position||tr("Propuesta","Proposal"));
+    const badge=document.createElement("span");badge.className="trackingBadge";badge.dataset.state=row.state||"received";badge.textContent=publicLabel(row.state);
+    head.append(h,badge);
+    const meta=document.createElement("p");meta.className="sub";
+    const kind=row.kind==="in_house"?tr("Contratación In-house","In-house hiring"):row.kind==="proyecto"?tr("Contratación por proyecto","Project-based hiring"):tr("Solicitud de CV","CV request");
+    const date=new Date(row.created_at||"");
+    meta.textContent=kind+(Number.isFinite(date.getTime())?" · "+date.toLocaleDateString(locale==="en"?"en-GB":"es-PE",{day:"numeric",month:"short",year:"numeric"}):"");
+    article.append(head,meta);
+    const options={full_time:tr("Full time","Full time"),part_time:tr("Part time","Part time"),por_horas:tr("Por horas","Hourly"),remoto:tr("Remoto","Remote"),presencial:tr("Presencial","On-site"),hibrido:tr("Híbrido","Hybrid"),urgente:tr("Urgente","Urgent"),este_mes:tr("Este mes","This month"),mas_adelante:tr("Más adelante","Later"),a_definir:tr("A definir","To be defined")};
+    const detail=[options[row.dedication],options[row.work_mode],options[row.project_timing]].filter(Boolean);
+    if(detail.length){const p=document.createElement("p");p.className="trackingDetail";p.textContent=detail.join(" · ");article.append(p);}
+    return article;
+  }
+  function renderTracking(){
+    track.hidden=false;
+    by("trackingIntro").textContent=verifiedAccess?tr("Solicitudes del correo verificado para esta empresa.","Requests from your verified email for this company."):tr("Consultá el seguimiento de forma privada con el correo que utilizaste.","View your requests privately using the email you submitted.");
+    const list=by("trackingList");list.replaceChildren();list.hidden=!verifiedAccess;
+    if(verifiedAccess){
+      if(!verifiedRows.length){const p=document.createElement("p");p.className="sub";p.textContent=tr("No hay solicitudes disponibles para este acceso.","No requests are available for this access.");list.append(p);}
+      for(const row of verifiedRows)list.append(trackingCard(row));
+    }
+    const receipt=by("trackingReceipt");receipt.replaceChildren();receipt.hidden=!lastReceipt;
+    if(lastReceipt){
+      const title=document.createElement("p");title.className="sub";title.textContent=tr("Última solicitud enviada en esta sesión (confirmación de recepción).","Latest request submitted in this session (receipt confirmation).");
+      receipt.append(title,trackingCard(lastReceipt));
+    }
+    by("trackingOpen").hidden=verifiedAccess;by("trackingRefresh").hidden=!verifiedAccess;by("trackingExit").hidden=!verifiedAccess;
+    const compact=hasVerifiedRequests()||Boolean(lastReceipt);
+    by("trackingNew").hidden=!compact;by("trackingNew").setAttribute("aria-expanded",String(newRequestOpen));
+    by("trackingCancelNew").hidden=!newRequestOpen||!compact;
+  }
+  function setRequestCopy(){
+    by("requestHeading").classList.remove("requestConfirmed");
+    by("requestIntro").classList.remove("requestConfirmed");
+    by("emptySection").classList.remove("cgaRequestComplete");
+    by("requestHeading").textContent=newRequestOpen?tr("Nueva solicitud","New request"):t(items.some(x=>x.available)?"¿Querés contratarme o conversar sobre un proyecto?":"¿Te interesa proponer una contratación?");
+    by("requestIntro").textContent=t("Elegí una opción y dejame los datos esenciales. Los detalles los conversamos después.");
+  }
+  function closeNewRequest(){
+    newRequestOpen=false;form.hidden=true;by("choices").hidden=true;
+    ++securityGeneration;securityToken="";
+    if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
+    by("emptySection").hidden=true;
+    renderTracking();
+  }
+  function openNewRequest(){
+    if(leadSubmitting)return;
+    newRequestOpen=true;
+    by("requestSuccessVideo").pause();
+    by("requestSuccessLayout").hidden=true;by("requestSuccessActions").hidden=true;by("requestNextSteps").hidden=true;
+    form.reset();form.hidden=true;by("choices").hidden=false;
+    for(const button of by("choices").querySelectorAll("button"))button.setAttribute("aria-pressed","false");
+    by("emptySection").hidden=false;setRequestCopy();renderTracking();
+    by("choices").querySelector("button")?.focus({preventScroll:true});
+    by("emptySection").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+  }
+  by("trackingNew").addEventListener("click",()=>{if(!leadSubmitting){if(newRequestOpen)closeNewRequest();else openNewRequest();}});
+  by("trackingCancelNew").addEventListener("click",()=>{if(!leadSubmitting){closeNewRequest();by("trackingNew").focus();}});
+  async function prepareTrackingCaptcha(){
+    stopTrackingCaptcha();const generation=trackingGeneration;
+    by("trackingRetry").hidden=true;
+    setTrackingStatus("Cargando verificación de seguridad…","Loading security verification…");
+    try{
+      const ts=await loadSecurity();
+      if(generation!==trackingGeneration||accessForm.hidden)return;
+      const failed=()=>{if(generation!==trackingGeneration)return;trackingCaptcha="";by("trackingRetry").hidden=false;setTrackingStatus("Reintentá la verificación de seguridad.","Retry security verification.");};
+      trackingWidget=ts.render(by("trackingTurnstile"),{sitekey:securitySiteKey,action:"portfolio_tracking",language:locale,theme:document.documentElement.dataset.theme==="dark"?"dark":"light",size:"flexible",appearance:"interaction-only",retry:"never",callback:token=>{if(generation===trackingGeneration){trackingCaptcha=token;trackStatus.textContent="";}}, "error-callback":failed,"expired-callback":failed,"timeout-callback":failed});
+    }catch{if(generation===trackingGeneration){by("trackingRetry").hidden=false;setTrackingStatus("No se pudo cargar la verificación.","Could not load verification.");}}
+  }
+  by("trackingOpen").addEventListener("click",()=>{
+    accessForm.hidden=!accessForm.hidden;by("trackingOpen").setAttribute("aria-expanded",String(!accessForm.hidden));
+    if(accessForm.hidden){stopTrackingCaptcha();trackStatus.textContent="";}
+    else{by("trackingEmail").focus();void prepareTrackingCaptcha();}
+  });
+  by("trackingRetry").addEventListener("click",()=>void prepareTrackingCaptcha());
+  accessForm.addEventListener("submit",async event=>{
+    event.preventDefault();if(!accessForm.reportValidity())return;
+    if(!trackingCaptcha){setTrackingStatus("Completá la verificación de seguridad.","Complete security verification.");return;}
+    const context=trackingContext,button=by("trackingSend");button.disabled=true;
+    try{
+      const result=await api({action:"tracking_access",ruc,email:by("trackingEmail").value.trim(),language:locale,turnstile_token:trackingCaptcha});
+      if(context!==trackingContext)return;
+      if(result.status!=="accepted")throw Error("tracking");
+      accessForm.reset();accessForm.hidden=true;by("trackingOpen").setAttribute("aria-expanded","false");stopTrackingCaptcha();
+      setTrackingStatus("Si existe una solicitud asociada, recibirás un enlace privado por correo. Revisá también Spam.","If a matching request exists, you will receive a private email link. Check your spam folder too.");
+    }catch{if(context===trackingContext){await prepareTrackingCaptcha();setTrackingStatus("No se pudo solicitar el enlace. Volvé a intentarlo.","Could not request the link. Please retry.");}}
+    finally{button.disabled=false;}
+  });
+  async function refreshTracking({collapse=false}={}){
+    if(!trackingToken)return;
+    const context=trackingContext,token=trackingToken,button=by("trackingRefresh");button.disabled=true;
+    try{
+      const data=await api({action:"tracking_list",ruc,token});
+      if(context!==trackingContext||token!==trackingToken)return;
+      if(data.status!=="verified"||!Array.isArray(data.requests))throw Error("tracking");
+      verifiedRows=data.requests;verifiedAccess=true;accessForm.hidden=true;stopTrackingCaptcha();by("trackingOpen").setAttribute("aria-expanded","false");
+      renderTracking();
+      if(collapse&&hasVerifiedRequests()&&!lastReceipt&&!leadSubmitting)closeNewRequest();
+      if(data.truncated)setTrackingStatus("Mostrando las 100 solicitudes más recientes.","Showing the 100 most recent requests.");else trackStatus.textContent="";
+    }catch{
+      if(context!==trackingContext||token!==trackingToken)return;
+      storeTracking("");verifiedRows=[];verifiedAccess=false;renderTracking();
+      if(!lastReceipt&&!newRequestOpen){by("emptySection").hidden=false;by("choices").hidden=false;setRequestCopy();}
+      setTrackingStatus("El acceso privado venció o no está disponible. Solicitá un nuevo enlace.","Private access expired or is unavailable. Request a new link.");
+    }finally{button.disabled=false;}
+  }
+  by("trackingRefresh").addEventListener("click",()=>void refreshTracking());
+  by("trackingExit").addEventListener("click",()=>{
+    ++trackingContext;storeTracking("");verifiedRows=[];verifiedAccess=false;lastReceipt=null;
+    if(!leadSubmitting){by("requestSuccessVideo").pause();by("requestSuccessLayout").hidden=true;by("requestSuccessActions").hidden=true;by("requestNextSteps").hidden=true;newRequestOpen=false;form.hidden=true;by("choices").hidden=false;by("emptySection").hidden=false;setRequestCopy();}
+    renderTracking();setTrackingStatus("Acceso privado cerrado.","Private access closed.");
+  });
+  async function initializeTracking(){
+    if(!companyIdValid(ruc))return;
+    renderTracking();
+    let saved="";try{saved=sessionStorage.getItem(tokenKey())||"";}catch{}
+    const token=inboundTrackingToken||saved;inboundTrackingToken="";
+    if(token){storeTracking(token);await refreshTracking({collapse:true});}
+  }
+
   const titles={
     in_house:["Invitar a una entrevista","Dejame la vacante y tus datos de contacto."],
     proyecto:["Conversemos sobre tu proyecto","Contame qué necesitás con un par de clics."]
@@ -327,6 +500,10 @@
       ++securityGeneration;
       if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
       by("choices").hidden=true;
+      newRequestOpen=false;
+      lastReceipt=reply.receipt&&typeof reply.receipt==="object"?reply.receipt:{kind,position:kind==="in_house"?position:projectLabels[intake.project_need]||tr("Propuesta de proyecto","Project proposal"),project_need:intake.project_need,dedication:intake.dedication,work_mode:intake.work_mode,project_timing:intake.project_timing,created_at:new Date().toISOString(),state:"received"};
+      renderTracking();
+      if(trackingToken)void refreshTracking();
       const copy=successCopy(locale,preference,method);
       for(const [id,value] of Object.entries(copy))by(id).textContent=value;
       by("emptySection").classList.add("cgaRequestComplete");
@@ -378,11 +555,11 @@
     by("rucField").value=ruc;
     try {
       const data=await api({action:"resolve",ruc});
-      if(data.status==="company"&&Array.isArray(data.items)&&data.items.length)displayCompany(data);
+      if(data.status==="company"&&Array.isArray(data.items)&&data.items.length){displayCompany(data);await initializeTracking();}
       else if(data.status==="not_found") {
         by("companyDescription").textContent=t("Todavía no hay CV asociados a ese identificador.");
-        show("emptySection");
-        showNoCVDialog();
+        show("emptySection");await initializeTracking();
+        if(!hasVerifiedRequests())showNoCVDialog();
       } else throw Error("Respuesta del servicio no reconocida");
     } catch(error) {
       loading.textContent=locale==="en"?"Could not load the portal. Please try again. ":"No pudimos cargar el portal. "+(error.message||"Volvé a intentarlo.")+" ";
