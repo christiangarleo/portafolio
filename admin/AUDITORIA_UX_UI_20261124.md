@@ -191,3 +191,8 @@ La evidencia móvil del titular confirma la pérdida visual de flechas laterales
 ### Índice lateral y paginación superior (escritorio) — 26/11/2026
 
 Solicitud del titular: mover exclusivamente los capítulos de la barra inferior a un índice plegable izquierdo y Anterior/Página/total/Siguiente a la parte superior. Se reutilizan los nodos de navegación existentes sin duplicarlos; el panel compacto mide 48 px, con control accesible de expansión, y se recalcula el pliego al compactar/expandir. El modo se aplica desde 1000 px con puntero fino y hover, respetando el modo apaisado móvil prioritario y la navegación vertical original. Se conserva el tema y las traducciones ES/EN; no se modifica el PDF ni se altera la lógica de navegación. Cambios incorporados al PR #3 abierto. Validación estática; pendiente verificación visual y autorización de producción.
+
+
+### Indicador central de descarga del lector — 26/11/2026
+
+Se reemplaza el aviso visual central de descarga/preparación por la barra existente cian–rosa, centrada durante el arranque. Se muestra porcentaje basado en bytes recibidos si existe Content-Length utilizable y lectura por stream; si no, barra indeterminada sin inventar porcentajes. El indicador superior se conserva únicamente para cambios de páginas; el mensaje de error permanece visible. El PDF se descarga una sola vez, preservando URL, no-store, validación de firma y fallback. Pendiente prueba visual en producción y autorización de publicación.

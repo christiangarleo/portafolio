@@ -23,7 +23,51 @@
   const viewportBox = byId("pageViewport");
   const pageStatus = byId("pageStatus");
   const readerLoadBar=byId("readerLoadBar");
-  function readerBusy(active){readerLoadBar.hidden=!active;}
+  const readerLoadPercent=byId("readerLoadPercent");
+  function readerBusy(active,phase="page"){
+    readerLoadBar.hidden=!active;
+    readerLoadBar.dataset.phase=phase;
+    readerLoadBar.removeAttribute("aria-valuenow");
+    readerLoadBar.style.removeProperty("--reader-progress");
+    readerLoadPercent.hidden=true;
+  }
+  function downloadProgress(received,total){
+    if(!Number.isSafeInteger(total)||total<=0||received>total){
+      readerLoadBar.removeAttribute("aria-valuenow");
+      readerLoadBar.style.removeProperty("--reader-progress");
+      readerLoadPercent.hidden=true;
+      return;
+    }
+    const pct=Math.min(99,Math.floor(received/total*100));
+    readerLoadBar.setAttribute("aria-valuenow",String(pct));
+    readerLoadBar.style.setProperty("--reader-progress",pct+"%");
+    readerLoadPercent.textContent=pct+"%";
+    readerLoadPercent.hidden=false;
+  }
+  async function readPdfBytes(response,progress=downloadProgress){
+    const length=Number(response.headers.get("content-length"));
+    const encoding=response.headers.get("content-encoding");
+    const total=(!encoding||encoding==="identity")&&Number.isSafeInteger(length)&&length>0?length:0;
+    if(!response.body?.getReader||!total)return response.arrayBuffer();
+    const stream=response.body.getReader();
+    const chunks=[];
+    let received=0;
+    progress(0,total);
+    try{
+      while(true){
+        const {done,value}=await stream.read();
+        if(done)break;
+        if(!value?.byteLength)continue;
+        chunks.push(value);
+        received+=value.byteLength;
+        progress(received,total);
+      }
+    }finally{stream.releaseLock();}
+    const bytes=new Uint8Array(received);
+    let offset=0;
+    for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+    return bytes.buffer;
+  }
   readerLoadBar.setAttribute("aria-label",locale==="en"?"Loading portfolio":"Cargando portafolio");
   const pageContainer = byId("pageContainer");
   const pageStage = byId("pageStage");
@@ -243,10 +287,12 @@
     });
   }
 
-  function setLoading(text,busy=true) {
-    readerBusy(busy);
-    pageStatus.textContent = t(text);
-    pageStatus.hidden = false;
+  function setLoading(text,busy=true,phase="page") {
+    readerBusy(busy,phase);
+    const message=t(text);
+    readerLoadBar.setAttribute("aria-label",message);
+    pageStatus.textContent=message;
+    pageStatus.hidden=busy;
   }
 
   function resetView() {
@@ -607,7 +653,7 @@
   }
   magazineButton.addEventListener("click",()=>{if(magazineActive)closeMagazine();else void openMagazine();});
   async function start() {
-    setLoading("Preparando el portafolio…");
+    setLoading("Preparando el portafolio…",true,"startup");
     updateToolbar();
     try {
       const library = await new Promise((resolve,reject) => {
@@ -621,15 +667,15 @@
       library.GlobalWorkerOptions.workerSrc = PDFJS_CDN + "pdf.worker.min.js";
       // Fetching the same URL used for the confirmed-correct download
       // avoids serving an older cached PDF from the plain public URL.
-      setLoading("Descargando la última versión del portafolio…");
+      setLoading(locale==="en"?"Downloading PDF":"Descargando PDF",true,"download");
       const response = await fetch(DOWNLOAD_URL, { cache: "no-store", credentials: "omit" });
       if (!response.ok) throw new Error("HTTP " + response.status + " al descargar el PDF");
-      const pdfBytes = await response.arrayBuffer();
+      const pdfBytes = await readPdfBytes(response);
       if (pdfBytes.byteLength < 1024) throw new Error("Respuesta PDF vacía o incompleta");
       const signature = new TextDecoder("latin1").decode(pdfBytes.slice(0, 1024));
       if (!signature.includes("%PDF-")) throw new Error("La descarga no es un documento PDF");
       verifiedPdfBlobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
-      setLoading("Preparando la última versión…");
+      setLoading(locale==="en"?"Preparing PDF":"Preparando PDF",true,"startup");
       pdfDocument = await library.getDocument({ data: new Uint8Array(pdfBytes) }).promise;
       totalPages = pdfDocument.numPages;
       if(locale==="en"){
