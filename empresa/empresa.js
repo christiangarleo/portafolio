@@ -82,9 +82,17 @@
     }
     by("filterAllCV").setAttribute("aria-pressed",String(currentFilter==="all"));
     by("filterActiveCV").setAttribute("aria-pressed",String(currentFilter==="active"));
-    by("filteredCVCount").textContent=locale==="en"
+    const resultCount=by("filteredCVCount");
+    const nextCount=locale==="en"
       ? "Showing "+visible+" of "+cards.length+" positions"
       : "Mostrando "+visible+" de "+cards.length+" vacantes";
+    if(resultCount.textContent!==nextCount){
+      resultCount.textContent=nextCount;
+      if(!matchMedia("(prefers-reduced-motion: reduce)").matches&&resultCount.animate){
+        resultCount.getAnimations?.().forEach(animation=>animation.cancel());
+        resultCount.animate([{opacity:.55},{opacity:1}],{duration:200,easing:"ease-out"});
+      }
+    }
     by("emptyCVSearch").hidden=visible>0;
   }
   by("companySearchInput").addEventListener("input",updateCVFilters);
@@ -136,7 +144,10 @@
       const expiry=element("small",x.expires_at
         ? (locale==="en"?"Valid until: ":"Vigencia: ")+new Date(x.expires_at).toLocaleDateString(locale==="en"?"en-GB":"es-PE",{day:"2-digit",month:"short",year:"numeric"})
         : "Sin fecha de vencimiento");
-      const button=element("button",x.available?"Descargar CV ↓":"Descarga no disponible","action");
+      const button=element("button",undefined,"cgaGlassCTA cvDownloadCTA");
+      const label=element("span",x.available?"Descargar CV ↓":"Descarga no disponible");
+      if(x.available){label.textContent=label.textContent.replace(/\s*↓\s*$/,"");button.dataset.cgaIcon="download";}
+      button.append(label);
       button.type="button";button.disabled=!x.available;
       button.dataset.cvId=x.id;
       card.append(top,title,expiry,button);wrap.append(card);
@@ -153,7 +164,7 @@
   }
   async function downloadCv(button) {
     if(button.disabled)return;
-    button.disabled=true;
+    button.disabled=true;button.setAttribute("aria-busy","true");
     setMessage(message,"Preparando descarga del CV…");
     try {
       const data=await api({action:"download",ruc,id:button.dataset.cvId});
@@ -165,7 +176,7 @@
       // El enlace manual permanece visible si el navegador bloquea la apertura.
       a.click();
     }catch(error){setMessage(message,error.message||"No se pudo obtener el CV.",true);}
-    finally{button.disabled=false;}
+    finally{button.disabled=false;button.removeAttribute("aria-busy");}
   }
   by("vacancies").addEventListener("click",event=>{
     const button=event.target.closest("button[data-cv-id]");
@@ -246,7 +257,7 @@
     by("jobRole").required=kind==="in_house";
     by("leadTitle").textContent=t(titles[kind][0]);
     by("leadSubtitle").textContent=t(titles[kind][1]);
-    by("submitLead").textContent=t(kind==="in_house"?"Enviar invitación":"Proponer proyecto");
+    by("submitLeadLabel").textContent=t(kind==="in_house"?"Enviar invitación":"Proponer proyecto");
     by("moreInfo").open=false;
     for(const item of by("choices").querySelectorAll("button")){
       item.setAttribute("aria-pressed",String(item===button));
