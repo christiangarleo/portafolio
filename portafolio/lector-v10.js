@@ -25,8 +25,13 @@
   const pageContainer = byId("pageContainer");
   const pageStage = byId("pageStage");
   const focusButton=byId("focusMode"),focusDialog=byId("focusDialog"),focusScroll=byId("focusScroll"),focusPageNode=byId("focusPage"),focusStatus=byId("focusStatus");
-  focusButton.textContent=locale==="en"?"Reading mode":"Modo lectura";
-  byId("focusTitle").textContent=focusButton.textContent;
+  const readingLabel=locale==="en"?"Reading mode":"Modo lectura";
+  function labelFocusControl(label){
+    focusButton.setAttribute("aria-label",label);
+    focusButton.title=label;
+  }
+  labelFocusControl(readingLabel);
+  byId("focusTitle").textContent=readingLabel;
   byId("focusClose").textContent=locale==="en"?"← Back":"← Volver";
   focusScroll.setAttribute("aria-label",locale==="en"?"Page in reading mode":"Página en modo lectura");
   const viewerModeButton = byId("viewerMode");
@@ -34,7 +39,9 @@
   const magazineButton=byId("magazineMode"), magazineStage=byId("magazineStage");
   let magazine=null, magazineActive=false, magazineOpening=false, magazineNav=null;
   const magazineLabel=active=>locale==="en"?(active?"Exit magazine":"Magazine view"):(active?"Salir de revista":"Vista revista");
-  magazineButton.textContent=magazineLabel(false); magazineStage.setAttribute("aria-label",locale==="en"?"Magazine view":"Vista revista");
+  const magazineButtonLabel=magazineButton.querySelector(".cgaReaderControlLabel");
+  const viewerButtonLabel=viewerModeButton.querySelector(".cgaReaderControlLabel");
+  magazineButtonLabel.textContent=magazineLabel(false); magazineStage.setAttribute("aria-label",locale==="en"?"Magazine view":"Vista revista");
   const totalPagesText = byId("totalPages");
   const previousButton = byId("previousPage");
   const nextButton = byId("nextPage");
@@ -426,12 +433,12 @@
   }
   function setFocusControl(focused=false){
     if(magazineActive){
-      focusButton.textContent=focused?(locale==="en"?"View spread":"Ver pliego"):(locale==="en"?"Read closer":"Acercar");
+      labelFocusControl(focused?(locale==="en"?"View spread":"Ver pliego"):(locale==="en"?"Read closer":"Acercar"));
       focusButton.removeAttribute("aria-haspopup");
       focusButton.setAttribute("aria-controls","magazineStage");
       focusButton.setAttribute("aria-pressed",String(focused));
     }else{
-      focusButton.textContent=locale==="en"?"Reading mode":"Modo lectura";
+      labelFocusControl(readingLabel);
       focusButton.setAttribute("aria-haspopup","dialog");
       focusButton.setAttribute("aria-controls","focusDialog");
       focusButton.removeAttribute("aria-pressed");
@@ -522,7 +529,7 @@
     history.replaceState(null,"","/portafolio/?"+params.toString());
   }
   function setMagazineControls(active){
-    magazineButton.setAttribute("aria-pressed",String(active));magazineButton.textContent=magazineLabel(active);
+    magazineButton.setAttribute("aria-pressed",String(active));magazineButtonLabel.textContent=magazineLabel(active);
     viewerModeButton.setAttribute("aria-pressed",String(!active));
     viewerModeButton.title=locale==="en"?"Classic reader":"Lectura convencional";
     setFocusControl(active&&magazine?.isFocused());
@@ -541,7 +548,7 @@
       ticket++; // Cancel pending getPage/render work before switching modes.
       if(activeRender){const task=activeRender;activeRender=null;task.cancel();try{await task.promise;}catch{}}
       nativeMode=false;nativeFallback.hidden=true;pageStage.hidden=true;pageStatus.hidden=true;
-      viewerModeButton.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
+      viewerButtonLabel.textContent=t("Visor PDF clásico");magazineStage.hidden=false;magazineActive=true;
       magazine ||= window.CGAMagazine.create({pdf:pdfDocument,host:byId("magazineBook"),viewport:viewportBox,locale,
         onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
         onInternal:page=>{if(validPage(page))magazine.go(page);},
@@ -616,7 +623,7 @@
         setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.");
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";
-        viewerModeButton.textContent = t("Visor PDF clásico");
+        viewerButtonLabel.textContent=t("Visor PDF clásico");
       } else {
         const missingEnglish=locale==="en" && /(?:HTTP 404|HTTP 400)/.test(String(error.message));
         setLoading(missingEnglish

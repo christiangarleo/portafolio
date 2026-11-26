@@ -114,3 +114,47 @@
  body.cgaMobileLandscape #magazineHint{bottom:3px;font-size:10px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
  body.cgaMobileLandscape .toast{right:calc(var(--cga-rail-right) + 8px);bottom:8px;max-width:calc(100vw - var(--cga-rail-left) - var(--cga-rail-right) - 16px)}
 }
+
+/* Herramientas del lector: superficie cuadrada 4%, microinteracción compartida. */
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle){
+ box-sizing:border-box;position:relative;isolation:isolate;overflow:hidden;
+ border:1px solid color-mix(in srgb,var(--cga-text) 13%,transparent)!important;
+ border-radius:0!important;background:color-mix(in srgb,var(--cga-text) 4%,transparent)!important;
+ color:var(--cga-text)!important;box-shadow:none!important;
+ transition:background-color .3s ease,border-color .3s ease,color .3s ease,transform .3s ease;
+ touch-action:manipulation;
+}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle).iconOnly{width:30px;min-width:30px;height:30px;min-height:30px;flex:0 0 30px;padding:0}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle).iconOnly svg{width:17px;height:17px;flex:0 0 auto}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):is(#magazineMode,#viewerMode){min-height:30px;padding:5px 8px}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle) .cgaReaderControlLabel{display:inline-block}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle)[aria-pressed="true"]{border-color:var(--cga-focus)!important}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle)[aria-expanded="true"]{border-color:var(--cga-focus)!important}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):not(:disabled):is(:focus-visible,:active){
+ background:color-mix(in srgb,var(--cga-accent) 20%,transparent)!important;
+ border-color:var(--cga-focus)!important;
+}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):not(:disabled):focus-visible :is(svg,.cgaReaderControlLabel){animation:cgaHomeSocialSlideIn .3s both}
+@media(hover:hover) and (pointer:fine){
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):hover:not(:disabled){
+  background:color-mix(in srgb,var(--cga-accent) 20%,transparent)!important;
+  border-color:var(--cga-focus)!important;
+ }
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):hover:not(:disabled) :is(svg,.cgaReaderControlLabel){animation:cgaHomeSocialSlideIn .3s both}
+}
+html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):active:not(:disabled){transform:scale(.9)}
+#focusMode[aria-pressed="true"] .cgaZoomPlus{display:none}
+@media(max-width:820px),(orientation:portrait),(hover:none) and (pointer:coarse){
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle).iconOnly{min-height:31px}
+}
+@media(orientation:landscape) and (max-height:600px) and (max-width:1180px) and (pointer:coarse){
+ html body.cgaMobileLandscape .siteHeader #focusMode::before{content:none;display:none}
+ html body.cgaMobileLandscape .siteHeader #focusMode svg{display:block}
+ html body.cgaMobileLandscape .siteHeader :is(#magazineMode,#viewerMode) .cgaReaderControlLabel{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle){transition:none!important}
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):active:not(:disabled){transform:none}
+ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):is(:hover,:focus-visible) :is(svg,.cgaReaderControlLabel){animation:none}
+}
+@media(forced-colors:active){html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle){border:1px solid ButtonText!important}}
