@@ -367,3 +367,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ## HOME: alineación de placa y limpieza de separadores — 2026-11-25 (Lima)
 - Corregir placa de nombre 8px hacia abajo en desktop (compensación exacta de la reserva inferior de 16px del hint; alinear centros de placa y controles sociales/tema). Hint en cursiva, opacidad .72 oscuro/.85 claro, confirmación de copia a opacidad 1. Eliminar bordes separadores del header y footer solo HOME; conservar línea de acento de hero, móvil, comportamiento de copia y demás páginas. 7 comprobaciones estáticas satisfactorias; QA visual pendiente. Base 1eb8e377c8d9b6be31a6ea39a75c0a6fd45f4e1b; rollback revertir commit.
+
+## Lector: corregir destinos de capítulos ES — 2026-11-25 (Lima)
+- Por indicación del titular, Proyectos de autor → página 10; Experiencias profesionales → página 44. Actualizar manifest español y enlaces HTML iniciales, cache-bust del manifest. El menú móvil usa los mismos nodos. Edición EN conserva detección independiente y fallback de 55 páginas. Sin cambios al PDF, navegación o estilos. Manifest y destinos verificados estáticamente; navegación real pendiente. Base 9f71465e72bf2a09da0240ab8fef9556dfa4314e; rollback revertir commit.

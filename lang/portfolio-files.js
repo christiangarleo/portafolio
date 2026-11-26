@@ -9,8 +9,8 @@
       url:bucket+"Christian_Arleo_Portafolio.pdf",
       filename:"Christian_Arleo_Portafolio_ES.pdf",
       title:"Portafolio profesional de Christian Gabriel Arleo",
-      // Section links verified against the published Spanish edition.
-      sections:{index:3,intro:4,summary:5,projects:6,experience:23}
+      // Spanish section destinations: projects/experience updated by owner 2026-11-25 (Lima).
+      sections:{index:3,intro:4,summary:5,projects:10,experience:44}
     },
     en:{
       // Archivo EN publicado. Marcadores se detectan del PDF real en el navegador.
