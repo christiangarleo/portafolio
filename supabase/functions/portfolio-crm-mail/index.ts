@@ -17,7 +17,7 @@ Deno.serve(async req=>{
  if(member.error||!member.data||member.data.approved_email.toLowerCase()!==user.email.toLowerCase())return reply(403,{status:"forbidden"});
  const key=Deno.env.get("RESEND_API_KEY");
  // Never silently switch to an alternate From address.
- if(!key||Deno.env.get("PORTFOLIO_FROM_EMAIL")!=="hola@christianarleo.com")return reply(503,{status:"sender_not_configured"});
+ if(!key||Deno.env.get("PORTFOLIO_CRM_MAIL_ENABLED")!=="true")return reply(200,{status:"sender_not_configured"});
  let input;
  try{const raw=await req.text();if(raw.length>24000)return reply(413,{status:"invalid"});input=JSON.parse(raw);}catch{return reply(400,{status:"invalid"});}
  const id=input?.id,lead=input?.lead_id,subject=typeof input?.subject==="string"?input.subject.trim():"",body=typeof input?.body==="string"?input.body.trim():"",context=input?.context;
