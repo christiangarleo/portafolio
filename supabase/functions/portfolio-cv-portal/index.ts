@@ -197,6 +197,22 @@ Deno.serve(async (req: Request) => {
     if (error || !data?.signedUrl) throw Error(error?.message || "Signed URL missing");
     return data.signedUrl;
   }
+  if(input.action==="request_history_check"){
+    // Non-mutating smoke test: synthetic inputs only, never return tokens or configuration values.
+    try{
+      if(!Deno.env.get("RESEND_API_KEY"))throw Error("mail_unavailable");
+      const id="00000000-0000-4000-8000-000000000001",ruc="SYNTHETIC",email="example@example.invalid";
+      const token=await makeHistoryToken(id,ruc,email),valid=await readHistoryToken(token);
+      const [payload,signature]=token.split(".");
+      const tampered=payload+"."+(signature[0]==="A"?"B":"A")+signature.slice(1);
+      const expired=b64(encoder.encode(JSON.stringify({v:1,scope:"request-history",id,bind:valid?.bind,exp:0})));
+      if(!valid||valid.id!==id||valid.bind!==await historyDigest("scope:"+JSON.stringify([ruc,email]))||
+        valid.bind===await historyDigest("scope:"+JSON.stringify(["OTHER",email]))||
+        valid.bind===await historyDigest("scope:"+JSON.stringify([ruc,"other@example.invalid"]))||
+        await readHistoryToken(tampered)||await readHistoryToken(expired+"."+await historyDigest(expired)))throw Error("history_check_failed");
+      return reply(req,{status:"ready"});
+    }catch{return reply(req,{status:"unavailable"},503);}
+  }
   if(input.action==="request_history_link"){
     const ruc=companyId(input.ruc),email=text(input.email,200).toLowerCase(),en=input.language==="en";
     if(!validCompanyId(ruc)||!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email)||await verifyTurnstile(input)!=="verified")return reply(req,{error:"Verificación requerida"},400);
