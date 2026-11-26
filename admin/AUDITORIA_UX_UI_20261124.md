@@ -260,3 +260,8 @@ El titular autoriza explícitamente cambios de seguridad y producción condicion
 ### Configuración del secreto y QA criptográfico — 26/11/2026
 
 El titular confirma haber guardado el secreto en Supabase, sin compartir su valor. Verificación SQL posterior: RLS y RPC service_role-only activos, 0 reservas. Edge Function activa coincide exactamente con fuente de main y verify_jwt=false preexistente. Se reproducen las funciones de firma/verificación en Node WebCrypto con datos sintéticos: 8 aserciones pasan (firma, vinculación RUC/correo, manipulación, formato, vencimiento y ámbito). Se añade acción request_history_check, sin acceso a registros ni envío de correo, que solo devuelve ready/unavailable y comprueba el secreto real y disponibilidad de configuración de Resend; no retorna claves, tokens ni datos. Pendiente ejecución real del diagnóstico, prueba de entrega y flujo navegador; navegador conectado no disponible. Autorización de seguridad y producción condicionada registrada previamente.
+
+
+### Despliegue backend para prueba de readiness — 26/11/2026
+
+Edge Function portfolio-cv-portal v16 ACTIVE desplegada con autorización previa, conservando verify_jwt=false y deno.json preexistentes. Fuente remota cotejada con commit b920ba7. Frontend permanece sin fusionar: falta ejecutar request_history_check (POST JSON, respuesta ready), verificar entrega de correo y navegación real. No se consultaron solicitudes privadas ni se enviaron correos durante este despliegue. El diagnóstico no altera datos ni devuelve el secreto. Reversión backend: redeploy de la fuente index.ts de main 6da9949 con el mismo deno.json si se detecta regresión.
