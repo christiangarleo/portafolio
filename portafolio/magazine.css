@@ -208,10 +208,6 @@ body.cgaMobileLandscape .bottomBar{min-height:0;flex-wrap:nowrap}
 body.cgaMobileLandscape .siteRow,body.cgaMobileLandscape .siteActions{box-sizing:border-box;flex-wrap:nowrap;max-height:100%}
 body.cgaMobileLandscape .siteRow #contactMenuToggle{display:inline-flex!important}
 body.cgaMobileLandscape .siteHeader .readerTools :is(#magazineMode,#viewerMode) .cgaReaderControlLabel{font-size:0!important}
-body.cgaMobileLandscape .siteHeader .readerTools #focusMode>svg{display:none}
-body.cgaMobileLandscape .viewerShell>.sideNav{width:34px;min-width:34px;height:38px;min-height:38px}
-body.cgaMobileLandscape .viewerShell:has(#magazineStage:not([hidden]):not(.cgaCameraFocused))>.sidePrevious{left:max(0px,calc((var(--cga-book-gutter,8px) - 34px)/2))}
-body.cgaMobileLandscape .viewerShell:has(#magazineStage:not([hidden]):not(.cgaCameraFocused))>.sideNext{right:max(0px,calc((var(--cga-book-gutter,8px) - 34px)/2))}
 body.cgaMobileLandscape #gotoForm #pageNumber{min-height:34px;font-size:16px;border-radius:6px}
 #readerLoadBar{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:min(240px,70%);height:5px;overflow:hidden;border-radius:3px;z-index:12;pointer-events:none;background:color-mix(in srgb,var(--cga-text) 16%,var(--cga-surface))}
 #readerLoadBar[hidden]{display:none}
@@ -231,6 +227,7 @@ html.cgaModern #cvDialog[data-compact="true"] .cgaFormField{min-height:44px}
 html.cgaModern #cvDialog #cvRuc{font-size:16px;scroll-margin-block:8px}
 html.cgaModern #cvDialog button.cgaFormButton{width:100%}
 
-/* Keep both page arrows within the existing rail on narrow landscape screens. */
-body.cgaMobileLandscape #gotoForm :is(#previousPage,#nextPage){display:inline-flex!important}
-body.cgaMobileLandscape .viewerShell>.sideNav{display:none!important}
+/* Restore approved side chevrons and original SVG magnifier. */
+html body.cgaMobileLandscape .siteHeader #focusMode>svg{display:block}
+html body.cgaMobileLandscape .siteHeader #focusMode::before{content:none;display:none}
+

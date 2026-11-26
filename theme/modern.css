@@ -247,7 +247,7 @@ html.cgaModern body:has(#loginPanel) .publicPortfolioCard .publicPortfolioAction
 }
 
 /* HOME: cristal neutro, sin bordes cromáticos ni distinción ornamental por idioma. */
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta){
   --glass-fill:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.28) 58%,rgba(255,255,255,.44));
   --glass-hover:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.43) 58%,rgba(255,255,255,.58));
   --glass-border:rgba(22,22,22,.24);
@@ -262,7 +262,7 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
   box-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.10),0 9px 24px var(--glass-shadow);
   transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,background .22s ease;
 }
-html.cgaModern[data-theme="dark"] body:has(.languageGrid) .languageCard[data-lang-choice]{
+html.cgaModern[data-theme="dark"] :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta){
   --glass-fill:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.045) 58%,rgba(255,255,255,.085));
   --glass-hover:linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.075) 58%,rgba(255,255,255,.12));
   --glass-border:rgba(255,255,255,.25);
@@ -270,29 +270,29 @@ html.cgaModern[data-theme="dark"] body:has(.languageGrid) .languageCard[data-lan
   --glass-shadow:rgba(0,0,0,.38);
   
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta)::before{
   content:none;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .recommended{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta) :is(.arrow,.messageLanguageArrow),
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta) .recommended{
   color:var(--cga-text);
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible){
   background:var(--glass-hover);
   border-color:var(--glass-border);
   border-top-color:var(--glass-edge);
   box-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.12),0 14px 32px var(--glass-shadow);
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-visible{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):focus-visible{
   outline:2px solid var(--cga-focus)!important;outline-offset:4px;
 }
 @media(prefers-contrast:more){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta){
     border:2px solid var(--cga-text);background:var(--cga-surface);
   }
 }
 @media(prefers-reduced-motion:reduce){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible){transform:none}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible){transform:none}
 }
 
 /* HOME responsive: shared alignment and proportional scale for the entire hero. */
@@ -638,15 +638,16 @@ html.cgaModern .cgaActionButton:hover:not(:disabled){border-color:var(--cga-focu
 
 /* HOME · CGA glass microinteraction. Brand accent only during interaction.
    Native CSS; intentionally scoped away from video and form cards. */
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta){
   --cga-glass-glow:color-mix(in srgb,var(--cga-accent) 32%,transparent);
   --cga-glass-tint:color-mix(in srgb,var(--cga-accent) 28%,transparent);
   --cga-glass-rest-shadow:inset 0 1px 1px var(--glass-edge),inset 0 -1px 8px rgba(255,255,255,.10),0 9px 24px var(--glass-shadow);
   isolation:isolate;
+  position:relative;
   touch-action:manipulation;
   transition:transform .6s cubic-bezier(.2,.75,.25,1),box-shadow .6s ease,border-color .6s ease,background .6s ease;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta)::before{
   content:"";
   position:absolute;inset:0;border-radius:inherit;
   pointer-events:none;z-index:0;
@@ -654,44 +655,44 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{
   opacity:0;
   transition:opacity .6s ease;
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] > *{position:relative;z-index:1;}
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow{transition:transform .6s cubic-bezier(.2,.75,.25,1);}
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:focus-visible,
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:active{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta) > *{position:relative;z-index:1;}
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta) :is(.arrow,.messageLanguageArrow){transition:transform .6s cubic-bezier(.2,.75,.25,1);}
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):focus-visible,
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):active{
   border-color:var(--cga-focus);
   box-shadow:inset 0 1px 1px var(--glass-edge),0 10px 26px var(--glass-shadow),0 0 28px var(--cga-glass-glow);
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:focus-visible,:active)::before{opacity:1;}
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:focus-visible,:active)::before{opacity:1;}
 @media(hover:hover) and (pointer:fine){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover{
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):hover{
     transform:translateY(-3px);
     border-color:var(--cga-focus);
     box-shadow:inset 0 1px 1px var(--glass-edge),0 10px 26px var(--glass-shadow),0 0 36px var(--cga-glass-glow);
     -webkit-box-reflect:below 7px linear-gradient(to bottom,transparent 82%,rgba(0,0,0,.10));
   }
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover::before{opacity:1;}
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible) .arrow{transform:translate(3px,-3px);}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):hover::before{opacity:1;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible) .arrow{transform:translate(3px,-3px);}
 }
 @media(hover:none),(pointer:coarse){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:hover:not(:active):not(:focus-visible){
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):hover:not(:active):not(:focus-visible){
     transform:none;background:var(--glass-fill);border-color:var(--glass-border);border-top-color:var(--glass-edge);box-shadow:var(--cga-glass-rest-shadow);
   }
 }
-html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:active{
+html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):active{
   transform:scale(.92);
   transition:transform .12s ease-out,box-shadow .15s ease,border-color .15s ease;
   -webkit-box-reflect:none;
 }
 @media(prefers-reduced-motion:reduce){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice],
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible,:active){transition:none;transform:none;-webkit-box-reflect:none;}
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before,html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice] .arrow{transition:none;transform:none;}
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible) .arrow{transform:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta),
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible,:active){transition:none;transform:none;-webkit-box-reflect:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta)::before,html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta) :is(.arrow,.messageLanguageArrow){transition:none;transform:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible) .arrow{transform:none;}
 }
 @media(prefers-contrast:more),(forced-colors:active){
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice],
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:is(:hover,:focus-visible,:active){background:var(--cga-surface);box-shadow:none;border:2px solid currentColor;-webkit-box-reflect:none;}
-  html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{display:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta),
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta):is(:hover,:focus-visible,:active){background:var(--cga-surface);box-shadow:none;border:2px solid currentColor;-webkit-box-reflect:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta)::before{display:none;}
 }
 
 /* Contacto HOME y lector: cuadrados discretos; una sola microinteracción. */
