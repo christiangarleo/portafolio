@@ -799,3 +799,97 @@ html.cgaModern body.cgaMobileLandscape .siteActions #cgaLangPicker button.cgaLan
  :root body #cgaLangPicker button.cgaLangButton::before{border:1px solid ButtonText}
  :root body #cgaLangPicker button.cgaLangButton[aria-pressed="true"]::before{border:2px solid Highlight}
 }
+
+/* CGA Glass Forms — shared opt-in components; pilot: company lookup dialog.
+   Reuse existing brand and theme tokens. No global form/input overrides. */
+html.cgaModern .cgaGlassForm{
+ --form-glass:color-mix(in srgb,var(--cga-surface) 91%,transparent);
+ --form-edge:color-mix(in srgb,var(--cga-text) 19%,transparent);
+ --form-highlight:rgba(255,255,255,.60);
+ --form-inset:rgba(22,22,22,.09);
+ --form-glow:color-mix(in srgb,var(--cga-accent) 17%,transparent);
+ --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-pink),var(--brand-yellow));
+ --form-error:#A31249;
+ box-sizing:border-box;border:1px solid transparent;border-radius:16px;
+ background:linear-gradient(145deg,var(--form-glass),var(--form-glass)) padding-box,linear-gradient(145deg,var(--form-highlight),var(--form-edge) 60%,var(--form-edge)) border-box;
+ color:var(--cga-text);box-shadow:inset 0 1px 1px var(--form-highlight),0 16px 45px var(--cga-shadow);
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+ transition:box-shadow .3s ease;
+}
+:root[data-theme="dark"].cgaModern .cgaGlassForm{
+ --form-glass:color-mix(in srgb,var(--cga-surface) 94%,transparent);
+ --form-highlight:rgba(255,255,255,.24);--form-inset:rgba(0,0,0,.26);
+ --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-cyan),var(--brand-pink));
+ --form-error:#ff80b7;
+}
+html.cgaModern .cgaGlassForm:focus-within{
+ background:linear-gradient(145deg,var(--form-glass),var(--form-glass)) padding-box,var(--form-gradient) border-box;
+ box-shadow:inset 0 1px 1px var(--form-highlight),0 18px 48px var(--cga-shadow),0 0 23px var(--form-glow);
+}
+html.cgaModern dialog.cgaGlassForm[open]{animation:cgaFormEnter .24s ease-out both}
+html.cgaModern dialog.cgaGlassForm::backdrop{background:rgba(0,0,0,.53);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+@keyframes cgaFormEnter{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+html.cgaModern .cgaGlassForm .cgaFormLayout{display:grid;gap:16px;margin:18px 0 0}
+html.cgaModern .cgaGlassForm .cgaFormGroup{display:grid;gap:6px;min-width:0}
+html.cgaModern .cgaGlassForm .cgaFormGroup label{margin:0;font-size:12px;font-weight:650;color:var(--cga-text)}
+html.cgaModern .cgaGlassForm .cgaFormField{
+ display:flex;align-items:center;gap:10px;padding:0 13px;min-width:0;min-height:48px;
+ border:1px solid var(--cga-border-strong);border-radius:6px;
+ background:color-mix(in srgb,var(--cga-text) 5%,var(--cga-surface));
+ box-shadow:inset 0 2px 7px var(--form-inset);
+ transition:border-color .24s ease,box-shadow .24s ease;
+}
+html.cgaModern .cgaGlassForm .cgaFormField:focus-within{
+ border-color:var(--cga-focus);box-shadow:inset 0 2px 7px var(--form-inset),0 0 0 1px var(--cga-focus),0 0 12px var(--form-glow);
+}
+html.cgaModern .cgaGlassForm .cgaFormIcon{flex:0 0 19px;width:19px;height:19px;color:var(--cga-muted);transition:color .24s ease;pointer-events:none}
+html.cgaModern .cgaGlassForm .cgaFormField:focus-within .cgaFormIcon{color:var(--cga-focus)}
+html.cgaModern .cgaGlassForm .cgaFormField :is(input,textarea,select){
+ flex:1 1 auto;min-width:0;width:100%;min-height:46px;height:auto;
+ padding:10px 0;border:0;border-radius:0;background:transparent;color:var(--cga-text);box-shadow:none;font:inherit;font-size:16px;
+}
+html.cgaModern .cgaGlassForm .cgaFormField :is(input,textarea,select):focus-visible{outline:none!important}
+html.cgaModern .cgaGlassForm .cgaFormField input::placeholder{color:var(--cga-muted);opacity:.87;font-size:13px}
+html.cgaModern .cgaGlassForm .cgaFormField:has([aria-invalid="true"]){border-color:var(--form-error);box-shadow:0 0 0 1px var(--form-error)}
+html.cgaModern .cgaGlassForm button.cgaFormButton{
+ display:inline-flex;align-items:center;justify-content:center;justify-self:start;gap:9px;
+ min-height:48px;max-width:100%;padding:11px 16px;border-radius:4px;
+ border:1px solid var(--cga-border-strong);background:color-mix(in srgb,var(--cga-text) 6%,var(--cga-surface));color:var(--cga-text);
+ font-size:14px;font-weight:650;box-shadow:inset 0 1px 1px var(--form-highlight);
+ transition:background .3s ease,border-color .3s ease,box-shadow .3s ease,transform .15s ease;
+}
+html.cgaModern .cgaGlassForm button.cgaFormButton .cgaIcon{transition:transform .3s ease}
+@media(hover:hover) and (pointer:fine){
+ html.cgaModern .cgaGlassForm button.cgaFormButton:hover:not(:disabled){background:linear-gradient(110deg,color-mix(in srgb,var(--cga-accent) 24%,var(--cga-surface)),var(--cga-surface));border-color:var(--cga-focus);color:var(--cga-text);box-shadow:0 0 16px var(--form-glow)}
+ html.cgaModern .cgaGlassForm button.cgaFormButton:hover:not(:disabled) .cgaIcon{transform:translateX(3px)}
+}
+html.cgaModern .cgaGlassForm button.cgaFormButton:active:not(:disabled){transform:scale(.95)}
+html.cgaModern .cgaGlassForm .cvDialogHead button{border-radius:4px;background:transparent;border:1px solid var(--form-edge);color:var(--cga-muted)}
+html.cgaModern .cgaGlassForm .cgaFormFeedback{min-height:0;padding:0;margin-top:10px;color:var(--cga-muted);font-size:13px;line-height:1.5}
+html.cgaModern .cgaGlassForm .cgaFormFeedback:empty{margin:0;padding:0}
+html.cgaModern .cgaGlassForm .cgaFormFeedback[data-error="true"]{color:var(--form-error)}
+html.cgaModern .cgaGlassForm .cgaFormLoader{
+ position:relative;width:60%;height:6px;margin:18px auto 0;border-radius:2px;
+ background:color-mix(in srgb,var(--cga-text) 10%,transparent);
+ box-shadow:0 0 13px color-mix(in srgb,var(--brand-pink) 12%,transparent);
+}
+html.cgaModern .cgaGlassForm .cgaFormLoader::before{
+ content:"";position:absolute;top:0;height:100%;border-radius:2px;
+ background:linear-gradient(90deg,var(--brand-cyan),var(--brand-pink));
+ box-shadow:0 0 9px #09B3DC50,0 0 14px #E5007D40;
+ animation:cgaFormLoad 3.5s ease-in-out infinite;
+}
+@keyframes cgaFormLoad{0%{left:0;right:100%}50%{left:0;right:0}100%{left:100%;right:0}}
+@media(max-width:600px){html.cgaModern .cgaGlassForm button.cgaFormButton{width:100%}}
+@media(prefers-reduced-motion:reduce){
+ html.cgaModern dialog.cgaGlassForm[open]{animation:none}
+ html.cgaModern .cgaGlassForm,html.cgaModern .cgaGlassForm *{transition:none!important}
+ html.cgaModern .cgaGlassForm button.cgaFormButton:active:not(:disabled),html.cgaModern .cgaGlassForm button.cgaFormButton .cgaIcon{transform:none!important}
+ html.cgaModern .cgaGlassForm .cgaFormLoader::before{animation:none;left:0;right:0}
+}
+@media(forced-colors:active){
+ html.cgaModern .cgaGlassForm,html.cgaModern .cgaGlassForm:focus-within{background:Canvas;border:1px solid CanvasText;box-shadow:none}
+ html.cgaModern .cgaGlassForm .cgaFormField{border:1px solid ButtonText}
+ html.cgaModern .cgaGlassForm .cgaFormField:focus-within{outline:2px solid Highlight}
+ html.cgaModern .cgaGlassForm .cgaFormLoader::before{background:Highlight}
+}

@@ -376,3 +376,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ## Lector: confirmar resumen ES — 2026-11-25 (Lima)
 - Titular confirma Resumen → página 8; mapa ES completo: índice 4, presentación 6, resumen 8, proyectos 10, experiencias 44. Manifest y cinco enlaces HTML concordantes; cache-bust actualizado. EN y lógica de navegación intactos. QA visual pendiente. Base de2ec5576f91ca22e177184f64841561b75b23df; rollback revertir commit.
+
+## CGA Glass Forms — piloto portal CV — 2026-11-25 (Lima)
+- Aprobado por el titular: sistema opt-in centralizado en theme/modern.css, clases cgaGlassForm/cgaFormLayout/cgaFormGroup/cgaFormField/cgaFormIcon/cgaFormButton/cgaFormLoader/cgaFormFeedback. Piloto solo diálogo #cvDialog, borde activo cian→rosa oscuro/rosa→amarillo claro, blur 18px, campos hundidos 48px, animación entrada y press .95, loader cian→rosa 3.5s durante navegación, foco accesible y errores textuales. No retrasar navegación ni simular progreso; no cambiar validación, ruta, parámetros, API o seguridad. Evitar doble submit, reset pageshow. No extender todavía a empresa/solicitudes; pendiente validación visual en ambos temas. Simulaciones ES/EN: inválido, corrección, redirección codificada, doble submit y restauración. CSS/JS sintaxis básica verificada. Base 22a52e7eb031fc776577e4fbc4ede94168d371a7; rollback revertir commit.

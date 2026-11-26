@@ -5,7 +5,31 @@
   const locale = window.CGALang?.current === "es" ? "es" : "en";
   const toggle = by("downloadToggle"), menu = by("downloadMenu");
   const dialog = by("cvDialog"), form = by("cvLookupForm"), ruc = by("cvRuc");
-  const status = by("cvResult");
+  const status = by("cvResult"), loader=by("cvLookupLoader"), submit=form.querySelector('button[type="submit"]');
+  let navigating=false;
+  function setLoading(active){
+    navigating=active;
+    form.setAttribute("aria-busy",String(active));
+    loader.hidden=!active;
+    submit.disabled=active;
+  }
+  function clearFeedback(){
+    status.textContent="";
+    delete status.dataset.error;
+    ruc.removeAttribute("aria-invalid");
+    setLoading(false);
+  }
+  function showError(message){
+    setLoading(false);
+    status.dataset.error="true";
+    status.textContent=message;
+    ruc.setAttribute("aria-invalid","true");
+    ruc.focus();
+  }
+  ruc.addEventListener("input",()=>{
+    if(!navigating){status.textContent="";delete status.dataset.error;ruc.removeAttribute("aria-invalid");}
+  });
+  window.addEventListener("pageshow",()=>{if(navigating)clearFeedback();});
   function closeMenu() { menu.hidden = true; toggle.setAttribute("aria-expanded","false"); }
   function positionMenu(){
     const rect=toggle.getBoundingClientRect();
@@ -30,16 +54,20 @@
   menu.querySelectorAll("a").forEach(link=>link.addEventListener("click",closeMenu));
   by("cvOpen").addEventListener("click",()=>{
     closeMenu();
-    status.textContent="";
+    clearFeedback();
     dialog.showModal();ruc.focus();
   });
   by("cvClose").addEventListener("click",()=>dialog.close());
   dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
   form.addEventListener("submit",event=>{
     event.preventDefault();
+    if(navigating)return;
     const value=ruc.value.trim().replace(/\s+/g," ").toUpperCase();
-    if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(value)){status.textContent=t("Ingresá un identificador de empresa válido (hasta 64 caracteres).");return;}
+    if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(value)){showError(t("Ingresá un identificador de empresa válido (hasta 64 caracteres)."));return;}
+    clearFeedback();
     status.textContent=t("Abriendo el portal de la empresa…");
-    window.location.assign("/empresa/?ruc="+encodeURIComponent(value)+"&lang="+locale);
+    setLoading(true);
+    try{window.location.assign("/empresa/?ruc="+encodeURIComponent(value)+"&lang="+locale);}
+    catch{setLoading(false);status.dataset.error="true";status.textContent=locale==="en"?"Could not open the portal. Please try again.":"No se pudo abrir el portal. Volvé a intentar.";}
   });
 })();
