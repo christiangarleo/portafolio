@@ -10,7 +10,7 @@
   const loading = by("loading");
   const message = by("downloadMessage");
   const portfolioBack="/portafolio/?lang="+locale;
-  for(const id of ["returnPortfolio","invalidBackPortfolio","missingCVBack","successBackPortfolio"]){
+  for(const id of ["returnPortfolio","invalidBackPortfolio","missingCVBack"]){
     const link=by(id);if(link)link.href=portfolioBack;
   }
   const missingDialog=by("missingCVDialog");
@@ -328,7 +328,6 @@
       const actions=by("requestSuccessActions");
       const successLayout=by("requestSuccessLayout");
       by("emptySection").insertBefore(note,successLayout);
-      by("successBackPortfolio").textContent=t("Volver al portafolio");
       by("successWhatsApp").textContent=locale==="es"?"Contacta por WhatsApp":"Contact me on WhatsApp";
       by("successLinkedIn").textContent=locale==="es"?"Sígueme en LinkedIn":"Follow me on LinkedIn";
       if(locale==="en"){
