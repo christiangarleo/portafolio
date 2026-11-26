@@ -187,7 +187,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-svg-morph2">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261126-svg-morph2">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261126-glass-forms2">
 </head><body>
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
@@ -197,9 +197,9 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   </div>
 </header>
 <main>
-<section class="panel" id="loginPanel">
+<section class="panel cgaGlassForm cgaFormControls" id="loginPanel">
 <p class="adminEyebrow">ACCESO PERSONAL</p><h1>Tu oficina</h1><p>Ingresá con tu cuenta autorizada.</p>
-<form id="authForm">
+<form id="authForm" class="cgaFormAsync">
 <label for="email">Correo</label><input id="email" type="email" autocomplete="username" required>
 <label for="password">Contraseña</label><input id="password" type="password" minlength="8" autocomplete="current-password" required>
 <p class="row"><button class="primary" type="submit" data-cga-icon="lock">Ingresar</button></p>
@@ -252,14 +252,14 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       <button id="reloadLeads" type="button" class="cgaSoftButton" data-cga-icon="refresh">Actualizar</button>
     </div>
   </div>
-  <div class="adminSearchWrap adminLeadSearch">
+  <div class="adminSearchWrap adminLeadSearch cgaFormControls">
     <label class="srOnly" for="leadSearch">Buscar solicitudes</label>
     <svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg>
     <input id="leadSearch" type="search" placeholder="Buscar empresa, contacto o vacante…" autocomplete="off">
   </div>
   <div id="leadFilters" class="crmFilters" role="group" aria-label="Filtrar solicitudes por decisión"></div>
   <div id="leadSummary" class="crmSummary" role="status" aria-live="polite"></div>
-  <div id="leads">Cargando solicitudes…</div>
+  <div id="leads" class="cgaFormControls">Cargando solicitudes…</div>
 </section></div>
  <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel">
 <div class="adminSectionHeader">
@@ -268,10 +268,10 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
     <button id="newCVToggle" type="button" data-cga-icon="plus" class="primary" aria-expanded="false" aria-controls="cvUploadForm">Nuevo CV</button>
   </div>
 </div>
-<div id="cvUploadForm" class="adminCompactForm" hidden>
+<div id="cvUploadForm" class="adminCompactForm cgaGlassForm cgaFormControls" hidden>
   <div class="adminSectionHeader"><h2>Subir un CV</h2>
     <button id="cancelCVUpload" type="button" class="cgaSoftButton" data-cga-icon="close">Cancelar</button></div>
-<form id="uploadForm">
+<form id="uploadForm" class="cgaFormAsync">
 <div class="grid">
 <div><label for="company">Empresa</label><input id="company" minlength="2" maxlength="140" placeholder="Ej.: Movistar" required></div>
 <div><label for="ruc">Identificador de empresa</label><input id="ruc" maxlength="64" placeholder="RUC, RFC, NIT, VAT ID…" autocapitalize="characters" spellcheck="false" required><span class="cgaMeta">Acepta identificadores de cualquier país.</span></div>
@@ -293,12 +293,12 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <section class="panel"><div class="adminSectionHeader">
   <div><h2>Mis documentos</h2><p id="documentsCount" class="adminTiny">Cargando…</p></div>
   <div class="adminFilterLine">
-    <div class="adminSearchWrap"><label for="documentsFilter" class="srOnly">Buscar CV</label>
+    <div class="adminSearchWrap cgaFormControls"><label for="documentsFilter" class="srOnly">Buscar CV</label>
       <svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg>
       <input id="documentsFilter" type="search" placeholder="Buscar empresa, ID o vacante…" autocomplete="off" aria-label="Buscar CV"></div>
     <button id="reloadDocuments" type="button" class="cgaIconOnly cgaSoftButton" data-cga-icon="refresh" aria-label="Actualizar documentos" title="Actualizar documentos"></button>
   </div>
-</div><div id="documents">Sin documentos todavía.</div></section></div>
+</div><div id="documents" class="cgaFormControls">Sin documentos todavía.</div></section></div>
  <div id="adminPanePortfolio" class="adminPane" role="tabpanel" aria-labelledby="adminTabPortfolio" hidden><section class="panel" id="publicPortfolios">
   <div class="adminSectionHeader">
     <div><h1>Portafolios</h1><p class="cgaMeta">Administrá los PDF en cada idioma.</p></div>
@@ -313,7 +313,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       
       <a id="publicPortfolioLinkEs" href="#" target="_blank" rel="noopener noreferrer" data-cga-icon="eye" hidden>Ver PDF</a>
       <div class="publicPortfolioActions"><button id="editPublicPortfolioEs" type="button" class="cgaSoftButton" data-cga-icon="upload" aria-controls="publicPortfolioFormEs" aria-expanded="false">Actualizar español</button></div>
-      <form id="publicPortfolioFormEs" data-public-language="es" hidden>
+      <form id="publicPortfolioFormEs" class="cgaGlassForm cgaFormControls cgaFormAsync" data-public-language="es" hidden>
         <label for="publicPortfolioFileEs">Nuevo archivo PDF (máx. 45 MB)</label>
         <input id="publicPortfolioFileEs" type="file" accept=".pdf,application/pdf" required>
         <div class="row"><button id="publicPortfolioButtonEs" class="primary" data-cga-icon="check" type="submit">Guardar español</button><button type="button" data-cancel-portfolio="es">Cancelar</button></div>
@@ -327,7 +327,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       
       <a id="publicPortfolioLinkEn" href="#" target="_blank" rel="noopener noreferrer" data-cga-icon="eye" hidden>Ver PDF</a>
       <div class="publicPortfolioActions"><button id="editPublicPortfolioEn" type="button" class="cgaSoftButton" data-cga-icon="upload" aria-controls="publicPortfolioFormEn" aria-expanded="false">Actualizar inglés</button></div>
-      <form id="publicPortfolioFormEn" data-public-language="en" hidden>
+      <form id="publicPortfolioFormEn" class="cgaGlassForm cgaFormControls cgaFormAsync" data-public-language="en" hidden>
         <label for="publicPortfolioFileEn">Nuevo archivo PDF (máx. 45 MB)</label>
         <input id="publicPortfolioFileEn" type="file" accept=".pdf,application/pdf" required>
         <div class="row"><button id="publicPortfolioButtonEn" class="primary" data-cga-icon="check" type="submit">Guardar inglés</button><button type="button" data-cancel-portfolio="en">Cancelar</button></div>

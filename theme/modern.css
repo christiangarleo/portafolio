@@ -800,9 +800,9 @@ html.cgaModern body.cgaMobileLandscape .siteActions #cgaLangPicker button.cgaLan
  :root body #cgaLangPicker button.cgaLangButton[aria-pressed="true"]::before{border:2px solid Highlight}
 }
 
-/* CGA Glass Forms — shared opt-in components; pilot: company lookup dialog.
+/* CGA Glass Forms — shared opt-in components across public and admin flows.
    Reuse existing brand and theme tokens. No global form/input overrides. */
-html.cgaModern .cgaGlassForm{
+html.cgaModern :is(.cgaGlassForm,.cgaFormControls){
  --form-glass:color-mix(in srgb,var(--cga-surface) 91%,transparent);
  --form-edge:color-mix(in srgb,var(--cga-text) 19%,transparent);
  --form-highlight:rgba(255,255,255,.60);
@@ -810,13 +810,15 @@ html.cgaModern .cgaGlassForm{
  --form-glow:color-mix(in srgb,var(--cga-accent) 17%,transparent);
  --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-pink),var(--brand-yellow));
  --form-error:#A31249;
+}
+html.cgaModern .cgaGlassForm{
  box-sizing:border-box;border:1px solid transparent;border-radius:16px;
  background:linear-gradient(145deg,var(--form-glass),var(--form-glass)) padding-box,linear-gradient(145deg,var(--form-highlight),var(--form-edge) 60%,var(--form-edge)) border-box;
  color:var(--cga-text);box-shadow:inset 0 1px 1px var(--form-highlight),0 16px 45px var(--cga-shadow);
  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
  transition:box-shadow .3s ease;
 }
-:root[data-theme="dark"].cgaModern .cgaGlassForm{
+:root[data-theme="dark"].cgaModern :is(.cgaGlassForm,.cgaFormControls){
  --form-glass:color-mix(in srgb,var(--cga-surface) 94%,transparent);
  --form-highlight:rgba(255,255,255,.24);--form-inset:rgba(0,0,0,.26);
  --form-gradient:linear-gradient(145deg,var(--form-edge) 30%,var(--brand-cyan),var(--brand-pink));
@@ -892,4 +894,93 @@ html.cgaModern .cgaGlassForm .cgaFormLoader::before{
  html.cgaModern .cgaGlassForm .cgaFormField{border:1px solid ButtonText}
  html.cgaModern .cgaGlassForm .cgaFormField:focus-within{outline:2px solid Highlight}
  html.cgaModern .cgaGlassForm .cgaFormLoader::before{background:Highlight}
+}
+
+/* CGA Glass Forms — rollout: direct controls retain their native semantics,
+   existing grids and compact viewer/search layouts. No wrappers or JS events. */
+html.cgaModern body:has(:is(#loginPanel,#companySection)) .cgaGlassForm,
+html.cgaModern #leads :is(.crmStep,.crmRejectionComposer,.crmMeeting,.crmStage,.crmPhone):has(:is(input:not([hidden]):not([type=checkbox]),select,textarea)){
+ border:1px solid transparent;border-radius:16px;
+ background:linear-gradient(145deg,var(--form-glass),var(--form-glass)) padding-box,linear-gradient(145deg,var(--form-highlight),var(--form-edge) 60%,var(--form-edge)) border-box;
+ box-shadow:inset 0 1px 1px var(--form-highlight),0 10px 28px var(--cga-shadow);
+ -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+ transition:box-shadow .3s ease;
+}
+html.cgaModern body:has(:is(#loginPanel,#companySection)) .cgaGlassForm:focus-within,
+html.cgaModern #leads :is(.crmStep,.crmRejectionComposer,.crmMeeting,.crmStage,.crmPhone):has(:is(input:not([hidden]):not([type=checkbox]),select,textarea)):focus-within{
+ background:linear-gradient(145deg,var(--form-glass),var(--form-glass)) padding-box,var(--form-gradient) border-box;
+ box-shadow:inset 0 1px 1px var(--form-highlight),0 10px 28px var(--cga-shadow),0 0 16px var(--form-glow);
+}
+html.cgaModern body:has(#companySection) #leadForm{padding:clamp(14px,3vw,24px)}
+html.cgaModern body:has(#loginPanel) #loginPanel.cgaGlassForm{border-top:1px solid transparent}
+html.cgaModern body:has(#loginPanel) #cvUploadForm.cgaGlassForm{padding:clamp(14px,3vw,22px)}
+html.cgaModern body:has(#loginPanel) .publicPortfolioCard form.cgaGlassForm{padding:14px;margin-top:10px}
+html.cgaModern body:has(#loginPanel) #leads .crmInboxDetail .crmStep:has(:is(input:not([hidden]):not([type=checkbox]),select,textarea)){padding:14px;margin:10px 0}
+html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(input:not([type=hidden],[type=checkbox],[type=radio],[type=range],[type=button],[type=submit],[hidden],#website),textarea,select){
+ box-sizing:border-box;min-width:0;max-width:100%;min-height:48px;border:1px solid var(--cga-border-strong);
+ border-radius:6px;background-color:color-mix(in srgb,var(--cga-text) 5%,var(--cga-surface));
+ color:var(--cga-text);box-shadow:inset 0 2px 7px var(--form-inset);
+ transition:border-color .24s ease,box-shadow .24s ease;font-size:16px;
+}
+html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(input:not([type=hidden],[type=checkbox],[type=radio],[type=range],[type=button],[type=submit],[hidden],#website),textarea,select):focus{
+ border-color:var(--cga-focus);box-shadow:inset 0 2px 7px var(--form-inset),0 0 0 1px var(--cga-focus),0 0 12px var(--form-glow);
+}
+html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(input,textarea,select):is([aria-invalid="true"],:user-invalid):not([type=hidden],[type=checkbox],[type=radio],[hidden],#website){
+ border-color:var(--form-error);box-shadow:0 0 0 1px var(--form-error);
+}
+html.cgaModern .cgaFormControls :is(input,textarea)::placeholder{color:var(--cga-muted);opacity:.87}
+html.cgaModern .cgaFormControls textarea{resize:vertical}
+html.cgaModern .cgaFormControls :is(input[type=checkbox],input[type=radio]){accent-color:var(--cga-accent)}
+html.cgaModern .cgaFormControls :is(.adminSearchWrap,.companySearch):focus-within>.cgaIcon,
+html.cgaModern .adminSearchWrap.cgaFormControls:focus-within>.cgaIcon{color:var(--cga-focus)}
+html.cgaModern body:has(#companySection) #leadForm .formGrid,
+html.cgaModern body:has(#loginPanel) #cvUploadForm .grid{gap:16px}
+html.cgaModern body:has(#companySection) #leadForm .chip{min-height:44px;border-radius:6px!important}
+html.cgaModern body:has(#companySection) #leadForm .chip:has(input:checked){color:var(--cga-text)!important}
+html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(button[type=submit],#missingCVContinue,#missingCVModify,#previousPage,#nextPage,.crmStep button,.crmMeeting button,.crmStage button,.crmPhone button,.crmRejectionComposer button):not(.crmReject,.crmAccept,.cgaIconOnly){
+ border-radius:4px;min-height:44px;
+ transition:background .3s ease,border-color .3s ease,box-shadow .3s ease,transform .15s ease;
+}
+html.cgaModern body:has(:is(#loginPanel,#companySection)) .cgaFormControls :is(button[type=submit],#missingCVContinue,#missingCVModify):not(.crmReject,.crmAccept){
+ min-height:48px;border:1px solid var(--cga-border-strong);
+ background:color-mix(in srgb,var(--cga-text) 6%,var(--cga-surface));color:var(--cga-text);
+ box-shadow:inset 0 1px 1px var(--form-highlight);
+}
+@media(hover:hover) and (pointer:fine){
+ html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(button[type=submit],#missingCVContinue,#missingCVModify,#previousPage,#nextPage):not(:disabled):not(.crmReject,.crmAccept){
+  transform:none;background:linear-gradient(110deg,color-mix(in srgb,var(--cga-accent) 24%,var(--cga-surface)),var(--cga-surface));color:var(--cga-text);border-color:var(--cga-focus);box-shadow:0 0 16px var(--form-glow);
+ }
+ html.cgaModern .cgaFormControls button[type=submit] .cgaIcon{transition:transform .3s ease}
+ html.cgaModern .cgaFormControls button[type=submit]:hover:not(:disabled) .cgaIcon{transform:translateX(3px)}
+}
+html.cgaModern body:has(:is(#loginPanel,#companySection,#gotoForm)) .cgaFormControls :is(button[type=submit],#missingCVContinue,#missingCVModify,#previousPage,#nextPage):active:not(:disabled){transform:scale(.95)}
+/* Native file picker and the hidden CRM upload input retain their behavior. */
+html.cgaModern .cgaFormControls input[type=file]:not([hidden])::file-selector-button{
+ border:1px solid var(--cga-border-strong);border-radius:4px;padding:8px 10px;margin-inline-end:10px;
+ background:var(--cga-surface);color:var(--cga-text);font:inherit;font-size:13px;cursor:pointer;
+}
+/* Show loading only for known async submit handlers while their submit is disabled.
+   Never infer loading from disabled CRM channels, permissions or CV availability. */
+html.cgaModern :is(.cgaFormAsync,#leads .crmMeeting form):has(button[type=submit]:disabled)::after{
+ content:"";display:block;width:60%;height:6px;margin:14px auto 0;border-radius:2px;
+ background:linear-gradient(90deg,var(--brand-cyan),var(--brand-pink)) left center/50% 100% no-repeat,color-mix(in srgb,var(--cga-text) 10%,transparent);
+ box-shadow:0 0 13px color-mix(in srgb,var(--brand-pink) 12%,transparent);animation:cgaFormBusy 1.6s ease-in-out infinite alternate;
+}
+@keyframes cgaFormBusy{from{background-position:0% center,0 0}to{background-position:100% center,0 0}}
+html.cgaModern .cgaFormControls :is(#formError,#missingCVError,.message[data-error="true"]):not(:empty){color:var(--form-error)}
+html.cgaModern .cgaFormControls :is(#formError,#missingCVError):empty{min-height:0;margin:0}
+html.cgaModern #requestHeading.requestConfirmed::before{animation:cgaFormEnter .3s ease-out both}
+html.cgaModern .pageTools.cgaFormControls input{min-height:44px;text-align:center}
+html.cgaModern .pageTools.cgaFormControls button{min-height:44px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){
+ html.cgaModern .cgaFormControls *,html.cgaModern .cgaFormControls *::after{transition:none!important;animation:none!important}
+ html.cgaModern .cgaFormControls button:active:not(:disabled),html.cgaModern .cgaFormControls button:hover .cgaIcon{transform:none!important}
+}
+@media(forced-colors:active){
+ html.cgaModern body:has(:is(#loginPanel,#companySection)) .cgaGlassForm,
+ html.cgaModern body:has(:is(#loginPanel,#companySection)) .cgaGlassForm:focus-within,
+ html.cgaModern #leads :is(.crmStep,.crmRejectionComposer,.crmMeeting,.crmStage,.crmPhone):has(:is(input:not([hidden]):not([type=checkbox]),select,textarea)){
+  background:Canvas;border:1px solid CanvasText;box-shadow:none;
+ }
+ html.cgaModern :is(.cgaFormAsync,#leads .crmMeeting form):has(button[type=submit]:disabled)::after{background:Highlight;animation:none}
 }
