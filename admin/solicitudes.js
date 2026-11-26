@@ -24,7 +24,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  function when(v){return v?new Date(v).toLocaleString("es-PE",{dateStyle:"medium",timeStyle:"short"}):"—";}
  function value(v){if(Array.isArray(v))return v.map(x=>fieldValues[x]||x).join(", ");if(v===true)return "Sí";if(v===false)return "No";return fieldValues[v]||String(v??"");}
  function labeled(label,control){const wrap=n("div",undefined,"crmField"),lab=n("label",label);if(!control.id)control.id="crm-"+crypto.randomUUID();lab.htmlFor=control.id;wrap.append(lab,control);return wrap;}
- function action(button,work){button.addEventListener("click",async()=>{button.disabled=true;try{await work();}catch(e){notice(e.message||"No se pudo completar la acción.",true);}finally{button.disabled=false;}});}
+ function action(button,work){button.addEventListener("click",async()=>{button.disabled=true;button.setAttribute("aria-busy","true");try{await work();}catch(e){notice(e.message||"No se pudo completar la acción.",true);}finally{button.disabled=false;button.removeAttribute("aria-busy");}});}
  function validDocs(lead){return getDocuments().filter(x=>x.ruc===lead.ruc&&x.is_active&&(!x.expires_at||Date.parse(x.expires_at)>Date.now()));}
  function doc(lead){return validDocs(lead).find(x=>x.id===lead.cv_document_id)||null;}
  function companyURL(lead){if(!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(lead.ruc||""))return "";const u=new URL("/empresa/",location.origin);u.searchParams.set("ruc",lead.ruc);u.searchParams.set("lang",lead.language==="en"?"en":"es");if(doc(lead))u.searchParams.set("cv",lead.cv_document_id);return u.href;}
@@ -135,7 +135,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const status=n("small",sent?"Confirmado · "+when(recent.created_at):"Sin confirmar","crmSwitchStatus");
   check.addEventListener("change",async()=>{
     const previous=!check.checked;
-    check.disabled=true;
+    check.disabled=true;check.setAttribute("aria-busy","true");
     try{
       const {error}=await sb.from("portfolio_cv_lead_activities").insert({
         lead_id:lead.id,
@@ -148,7 +148,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     }catch(error){
       check.checked=previous;
       notice(error.message||"No se pudo guardar la confirmación.",true);
-    }finally{check.disabled=false;}
+    }finally{check.disabled=false;check.removeAttribute("aria-busy");}
   });
   toggle.append(check,track,caption,status);panel.append(toggle);
   panel.append(small("Abrir un correo no lo envía automáticamente. Confirmalo cuando lo hayas enviado desde Zoho o Gmail."));
@@ -223,7 +223,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   select.value=current?.id||"";
   select.addEventListener("change",async()=>{
    if(!select.value)return;
-   select.disabled=true;
+   select.disabled=true;select.setAttribute("aria-busy","true");
    try{await persist(lead,{cv_document_id:select.value},"cv_asociado",{cv_id:select.value});notice("CV asociado. Ya está disponible en el portal de esa empresa.");}
    catch(error){notice(error.message,true);await load();}
   });
@@ -235,7 +235,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    if(file.size>30*1024*1024||file.size<1024||!file.name.toLowerCase().endsWith(".pdf")){notice("Seleccioná un PDF de hasta 30 MB.",true);inp.value="";return;}
    const magic=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
    if(!magic.startsWith("%PDF-")){notice("El archivo no parece ser un PDF válido.",true);inp.value="";return;}
-   upload.disabled=true;upload.textContent="Subiendo…";
+   upload.disabled=true;upload.setAttribute("aria-busy","true");upload.textContent="Subiendo…";
    const path="companies/"+crypto.randomUUID()+".pdf";
    try{
     const stored=await sb.storage.from(bucket).upload(path,file,{contentType:"application/pdf",cacheControl:"0",upsert:false});
@@ -251,7 +251,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     await audit(lead,"cv_subido_asociado",{cv_id:added.data.id,filename:file.name});
     await loadDocuments();await load();notice("PDF subido y asociado. Ya podés compartirlo.");
    }catch(error){notice(error.message||"Error al subir el PDF.",true);}
-   finally{upload.disabled=false;upload.textContent="+ Subir PDF";inp.value="";}
+   finally{upload.disabled=false;upload.removeAttribute("aria-busy");upload.textContent="+ Subir PDF";inp.value="";}
   });
   r.append(select,upload,inp);
   section.append(r);
@@ -429,14 +429,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    control.addEventListener("change",async()=>{
     const checked=control.checked;
     // El switch constituye la confirmación expresa: no abrir un segundo popup nativo.
-    control.disabled=true;
+    control.disabled=true;control.setAttribute("aria-busy","true");
     try{
      await persist(lead,{[field]:checked?new Date().toISOString():null,
       ...(checked?{status:"contactado"}:{})},
       checked?confirmedEvent:undoEvent);
      notice(checked?"Envío confirmado.":"Confirmación retirada.");
     }catch(err){control.checked=!checked;notice(err.message,true);}
-    finally{control.disabled=false;}
+    finally{control.disabled=false;control.removeAttribute("aria-busy");}
    });
    return wrap;
   }
@@ -515,7 +515,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
      ["contactado","Contactada"],["cerrado","Cerrada"]])select.append(new Option(text,key));
    select.value=lead.status||"nuevo";
    select.addEventListener("change",async()=>{
-    select.disabled=true;
+    select.disabled=true;select.setAttribute("aria-busy","true");
     try{
      await persist(lead,{status:select.value},"seguimiento_actualizado",{etapa:select.value});
      notice("Seguimiento actualizado.");
