@@ -157,3 +157,47 @@ html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#acti
  html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle):is(:hover,:focus-visible) :is(svg,.cgaReaderControlLabel){animation:none}
 }
 @media(forced-colors:active){html body .siteHeader :is(#magazineMode,#viewerMode,#focusMode,#fullscreen,#actionsToggle,#sendPage,#printPdf,#downloadToggle){border:1px solid ButtonText!important}}
+
+/* Flechas laterales: chevron de dos trazos, iluminación secuencial y press.
+   Mantener geometría, visibilidad responsive, IDs y hit areas del lector. */
+:root body .viewerShell > button.sideNav{
+ padding:0;border:1px solid transparent;border-radius:0;
+ background:transparent;box-shadow:none;backdrop-filter:none;
+ color:var(--cga-muted);touch-action:manipulation;
+ transition:transform .1s ease,opacity .15s ease;
+}
+:root body .viewerShell > button.sideNav:hover:not(:disabled){background:transparent;box-shadow:none}
+:root body .viewerShell > button.sideNav .cgaPageChevron{
+ position:relative;display:block;width:24px;height:30px;flex:0 0 auto;
+ pointer-events:none;
+}
+:root body .viewerShell > button.sideNav.sidePrevious .cgaPageChevron{transform:rotate(180deg)}
+:root body .viewerShell > button.sideNav :is(.cgaPageChevronTop,.cgaPageChevronBottom){
+ position:absolute;right:5px;top:50%;width:17px;height:3px;
+ background:currentColor;transform-origin:right center;
+}
+:root body .viewerShell > button.sideNav .cgaPageChevronTop{transform:translateY(-50%) rotate(45deg)}
+:root body .viewerShell > button.sideNav .cgaPageChevronBottom{transform:translateY(-50%) rotate(-45deg)}
+:root body .viewerShell > button.sideNav :is(.cgaPageChevronTop,.cgaPageChevronBottom)::after{
+ content:"";position:absolute;top:0;height:100%;background:var(--cga-focus);
+ transition:left .15s ease,right .15s ease;
+}
+:root body .viewerShell > button.sideNav .cgaPageChevronTop::after{left:100%;right:0;transition-delay:0s}
+:root body .viewerShell > button.sideNav .cgaPageChevronBottom::after{left:0;right:100%;transition-delay:.15s}
+@media(hover:hover) and (pointer:fine){
+ :root body .viewerShell > button.sideNav:hover:not(:disabled) .cgaPageChevronTop::after{left:0;transition-delay:.15s}
+ :root body .viewerShell > button.sideNav:hover:not(:disabled) .cgaPageChevronBottom::after{right:0;transition-delay:0s}
+}
+:root body .viewerShell > button.sideNav:not(:disabled):is(:focus-visible,:active) .cgaPageChevronTop::after{left:0;transition-delay:.15s}
+:root body .viewerShell > button.sideNav:not(:disabled):is(:focus-visible,:active) .cgaPageChevronBottom::after{right:0;transition-delay:0s}
+:root body .viewerShell > button.sideNav:active:not(:disabled){transform:translateY(-50%) scale(.9)}
+:root body .viewerShell > button.sideNav:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+ :root body .viewerShell > button.sideNav,:root body .viewerShell > button.sideNav :is(.cgaPageChevronTop,.cgaPageChevronBottom)::after{transition:none!important}
+ :root body .viewerShell > button.sideNav:active:not(:disabled){transform:translateY(-50%)}
+}
+@media(forced-colors:active){
+ :root body .viewerShell > button.sideNav{color:ButtonText}
+ :root body .viewerShell > button.sideNav :is(.cgaPageChevronTop,.cgaPageChevronBottom){forced-color-adjust:none;background:ButtonText}
+ :root body .viewerShell > button.sideNav :is(.cgaPageChevronTop,.cgaPageChevronBottom)::after{forced-color-adjust:none;background:Highlight}
+}
