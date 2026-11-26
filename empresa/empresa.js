@@ -299,8 +299,10 @@
       if(!verifiedRows.length){const p=document.createElement("p");p.className="sub";p.textContent=tr("No hay solicitudes disponibles para este acceso.","No requests are available for this access.");list.append(p);}
       for(const row of verifiedRows)list.append(trackingCard(row));
     }
-    const receipt=by("trackingReceipt");receipt.replaceChildren();receipt.hidden=!lastReceipt;
-    if(lastReceipt){
+    const receipt=by("trackingReceipt");receipt.replaceChildren();
+    const alreadyListed=lastReceipt&&verifiedAccess&&verifiedRows.some(row=>row.kind===lastReceipt.kind&&row.position===lastReceipt.position&&row.created_at===lastReceipt.created_at);
+    receipt.hidden=!lastReceipt||Boolean(alreadyListed);
+    if(lastReceipt&&!alreadyListed){
       const title=document.createElement("p");title.className="sub";title.textContent=tr("Última solicitud enviada en esta sesión (confirmación de recepción).","Latest request submitted in this session (receipt confirmation).");
       receipt.append(title,trackingCard(lastReceipt));
     }

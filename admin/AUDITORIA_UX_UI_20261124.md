@@ -281,3 +281,5 @@ commit;
 ```
 
 QA requerida: solicitudes nuevas e históricas, mismo RUC/correos distintos, token falsificado/vencido, otro RUC, CAPTCHA faltante, cuota concurrente, email inexistente sin enumeración, recuperación fallida, cierre de acceso, recarga, envío posterior, responsive ES/EN y Dark/Light. Rollback: desactivar feature/frontend y restaurar versión previa de Edge Function; conservar datos existentes, no borrar solicitudes.
+
+Revisión adicional: la firma incluye un hash HMAC del correo/RUC para invalidar el acceso si se reasigna el registro ancla; las confirmaciones manuales de rechazo se consultan sin revelar actividades ni motivos. Se elimina duplicación del recibo cuando ya aparece en la lista verificada. Sintaxis JS comprobada por compilación sin ejecución, IDs de seguimiento verificados. QA real y configuración backend pendientes.

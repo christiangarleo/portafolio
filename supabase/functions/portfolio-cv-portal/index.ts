@@ -152,23 +152,26 @@ const toHex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes),x=>x.toString(
 async function trackingSignature(value:string){
   return toHex(await crypto.subtle.sign("HMAC",await trackingKey(),trackingEncoder.encode(value)));
 }
-async function createTrackingToken(id:string){
+async function trackingScope(identifier:string,email:string){
+  return trackingSignature("company-tracking-scope-v1:"+JSON.stringify([identifier,email]));
+}
+async function createTrackingToken(id:string,identifier:string,email:string){
   if(!trackingUUID.test(id))throw Error("invalid_anchor");
-  const data=id+"."+String(Math.floor(Date.now()/1000)+3600);
+  const data=id+"."+String(Math.floor(Date.now()/1000)+3600)+"."+await trackingScope(identifier,email);
   return data+"."+await trackingSignature("company-tracking-v1:"+data);
 }
 async function verifyTrackingToken(token:string){
-  const [id,expires,signature,...extra]=token.split(".");
-  if(extra.length||!trackingUUID.test(id||"")||!/^\d{10}$/.test(expires||"")||! /^[a-f0-9]{64}$/.test(signature||""))return null;
+  const [id,expires,scope,signature,...extra]=token.split(".");
+  if(extra.length||!trackingUUID.test(id||"")||!/^\d{10}$/.test(expires||"")||! /^[a-f0-9]{64}$/.test(scope||"")||! /^[a-f0-9]{64}$/.test(signature||""))return null;
   const expiry=Number(expires),now=Math.floor(Date.now()/1000);
   if(expiry<=now||expiry>now+3600)return null;
   const bytes=Uint8Array.from(signature.match(/../g)!,x=>parseInt(x,16));
-  return await crypto.subtle.verify("HMAC",await trackingKey(),bytes,trackingEncoder.encode("company-tracking-v1:"+id+"."+expires))?id:null;
+  return await crypto.subtle.verify("HMAC",await trackingKey(),bytes,trackingEncoder.encode("company-tracking-v1:"+id+"."+expires+"."+scope))?{id,scope}:null;
 }
 async function sendTrackingLink(identifier:string,email:string,language:string){
   const {data,error}=await supabase.from("portfolio_cv_leads").select("id").eq("ruc",identifier).eq("email",email).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(error||!data?.id)return;
-  const token=await createTrackingToken(data.id);
+  const token=await createTrackingToken(data.id,identifier,email);
   const url=new URL("https://christianarleo.com/empresa/");
   url.searchParams.set("ruc",identifier);url.searchParams.set("lang",language);
   url.hash=new URLSearchParams({seguimiento:token}).toString();
@@ -185,7 +188,7 @@ async function sendTrackingLink(identifier:string,email:string,language:string){
 }
 function trackingPublicState(row:Record<string,unknown>){
   // Do not disclose a rejection or internal reason before a response is communicated.
-  if(row.email_sent_at||row.whatsapp_sent_at)return row.status==="cerrado"?"closed":"responded";
+  if(row.email_sent_at||row.whatsapp_sent_at||row.rejection_confirmed===true)return row.status==="cerrado"?"closed":"responded";
   return row.decision_status==="avanzar"?"reviewing":"received";
 }
 function trackingPublicRow(row:Record<string,unknown>){
@@ -228,15 +231,27 @@ Deno.serve(async (req: Request) => {
     const identifier=companyId(input.ruc),token=text(input.token,180);
     if(!validCompanyId(identifier))return reply(req,{error:"Acceso privado inválido"},403);
     try{
-      const id=await verifyTrackingToken(token);
-      if(!id)return reply(req,{error:"Acceso privado inválido"},403);
-      const {data:anchor,error:anchorError}=await supabase.from("portfolio_cv_leads").select("ruc,email").eq("id",id).maybeSingle();
+      const grant=await verifyTrackingToken(token);
+      if(!grant)return reply(req,{error:"Acceso privado inválido"},403);
+      const {data:anchor,error:anchorError}=await supabase.from("portfolio_cv_leads").select("ruc,email").eq("id",grant.id).maybeSingle();
       if(anchorError)throw Error("tracking_lookup");
-      if(!anchor||anchor.ruc!==identifier||!trackingEmail.test(anchor.email||""))return reply(req,{error:"Acceso privado inválido"},403);
-      const {data,error}=await supabase.from("portfolio_cv_leads").select("kind,position_or_project,created_at,decision_status,status,email_sent_at,whatsapp_sent_at,intake_data").eq("ruc",identifier).eq("email",anchor.email).order("created_at",{ascending:false}).limit(101);
+      if(!anchor||anchor.ruc!==identifier||!trackingEmail.test(anchor.email||"")||grant.scope!==await trackingScope(anchor.ruc,anchor.email))return reply(req,{error:"Acceso privado inválido"},403);
+      const {data,error}=await supabase.from("portfolio_cv_leads").select("id,kind,position_or_project,created_at,decision_status,status,email_sent_at,whatsapp_sent_at,intake_data").eq("ruc",identifier).eq("email",anchor.email).order("created_at",{ascending:false}).limit(101);
       if(error)throw Error("tracking_lookup");
-      const rows=data||[];
-      return reply(req,{status:"verified",requests:rows.slice(0,100).map(trackingPublicRow),truncated:rows.length>100});
+      const rows=data||[],visible=rows.slice(0,100);
+      const rejected=visible.filter(row=>row.decision_status==="rechazada").map(row=>row.id);
+      const confirmed=new Set<string>();
+      if(rejected.length){
+        const {data:activity,error:activityError}=await supabase.from("portfolio_cv_lead_activities").select("lead_id,event_type").in("lead_id",rejected).in("event_type",["rechazo_correo_confirmado","rechazo_correo_confirmacion_retirada"]).order("created_at",{ascending:false}).limit(1000);
+        if(!activityError){
+          const seen=new Set<string>();
+          for(const event of activity||[]){
+            if(seen.has(event.lead_id))continue;seen.add(event.lead_id);
+            if(event.event_type==="rechazo_correo_confirmado")confirmed.add(event.lead_id);
+          }
+        }
+      }
+      return reply(req,{status:"verified",requests:visible.map(row=>trackingPublicRow({...row,rejection_confirmed:confirmed.has(row.id)})),truncated:rows.length>100});
     }catch{return reply(req,{error:"Servicio temporalmente no disponible"},503);}
   }
   // El identificador de empresa es público y NO autentica al reclutador.
