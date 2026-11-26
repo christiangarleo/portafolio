@@ -79,6 +79,10 @@
     .actionsWrap { position:relative; }
     .actionsMenu { position:absolute; top:calc(100% + 7px); right:0; z-index:20; width:226px; padding:6px; border:1px solid #ddd; background:white; box-shadow:0 10px 25px rgba(0,0,0,.14); border-radius:5px; }
     .actionsMenu a,.actionsMenu button { display:block; width:100%; text-align:left; padding:11px 12px; min-height:37px; white-space:normal; }
+    .shareEmailOptions { margin:0 6px 4px 12px; border-left:1px solid var(--cga-border-strong); padding-left:5px; }
+    .actionsMenu .shareEmailOptions button { min-height:36px; padding:8px 10px; }
+    #sendEmail[aria-expanded="true"] { border-color:var(--cga-focus); }
+    .actionsMenu button:focus-visible { outline-offset:-2px; }
     .readerTools { flex:0 1 auto; min-width:0; justify-self:center; justify-content:center; gap:5px; white-space:nowrap; }
     .readerTools .toolButton { border:1px solid #e4e4e4; background:#fff; padding:7px 10px; }
     .readerTools .toolButton:hover:not(:disabled) { background:#f2f2f2; }
@@ -346,9 +350,15 @@
           <div class="actionsMenu" id="actionsMenu" hidden>
             <button id="deviceSend" type="button" hidden>Compartir desde el dispositivo</button>
             <button id="copyLink" type="button">Copiar enlace</button>
-            <a id="sendWhatsApp" target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
-            <a id="sendLinkedIn" target="_blank" rel="noopener noreferrer">Compartir en LinkedIn</a>
-            <a id="sendEmail">Compartir por correo</a>
+            <button id="sendWhatsApp" type="button">Compartir por WhatsApp</button>
+            <button id="sendLinkedIn" type="button">Compartir en LinkedIn</button>
+            <button id="sendEmail" type="button" aria-expanded="false" aria-controls="shareEmailOptions">Compartir por correo</button>
+            <div id="shareEmailOptions" class="shareEmailOptions" hidden>
+              <button id="shareGmail" type="button">Gmail</button>
+              <button id="shareOutlook" type="button">Outlook</button>
+              <button id="shareMailApp" type="button">Aplicación de correo</button>
+              <button id="shareEmailCopy" type="button">Copiar mensaje</button>
+            </div>
           </div>
         </div>
         <button class="copyPage iconOnly" type="button" id="sendPage" aria-label="Copiar enlace de la página actual" title="Copiar enlace de la página actual"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
@@ -494,7 +504,7 @@
     })();
   </script>
   <script src="./magazine.js?v=20261124-landscape2" defer></script>
-  <script src="./lector-v10.js?v=20261126-controls1" defer></script>
+  <script src="./lector-v10.js?v=20261126-sharefix1" defer></script>
   <script src="./cv-portal.js?v=20261124-international1" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>

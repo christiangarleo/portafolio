@@ -161,6 +161,10 @@
   function menuOpen(open) {
     shareMenu.hidden = !open;
     shareButton.setAttribute("aria-expanded", String(open));
+    if(!open){
+      byId("shareEmailOptions").hidden=true;
+      byId("sendEmail").setAttribute("aria-expanded","false");
+    }
   }
 
   shareButton.addEventListener("click", () => menuOpen(shareMenu.hidden));
@@ -173,9 +177,42 @@
 
   const nativeShare = byId("deviceSend");
   nativeShare.hidden = typeof navigator.share !== "function";
-  byId("sendWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(TITLE + "\n" + SHARE_URL);
-  byId("sendLinkedIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(SHARE_URL);
-  byId("sendEmail").href = "mailto:?subject=" + encodeURIComponent(TITLE) + "&body=" + encodeURIComponent((locale==="en"?"I'm sharing this portfolio: ":"Te comparto este portafolio: ") + SHARE_URL);
+  // Share choices are real buttons; no provider-specific href to hide the menu item.
+  // Keep contact links separate: these actions share the portfolio with a recipient of the visitor's choice.
+  const emailBody=(locale==="en"?"I'm sharing this portfolio:":"Te comparto este portafolio:")+"\r\n\r\n"+SHARE_URL;
+  const enc=encodeURIComponent;
+  const shareTargets={
+    whatsapp:"https://wa.me/?text="+enc(TITLE+"\n"+SHARE_URL),
+    linkedin:"https://www.linkedin.com/sharing/share-offsite/?url="+enc(SHARE_URL),
+    gmail:"https://mail.google.com/mail/?view=cm&fs=1&su="+enc(TITLE)+"&body="+enc(emailBody),
+    outlook:"https://outlook.live.com/mail/0/deeplink/compose?subject="+enc(TITLE)+"&body="+enc(emailBody),
+    mail:"mailto:?subject="+enc(TITLE)+"&body="+enc(emailBody)
+  };
+  function openShare(url){
+    menuOpen(false);
+    // Synchronous, trusted click; no external navigation before the visitor chooses it.
+    window.open(url,"_blank","noopener,noreferrer");
+  }
+  byId("sendWhatsApp").addEventListener("click",()=>openShare(shareTargets.whatsapp));
+  byId("sendLinkedIn").addEventListener("click",()=>openShare(shareTargets.linkedin));
+  const emailOptions=byId("shareEmailOptions"),emailToggle=byId("sendEmail");
+  byId("shareMailApp").textContent=locale==="en"?"Mail application":"Aplicación de correo";
+  byId("shareEmailCopy").textContent=locale==="en"?"Copy message":"Copiar mensaje";
+  emailToggle.addEventListener("click",()=>{
+    const open=emailOptions.hidden;
+    emailOptions.hidden=!open;
+    emailToggle.setAttribute("aria-expanded",String(open));
+  });
+  byId("shareGmail").addEventListener("click",()=>openShare(shareTargets.gmail));
+  byId("shareOutlook").addEventListener("click",()=>openShare(shareTargets.outlook));
+  byId("shareMailApp").addEventListener("click",()=>{
+    menuOpen(false);
+    location.href=shareTargets.mail;
+  });
+  byId("shareEmailCopy").addEventListener("click",()=>{
+    menuOpen(false);
+    copyText(TITLE+"\n\n"+emailBody);
+  });
   byId("copyLink").addEventListener("click", () => { menuOpen(false); copyText(SHARE_URL); });
   nativeShare.addEventListener("click", async () => {
     menuOpen(false);
