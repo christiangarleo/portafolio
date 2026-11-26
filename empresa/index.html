@@ -174,7 +174,7 @@
 #missingCVEditForm button{background:var(--cga-primary);color:var(--cga-primary-text)}
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-svg-morph2">
-<link rel="stylesheet" href="/theme/modern.css?v=20261126-svg-morph2">
+<link rel="stylesheet" href="/theme/modern.css?v=20261126-glass-forms3">
 <link rel="stylesheet" href="/theme/message-video.css?v=20261126-flags1">
 
 </head>
@@ -197,7 +197,7 @@
       <span class="count" id="count"></span>
     </div>
     <div class="companyTools">
-      <div class="companySearch">
+      <div class="companySearch cgaFormControls">
         <label for="companySearchInput">Buscar por vacante</label>
         <input id="companySearchInput" type="search" maxlength="100" autocomplete="off" placeholder="Ej.: Marketing, Coordinador…">
       </div>
@@ -219,7 +219,7 @@
       <button type="button" data-kind="in_house" aria-pressed="false" data-cga-icon="briefcase">Contratación In-house</button>
       <button type="button" data-kind="proyecto" aria-pressed="false" data-cga-icon="spark">Contratación por proyecto</button>
     </div>
-    <form id="leadForm" class="quickForm" hidden>
+    <form id="leadForm" class="quickForm cgaGlassForm cgaFormControls cgaFormAsync" hidden>
       <h3 id="leadTitle">Invitar a una entrevista</h3>
       <p id="leadSubtitle" class="formHint"></p>
       <input type="hidden" id="leadKind" name="kind">
@@ -352,14 +352,14 @@
     <p><a class="actionLink" id="invalidBackPortfolio" href="/portafolio/?lang=es">Volver al portafolio</a></p>
   </section>
 
-  <dialog id="missingCVDialog" class="companyMissingDialog" aria-labelledby="missingCVTitle" aria-describedby="missingCVDescription">
+  <dialog id="missingCVDialog" class="companyMissingDialog cgaGlassForm cgaFormControls" aria-labelledby="missingCVTitle" aria-describedby="missingCVDescription">
     <div class="companyMissingBody">
       <span class="companyMissingIcon" aria-hidden="true">i</span>
       <h2 id="missingCVTitle">Todavía no hay un CV para esta empresa</h2>
       <p id="missingCVDescription">No encontramos un CV asociado al identificador ingresado. ¿Deseás continuar?</p>
       <p class="companyMissingIdentifier" id="missingCVIdentifier"></p>
       <div id="missingCVEdit" hidden>
-        <form id="missingCVEditForm">
+        <form id="missingCVEditForm" class="cgaFormAsync">
           <label for="missingCVNewId">Modificar identificador de empresa</label>
           <input id="missingCVNewId" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
           <button type="submit">Buscar identificador</button>
@@ -381,5 +381,5 @@
 <script src="/theme/message-video.js?v=20261125-1" defer></script>
 <script src="./empresa.js?v=20261126-compact2" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
-<script src="/theme/modern.js?v=20261124-01" defer></script>
+<script src="/theme/modern.js?v=20261126-glass-forms3" defer></script>
 </body></html>

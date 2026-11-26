@@ -17,6 +17,23 @@
     svg.append(use);
     return svg;
   }
+  function decorateFields(under=document){
+    if(!under?.querySelectorAll)return;
+    const selector='.cgaFormControls label[for]';
+    const labels=[...(under.matches?.(selector)?[under]:[]),...under.querySelectorAll(selector)];
+    for(const label of labels){
+      const control=label.control;
+      if(!control||label.classList.contains('srOnly')||control.closest('.cgaFormField,.adminSearchWrap')||control.id==='website'||control.id==='pageNumber'||control.hidden||['hidden','radio','checkbox','range'].includes(control.type))continue;
+      if(label.querySelector(':scope > svg.cgaIcon')||control.closest('.cgaFieldShell'))continue;
+      const name=({email:'mail',password:'lock',tel:'chat',url:'external',search:'search',file:'upload',date:'calendar','datetime-local':'calendar',number:'clock',textarea:'edit','select-one':'filter'})[control.type]||({companyName:'briefcase',company:'briefcase',jobRole:'briefcase',position:'briefcase',contactName:'user',ruc:'file',missingCVNewId:'file'})[control.id]||'edit';
+      const icon=makeIcon(name);if(!icon)continue;
+      icon.classList.add('cgaFieldIcon');
+      if((control.matches('textarea,input:not([type]),input:is([type=text],[type=email],[type=password],[type=tel],[type=url],[type=search])'))&&label.parentElement===control.parentElement){
+        const shell=document.createElement('div');shell.className='cgaFieldShell';
+        control.before(shell);shell.append(icon,control);
+      }else{label.classList.add('cgaFieldLabel');label.prepend(icon);}
+    }
+  }
   function decorate(under=document){
     if(!under?.querySelectorAll)return;
     const targets=[];
@@ -29,18 +46,20 @@
       target.prepend(icon);
       target.classList.add("cgaWithIcon");
     }
+    decorateFields(under);
   }
   function start(){
     decorate();
     // Los CV y las propuestas se crean dinámicamente; decorar solo los nodos añadidos.
     const observer=new MutationObserver(records=>{
       for(const record of records){
+        if(record.target.matches?.('[data-cga-icon],label[for]'))decorate(record.target);
         for(const added of record.addedNodes){
           if(added.nodeType===1)decorate(added);
         }
       }
     });
-    for(const target of ["documents","leads","adminPriorities","vacancies","publicPortfolioStatus"]){
+    for(const target of ["documents","leads","adminPriorities","vacancies","publicPortfolioStatus","leadForm","missingCVEditForm"]){
       const node=document.getElementById(target);
       if(node)observer.observe(node,{childList:true,subtree:true});
     }

@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=15-company-id";
+import { createLeadCRM } from "./solicitudes.js?v=16-glass-forms";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -370,7 +370,7 @@ el("documents").addEventListener("change", async e => {
   const id=control.dataset.statusId;
   const selected=control.value;
   if(!["preparado","postulado","en_proceso","finalizado"].includes(selected))return;
-  control.disabled=true;
+  control.disabled=true;control.setAttribute("aria-busy","true");
   const {error}=await sb.from("portfolio_cv_documents").update({application_status:selected}).eq("id",id);
   if(error) {
     notice("No se pudo actualizar el estado: "+error.message,true);
