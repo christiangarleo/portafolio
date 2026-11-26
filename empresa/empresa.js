@@ -318,6 +318,7 @@
       by("choices").hidden=true;
       const copy=successCopy(locale,preference,method);
       for(const [id,value] of Object.entries(copy))by(id).textContent=value;
+      by("emptySection").classList.add("cgaRequestComplete");
       by("requestHeading").classList.add("requestConfirmed");
       by("requestIntro").classList.add("requestConfirmed");
       by("requestHeading").setAttribute("tabindex","-1");
