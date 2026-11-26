@@ -265,3 +265,8 @@ El titular confirma haber guardado el secreto en Supabase, sin compartir su valo
 ### Despliegue backend para prueba de readiness — 26/11/2026
 
 Edge Function portfolio-cv-portal v16 ACTIVE desplegada con autorización previa, conservando verify_jwt=false y deno.json preexistentes. Fuente remota cotejada con commit b920ba7. Frontend permanece sin fusionar: falta ejecutar request_history_check (POST JSON, respuesta ready), verificar entrega de correo y navegación real. No se consultaron solicitudes privadas ni se enviaron correos durante este despliegue. El diagnóstico no altera datos ni devuelve el secreto. Reversión backend: redeploy de la fuente index.ts de main 6da9949 con el mismo deno.json si se detecta regresión.
+
+
+### Readiness confirmado por el titular — 26/11/2026
+
+El titular ejecutó POST request_history_check en el panel de Supabase y aportó captura con status ready. La función real confirma presencia de configuración de correo, firma/verificación HMAC, rechazo de token manipulado/vencido y separación de correo/RUC con datos sintéticos. No comprueba entrega efectiva de correo ni la experiencia completa. Se habilita la interfaz como piloto autorizado para poder realizar la prueba final desde el portal con correo propio del titular y solicitud existente de prueba; no se envían correos desde esta sesión. No se considera cierre funcional hasta verificar entrega, acceso e historial, plegado de formulario y cierre de acceso.
