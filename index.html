@@ -83,6 +83,74 @@ footer a{color:inherit}
  main{padding:26px 0 32px}
 }
 @media(prefers-reduced-motion:reduce){.languageCard{transition:none}.languageCard:hover{transform:none}}
+
+/* HOME only — glass name plaque, inspired by the supplied Uiverse component. */
+.homeNamePlaque{
+ --plaque-point:5px;--plaque-duration:.8s;
+ position:relative;flex:0 1 308px;width:308px;min-width:0;
+ padding:0 0 16px;isolation:isolate;font-weight:400;
+}
+.homePlaqueButton{
+ box-sizing:border-box;position:relative;display:block;width:100%;height:46px;
+ padding:0;background:transparent;border:0;border-radius:0;cursor:pointer;
+ color:var(--cga-text);font:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.homePlaqueFrame,.homePlaqueText{position:absolute;inset:0;pointer-events:none}
+.homePlaqueFrame{
+ border:1px solid color-mix(in srgb,var(--cga-text) 16%,transparent);
+ background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.015) 58%,rgba(255,255,255,.045));
+ box-shadow:inset 0 1px 2px rgba(255,255,255,.15);
+}
+:root[data-theme="light"] .homePlaqueFrame{background:linear-gradient(145deg,rgba(255,255,255,.38),rgba(255,255,255,.12) 58%,rgba(255,255,255,.23))}
+.homePlaquePoint{
+ position:absolute;width:var(--plaque-point);height:var(--plaque-point);
+ background:var(--cga-surface-2);border:1px solid var(--cga-border-strong);
+ border-radius:1px;
+}
+.homePlaquePoint--tl{top:-2px;left:-2px}.homePlaquePoint--tr{top:-2px;right:-2px}
+.homePlaquePoint--bl{bottom:-2px;left:-2px}.homePlaquePoint--br{bottom:-2px;right:-2px}
+.homePlaqueText{display:grid;place-items:center;overflow:hidden}
+.homePlaqueText::after{
+ content:"";position:absolute;inset:4px;pointer-events:none;
+ background:repeating-linear-gradient(45deg,transparent,color-mix(in srgb,var(--cga-accent) 13%,transparent) 15%,transparent 20%);
+ background-size:440%;opacity:.35;transition:background-size .4s ease;
+}
+.homePlaqueName,.homePlaqueEmail{
+ position:absolute;max-width:100%;padding:0 9px;text-align:center;white-space:nowrap;
+ transition:opacity .22s ease;
+}
+.homePlaqueName{
+ font-family:"Bodoni MT","Bodoni 72",Didot,"Times New Roman",serif;
+ font-size:clamp(19px,2.3vw,25px);font-weight:500;line-height:1.15;letter-spacing:-.025em;
+}
+.homePlaqueEmail{font:500 14px/1.3 Arial,Helvetica,sans-serif;opacity:0;color:var(--cga-text)}
+.homePlaqueHint{
+ position:absolute;left:0;right:0;bottom:0;text-align:center;
+ font:400 10px/1.3 Arial,Helvetica,sans-serif;color:var(--cga-muted);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.homeNamePlaque[data-revealed="true"] :is(.homePlaqueFrame,.homePlaqueText),
+.homePlaqueButton:focus-visible :is(.homePlaqueFrame,.homePlaqueText){animation:cgaPlaqueFold var(--plaque-duration) ease both}
+.homeNamePlaque[data-revealed="true"] .homePlaqueName,.homePlaqueButton:focus-visible .homePlaqueName{opacity:0}
+.homeNamePlaque[data-revealed="true"] .homePlaqueEmail,.homePlaqueButton:focus-visible .homePlaqueEmail{opacity:1;transition-delay:.4s}
+.homeNamePlaque[data-revealed="true"] .homePlaqueText::after,.homePlaqueButton:focus-visible .homePlaqueText::after{background-size:700%}
+.homeNamePlaque[data-copied="true"] .homePlaqueFrame{border-color:var(--cga-focus)}
+.homeNamePlaque[data-copied="true"] .homePlaqueHint{color:var(--cga-focus)}
+.homePlaqueButton:active .homePlaqueText{filter:brightness(1.15)}
+.homePlaqueButton:focus-visible{outline:2px solid var(--cga-focus);outline-offset:4px}
+@keyframes cgaPlaqueFold{0%,100%{inset:0}50%{inset:0 50%}}
+body:has(.languageGrid)>header .homeSocialLinks{margin-left:auto}
+@media(max-width:600px){
+ .homeNamePlaque{flex:1 0 100%;width:100%;max-width:none}
+ .homePlaqueName{font-size:23px}
+ .homePlaqueButton{height:44px}
+ body:has(.languageGrid)>header{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){
+ .homeNamePlaque *,.homePlaqueText::after{animation:none!important;transition:none!important}
+}
+@media(forced-colors:active){.homePlaqueFrame,.homePlaquePoint{border:1px solid ButtonText}}
+
 </style>
 <link rel="stylesheet" href="/theme/theme.css?v=20261126-svg-morph2">
 <link rel="stylesheet" href="/theme/modern.css?v=20261126-svg-morph2">
@@ -90,7 +158,19 @@ footer a{color:inherit}
 </head>
 <body>
 <header>
-  <span class="homeHeaderName">Christian Gabriel Arleo</span>
+  <div class="homeNamePlaque" id="homeNamePlaque">
+    <button class="homePlaqueButton" id="homePlaqueButton" type="button" aria-label="Christian Gabriel Arleo — copiar correo electrónico" aria-describedby="homePlaqueHint">
+      <span class="homePlaqueFrame" aria-hidden="true">
+        <span class="homePlaquePoint homePlaquePoint--tl"></span><span class="homePlaquePoint homePlaquePoint--tr"></span>
+        <span class="homePlaquePoint homePlaquePoint--bl"></span><span class="homePlaquePoint homePlaquePoint--br"></span>
+      </span>
+      <span class="homePlaqueText" aria-hidden="true">
+        <span class="homePlaqueName">Christian Gabriel Arleo</span>
+        <span class="homePlaqueEmail">hola@christianarleo.com</span>
+      </span>
+    </button>
+    <span class="homePlaqueHint" id="homePlaqueHint" aria-live="polite">Pasá el cursor para ver el correo</span>
+  </div>
   <nav class="homeSocialLinks" aria-label="LinkedIn / WhatsApp">
     <a class="homeSocialLink homeSocialLink--linkedin" href="https://www.linkedin.com/in/christianarleo/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
       <svg class="homeSocialIcon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>
@@ -120,6 +200,65 @@ footer a{color:inherit}
 
 </main>
 <footer>Christian Gabriel Arleo · Lima, Perú · <a href="mailto:hola@christianarleo.com">hola@christianarleo.com</a></footer>
+<script>
+(() => {
+  "use strict";
+  const plaque=document.getElementById("homeNamePlaque");
+  const button=document.getElementById("homePlaqueButton");
+  const hint=document.getElementById("homePlaqueHint");
+  const email=plaque.querySelector(".homePlaqueEmail").textContent.trim();
+  const fine=matchMedia("(hover:hover) and (pointer:fine)");
+  const en=document.documentElement.lang.toLowerCase().startsWith("en");
+  const labels=en?{hover:"Hover to reveal address",tap:"Tap to reveal address",copy:"Click to copy",tapCopy:"Tap to copy",copied:"Address copied",error:"Copy from the footer",aria:"Christian Gabriel Arleo — copy email address"}:{hover:"Pasá el cursor para ver el correo",tap:"Tocá para ver el correo",copy:"Hacé clic para copiar",tapCopy:"Tocá para copiar",copied:"Correo copiado",error:"Copiá el correo desde el pie",aria:"Christian Gabriel Arleo — copiar correo electrónico"};
+  let pointer="",timer=0,busy=false;
+  button.setAttribute("aria-label",labels.aria);
+  function reset(){
+    clearTimeout(timer);
+    delete plaque.dataset.revealed;
+    delete plaque.dataset.copied;
+    hint.textContent=fine.matches?labels.hover:labels.tap;
+  }
+  function reveal(touch=false){
+    plaque.dataset.revealed="true";
+    if(plaque.dataset.copied!=="true")hint.textContent=touch?labels.tapCopy:labels.copy;
+  }
+  async function copy(){
+    try{
+      if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(email);return true;}
+    }catch{}
+    const field=document.createElement("textarea");
+    field.value=email;field.readOnly=true;
+    field.style.cssText="position:fixed;left:0;top:0;opacity:0;pointer-events:none;";
+    document.body.append(field);field.select();field.setSelectionRange(0,email.length);
+    let copied=false;
+    try{copied=document.execCommand("copy");}catch{}
+    field.remove();
+    button.focus({preventScroll:true});
+    return copied;
+  }
+  button.addEventListener("pointerdown",event=>{pointer=event.pointerType;});
+  button.addEventListener("pointerenter",event=>{if(event.pointerType==="mouse"&&fine.matches)reveal();});
+  button.addEventListener("pointerleave",()=>{if(fine.matches&&!button.matches(":focus-visible")&&!busy&&plaque.dataset.copied!=="true")reset();});
+  button.addEventListener("focus",()=>{if(button.matches(":focus-visible"))reveal();});
+  button.addEventListener("blur",()=>{if(pointer!=="touch"&&pointer!=="pen"&&!button.matches(":hover")&&!busy&&plaque.dataset.copied!=="true")reset();});
+  button.addEventListener("click",async event=>{
+    const touch=event.detail!==0&&(pointer==="touch"||pointer==="pen"||!fine.matches);
+    if(touch&&plaque.dataset.revealed!=="true"){reveal(true);return;}
+    if(busy)return;
+    reveal(touch);busy=true;clearTimeout(timer);
+    let ok=false;
+    try{ok=await copy();}finally{busy=false;}
+    if(ok){
+      plaque.dataset.copied="true";hint.textContent=labels.copied;
+      timer=setTimeout(()=>{delete plaque.dataset.copied;if(button.matches(":focus-visible")||(fine.matches&&button.matches(":hover")))reveal();else reset();},1800);
+    }else{
+      delete plaque.dataset.copied;hint.textContent=labels.error;
+    }
+  });
+  document.addEventListener("pointerdown",event=>{if(!plaque.contains(event.target)&&!busy)reset();});
+  reset();
+})();
+</script>
 <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>
 </body>
