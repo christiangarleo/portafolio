@@ -113,7 +113,9 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:crypto.randomUUID(),lead_id:lead.id,subject:s,body:b,context}});
     if(error){status.textContent="No se confirmó el resultado. Revisá el historial antes de volver a enviar.";notice(status.textContent,true);await refresh();return;}
     const messages={accepted:"Correo aceptado por Resend. No confirma entrega al destinatario.",failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
-    status.textContent=messages[data?.status]||"No se pudo completar el envío.";
+    const code=Number.isInteger(data?.provider_http)?data.provider_http:null;
+    const reason=code===401||code===403?"Revisá la autorización de la clave y el dominio en Resend.":code===422||code===400?"Revisá los datos del correo en los logs de Resend.":code===429?"Límite del proveedor; consultá la cuota antes de reintentar.":"";
+    status.textContent=(messages[data?.status]||"No se pudo completar el envío.")+(data?.status!=="accepted"&&code?" (HTTP "+code+"). "+reason:"");
     notice(status.textContent,data?.status!=="accepted");await refresh();
     if(data?.status==="accepted")await load();
    }catch{notice("No se confirmó el resultado. Consultá el historial antes de reenviar.",true);await refresh();}
@@ -533,7 +535,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    rechazo_correo_confirmado:"Respuesta de rechazo enviada (confirmada)",
    rechazo_correo_confirmacion_retirada:"Confirmación de rechazo retirada"};
   const ul=n("ul");
-  for(const e of eventsOfLead.slice(0,30))ul.append(n("li",when(e.created_at)+" · "+(eventNames[e.event_type]||e.event_type)));
+  for(const e of eventsOfLead.slice(0,30))ul.append(n("li",when(e.created_at)+" · "+(eventNames[e.event_type]||(e.event_type.startsWith("correo_crm_error_")?"Correo CRM: error del proveedor ("+e.event_type.slice("correo_crm_error_".length)+")":e.event_type))));
   if(!eventsOfLead.length)ul.append(n("li","Todavía no hay movimientos."));
   details.append(ul);card.append(details);
  }
