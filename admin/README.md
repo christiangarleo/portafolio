@@ -364,3 +364,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ## Lector: flechas laterales con iluminación secuencial — 2026-11-25 (Lima)
 - Adaptar el ejemplo de dos trazos a sidePrevious/sideNext (botones existentes), chevron reflejado a izquierda, sin caja sólida ni sombra, base neutra y acento de foco del tema. Iluminación sucesiva 150+150ms, compresión .9 centrada, foco y touch, disabled, reduced motion y forced colors. Conservar medidas, márgenes, hit areas y visibilidad móvil/landscape; no cambiar JS, controles inferiores, cambio de página ni PDF. Cache-bust magazine.css. 10 comprobaciones estáticas satisfactorias; QA visual pendiente. Base d35bf4582c28cc6d412216eca6826b26ac04e029; rollback revertir commit.
+
+## HOME: alineación de placa y limpieza de separadores — 2026-11-25 (Lima)
+- Corregir placa de nombre 8px hacia abajo en desktop (compensación exacta de la reserva inferior de 16px del hint; alinear centros de placa y controles sociales/tema). Hint en cursiva, opacidad .72 oscuro/.85 claro, confirmación de copia a opacidad 1. Eliminar bordes separadores del header y footer solo HOME; conservar línea de acento de hero, móvil, comportamiento de copia y demás páginas. 7 comprobaciones estáticas satisfactorias; QA visual pendiente. Base 1eb8e377c8d9b6be31a6ea39a75c0a6fd45f4e1b; rollback revertir commit.
