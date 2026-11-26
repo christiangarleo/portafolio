@@ -23,22 +23,26 @@
   toggle.id="cgaThemeToggle";
   toggle.className="cgaThemeSwitch";
   toggle.setAttribute("role","switch");
-  const track=document.createElement("span");
-  track.className="cgaThemeTrack";
-  track.setAttribute("aria-hidden","true");
-  const thumb=document.createElement("span");
-  thumb.className="cgaThemeThumb";
-  // One animated symbol travels with the thumb; the existing switch state remains authoritative.
-  const icon=document.createElement("span");
-  icon.className="cgaThemeIcon";
-  for(let i=0;i<9;i++){
-    const part=document.createElement("span");
-    part.className="cgaThemeIconPart";
-    icon.append(part);
+  // Native SVG morph: the existing aria-checked state remains authoritative.
+  const ns="http://www.w3.org/2000/svg";
+  const svgNode=(name,attrs={})=>{
+    const node=document.createElementNS(ns,name);
+    for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
+    return node;
+  };
+  const icon=svgNode("svg",{class:"cgaThemeMorph",width:18,height:18,viewBox:"0 0 20 20",fill:"currentColor",stroke:"none","aria-hidden":"true",focusable:"false"});
+  const defs=svgNode("defs");
+  const mask=svgNode("mask",{id:"cgaThemeMoonMask",maskUnits:"userSpaceOnUse",maskContentUnits:"userSpaceOnUse",x:0,y:0,width:20,height:20});
+  mask.append(svgNode("rect",{x:0,y:0,width:20,height:20,fill:"white"}),
+    svgNode("circle",{class:"cgaThemeMoonCut",cx:11,cy:3,r:8,fill:"black"}));
+  defs.append(mask);
+  icon.append(defs,svgNode("circle",{class:"cgaThemeSunMoon",cx:10,cy:10,r:8,mask:"url(#cgaThemeMoonMask)"}));
+  const rays=svgNode("g");
+  for(const [index,[cx,cy]] of [[18,10],[14,16.928],[6,16.928],[2,10],[6,3.1718],[14,3.1718]].entries()){
+    rays.append(svgNode("circle",{class:"cgaThemeRay cgaThemeRay"+(index+1),cx,cy,r:1.5}));
   }
-  thumb.append(icon);
-  track.append(thumb);
-  toggle.append(track);
+  icon.append(rays);
+  toggle.append(icon);
   control.append(toggle);
 
   function apply(){

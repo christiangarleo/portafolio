@@ -736,10 +736,7 @@ body:has(.languageGrid)>header .homeSocialLink .homeSocialIcon,:root body .siteH
  to{transform:translateY(0);opacity:1}
 }
 :root body .siteHeader .readerContactGrid a.cgaContactLink{--contact-size:44px;--contact-inset:5px;--contact-icon:16px}
-/* Reducir solo el control de apariencia de HOME y lector. Conservar su forma y morph. */
-html.cgaModern body:has(.languageGrid)>header .cgaThemeSwitch,
-html.cgaModern body .siteHeader .cgaThemeSwitch{--theme-switch-width:48px;--theme-switch-height:24px}
-html.cgaModern body.cgaMobileLandscape .siteHeader .siteActions .cgaThemeSwitch{--theme-switch-width:44px;--theme-switch-height:22px}
+/* Tamaño del switch centralizado en theme.css. */
 @media(max-width:900px){
  body:has(.languageGrid)>header{gap:6px}
  body:has(.languageGrid)>header .homeSocialLinks{gap:2px}

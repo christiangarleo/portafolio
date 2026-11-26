@@ -92,8 +92,7 @@
  body.cgaMobileLandscape .pageCount{font-size:10px;white-space:nowrap}
  body.cgaMobileLandscape .siteActions #cgaLangPicker{display:flex!important;flex-direction:column;align-items:center;gap:4px!important}
  body.cgaMobileLandscape .siteActions #cgaLangPicker button{box-sizing:border-box;width:42px!important;min-width:42px!important;min-height:32px!important;padding:4px 2px!important;font-size:11px!important}
- body.cgaMobileLandscape .siteActions .cgaThemeSwitch{--theme-switch-width:48px;--theme-switch-height:26px;height:36px!important;min-height:36px!important}
- body.cgaMobileLandscape .siteActions .cgaThemeSymbol{font-size:14px}
+ :root body.cgaMobileLandscape .siteHeader .siteActions .cgaThemeSwitch{--theme-size:36px;--theme-inset:2px}
  body.cgaMobileLandscape .actionsWrap{flex:0 0 auto}
  /* Reuse the reader's original arrows, not the toolbar duplicates. */
  body.cgaMobileLandscape #gotoForm :is(#previousPage,#nextPage){display:none!important}
