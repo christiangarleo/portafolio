@@ -196,3 +196,8 @@ Solicitud del titular: mover exclusivamente los capítulos de la barra inferior 
 ### Indicador central de descarga del lector — 26/11/2026
 
 Se reemplaza el aviso visual central de descarga/preparación por la barra existente cian–rosa, centrada durante el arranque. Se muestra porcentaje basado en bytes recibidos si existe Content-Length utilizable y lectura por stream; si no, barra indeterminada sin inventar porcentajes. El indicador superior se conserva únicamente para cambios de páginas; el mensaje de error permanece visible. El PDF se descarga una sola vez, preservando URL, no-store, validación de firma y fallback. Pendiente prueba visual en producción y autorización de publicación.
+
+
+### Paginación compacta en una sola barra de escritorio — 26/11/2026
+
+Solicitud: eliminar segunda fila superior y textos visibles Anterior/Página/de/Siguiente. El formulario original se mueve dentro de .readerTools; las flechas SVG reutilizan los estilos de los iconos del visor (30×30 px), número editable de 42×30 px y separador /. Se conservan etiquetas accesibles, títulos ES/EN, IDs, listeners, estado disabled y enlaces de capítulos. En móvil se mantiene la distribución anterior y su texto, sin duplicar controles. Validación estática; pendiente QA visual y publicación autorizada.
