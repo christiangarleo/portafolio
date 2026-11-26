@@ -744,3 +744,36 @@ body:has(.languageGrid)>header .homeSocialLink:active{transform:scale(.9)}
 @media(forced-colors:active){
  body:has(.languageGrid)>header .homeSocialLink{border:1px solid ButtonText;box-shadow:none}
 }
+
+/* Lector: mismos efectos de contacto que HOME, sin aumentar la barra de herramientas. */
+.siteHeader .siteNav{gap:4px}
+.siteHeader .readerContactGrid{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{
+ box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 auto;width:34px;height:34px;min-height:34px;padding:0;
+ border:1px solid var(--cga-border-strong);border-radius:7px;overflow:hidden;
+ background:var(--cga-surface-2);color:var(--cga-text);
+ text-decoration:none;box-shadow:0 3px 9px var(--cga-shadow);
+ transition:background-color .3s ease,color .3s ease,border-color .3s ease,transform .3s ease;
+ touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--linkedin{--contact-hover:#0072b1;--contact-ink:#fff}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--whatsapp{--contact-hover:#128c7e;--contact-ink:#fff}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--email,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--phone{--contact-hover:var(--cga-accent);--contact-ink:var(--brand-black)}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink .cgaContactIcon{display:block;width:17px;height:17px;flex:0 0 auto;pointer-events:none}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(.cgaContactLink--linkedin,.cgaContactLink--whatsapp) .cgaContactIcon{fill:currentColor}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(:focus-visible,:active){background:var(--contact-hover);border-color:var(--contact-hover);color:var(--contact-ink)}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:focus-visible .cgaContactIcon{animation:cgaHomeSocialSlideIn .3s both}
+@media(hover:hover) and (pointer:fine){
+ :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:hover{background:var(--contact-hover);border-color:var(--contact-hover);color:var(--contact-ink)}
+ :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:hover .cgaContactIcon{animation:cgaHomeSocialSlideIn .3s both}
+}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:active{transform:scale(.9)}
+:root body .siteHeader .readerContactGrid a.cgaContactLink{width:44px;height:44px;min-height:44px;border-radius:9px}
+@media(prefers-reduced-motion:reduce){
+ :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{transition:none}
+ :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:active{transform:none}
+ :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(:hover,:focus-visible) .cgaContactIcon{animation:none}
+}
+@media(forced-colors:active){:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{border:1px solid ButtonText;box-shadow:none}}
