@@ -316,18 +316,15 @@
       ++securityGeneration;
       if(securityWidget!==null){try{window.turnstile?.remove(securityWidget);}catch{}securityWidget=null;}
       by("choices").hidden=true;
-      by("requestHeading").textContent=t("Propuesta recibida");
-      by("requestIntro").textContent=t("Gracias. Tu propuesta quedó registrada correctamente.");
-      const contactMessage=preference==="contactame"
-        ?"Voy a tener en cuenta el medio de contacto que seleccionaste."
-        :"Quedó registrado que la empresa se comunicará por su cuenta.";
-      const existing=by("requestSuccess");
-      if(existing)existing.remove();
-      const note=element("p",contactMessage,"sub");
-      note.id="requestSuccess";
+      const copy=successCopy(locale,preference,method,payload.email);
+      for(const [id,value] of Object.entries(copy))by(id).textContent=value;
+      by("requestHeading").classList.add("requestConfirmed");
+      by("requestIntro").classList.add("requestConfirmed");
+      by("requestHeading").setAttribute("tabindex","-1");
+      by("requestNextSteps").hidden=false;
       const actions=by("requestSuccessActions");
       const successLayout=by("requestSuccessLayout");
-      by("emptySection").insertBefore(note,successLayout);
+      by("requestHeading").focus({preventScroll:true});
       by("successWhatsApp").textContent=locale==="es"?"Contacta por WhatsApp":"Contact me on WhatsApp";
       by("successLinkedIn").textContent=locale==="es"?"Sígueme en LinkedIn":"Follow me on LinkedIn";
       if(locale==="en"){
@@ -347,6 +344,27 @@
       leadSubmitting=false;submit.disabled=false;
     }
   });
+
+
+  function successCopy(locale,preference,method,email){
+    const en=locale==="en";
+    const pick=(es,eng)=>en?eng:es;
+    const channels={email:pick("por correo electrónico","by email"),whatsapp:pick("por WhatsApp","on WhatsApp"),llamada:pick("por teléfono","by phone")};
+    const contact=preference==="contactame"
+      ?pick("Revisaré personalmente tu propuesta y me pondré en contacto con vos "+(channels[method]||"por el medio que elegiste")+" para coordinar los próximos pasos.","I'll personally review your proposal and get in touch "+(channels[method]||"using your preferred contact method")+" to discuss the next steps.")
+      :pick("Revisaré tu propuesta y quedaré a la espera de que tu empresa se ponga en contacto conmigo. Podés usar WhatsApp o responder al correo de confirmación.","I'll review your proposal and wait for your company to get in touch. You can use WhatsApp or reply to the confirmation email.");
+    return {
+      requestHeading:pick("¡Gracias! Recibí tu propuesta.","Thank you! I've received your proposal."),
+      requestIntro:pick("Tu solicitud quedó registrada correctamente. No necesitás volver a enviarla.","Your request has been registered successfully. There's no need to submit it again."),
+      requestNextStepsTitle:pick("¿Qué pasa ahora?","What happens next?"),
+      requestEmailTitle:pick("Revisá tu correo","Check your email"),
+      requestEmailText:pick("Deberías recibir una confirmación automática en "+email+".","You should receive an automatic confirmation at "+email+"."),
+      requestEmailHint:pick("Si no aparece en unos minutos, revisá Spam o correo no deseado. Tu solicitud ya está registrada.","If it doesn't arrive within a few minutes, check your spam or junk folder. Your request has already been registered."),
+      requestContactTitle:pick(preference==="contactame"?"Me pondré en contacto con vos":"Quedo a la espera de tu contacto",preference==="contactame"?"I'll get in touch":"I'll wait to hear from you"),
+      requestContactText:contact,
+      requestVideoIntro:pick("Mientras tanto, quiero compartir con vos un breve mensaje personal.","In the meantime, I'd like to share a short personal message with you.")
+    };
+  }
 
   async function init(){
     if(!companyIdValid(ruc)){show("invalidSection");return;}
