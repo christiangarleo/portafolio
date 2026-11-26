@@ -1086,3 +1086,10 @@ html.cgaModern #emptySection.cgaRequestCompact #requestHeading{font-size:19px;ma
 html.cgaModern #newRequestToggle{margin-top:12px}
 html.cgaModern #companyRequests [hidden],html.cgaModern #companyRequests[hidden],html.cgaModern #newRequestToggle[hidden]{display:none!important}
 @media(max-width:660px){html.cgaModern .cgaRequestsHead button,html.cgaModern #newRequestToggle{width:100%}}
+
+html.cgaModern .crmDirectMail{display:grid;gap:8px;padding:14px;border:1px solid var(--cga-border);border-radius:12px;margin:10px 0;background:var(--cga-surface-2)}
+html.cgaModern .crmDirectMail>button{justify-self:start;min-height:44px}
+html.cgaModern .crmMailHistory{padding:8px 0}
+html.cgaModern .crmMailHistory summary{cursor:pointer;font-weight:650}
+html.cgaModern .crmMailItem{border-top:1px solid var(--cga-border);padding:12px 0;overflow-wrap:anywhere}
+html.cgaModern .crmMailBody{white-space:pre-wrap;overflow-wrap:anywhere}

@@ -97,6 +97,42 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const body=hello+"\n\n"+intro+cv+(rejection?"":suggestion(lead))+(en?"\n\nKind regards,\nChristian Gabriel Arleo":"\n\nQuedo atento.\nChristian Gabriel Arleo");
   return {subject,body};
  }
+ function directMail(lead,subject,body,context){
+  const box=n("div",undefined,"crmDirectMail");
+  const send=btn("Enviar desde CRM","crmAccept");send.dataset.cgaIcon="send";
+  const status=n("p","Remitente: hola@christianarleo.com · El envío queda registrado.","crmHint");status.setAttribute("role","status");
+  send.disabled=!allowed(lead)||!/^([^\s@,;<>]+)@([^\s@,;<>]+)\.[^\s@,;<>]+$/.test(String(lead.email||""));
+  let busy=false;
+  send.addEventListener("click",async()=>{
+   if(busy||send.disabled)return;
+   const s=subject.value.trim(),b=body.value.trim();if(!s||!b){notice("Completá el asunto y el mensaje.",true);return;}
+   busy=true;send.disabled=true;
+   try{
+    if(!await window.CGADialog.confirm("¿Enviar este mensaje a "+lead.email+" desde hola@christianarleo.com?"))return;
+    send.setAttribute("aria-busy","true");
+    const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:crypto.randomUUID(),lead_id:lead.id,subject:s,body:b,context}});
+    if(error){status.textContent="No se confirmó el resultado. Revisá el historial antes de volver a enviar.";notice(status.textContent,true);await refresh();return;}
+    const messages={accepted:"Correo aceptado por Resend. No confirma entrega al destinatario.",failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
+    status.textContent=messages[data?.status]||"No se pudo completar el envío.";
+    notice(status.textContent,data?.status!=="accepted");await refresh();
+    if(data?.status==="accepted")await load();
+   }catch{notice("No se confirmó el resultado. Consultá el historial antes de reenviar.",true);await refresh();}
+   finally{busy=false;send.disabled=false;send.removeAttribute("aria-busy");}
+  });
+  const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Correos enviados desde CRM"));
+  const list=n("div");details.append(list);
+  async function refresh(){
+   list.replaceChildren(small("Consultando…"));
+   const {data,error}=await sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50);
+   list.replaceChildren();
+   if(error){list.append(small("Historial de correo no disponible."));return;}
+   if(!data.length){list.append(small("Todavía no hay correos enviados desde el CRM."));return;}
+   const labels={accepted:"Aceptado por proveedor",failed:"Rechazado por proveedor",uncertain:"Sin confirmación",pending:"Pendiente"};
+   for(const mail of data){const item=n("article",undefined,"crmMailItem");item.append(n("strong",mail.subject),small(when(mail.created_at)+" · "+(labels[mail.status]||mail.status)),small("Para: "+mail.recipient));const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);list.append(item);}
+  }
+  details.addEventListener("toggle",()=>{if(details.open)void refresh();});
+  box.append(send,status,details);return box;
+ }
  function rejectionComposer(lead){
   const panel=n("div",undefined,"crmRejectionComposer");
   const to=String(lead.email||"").trim();
@@ -127,7 +163,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     button.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
     copyActions.append(button);
   }
-  panel.append(copyActions);
+  panel.append(directMail(lead,subject,body,"rejection"),copyActions);
   const channels=row("crmDeliveryButtons");
   const zoho=n("a","Zoho Mail ↗","crmAccept");
   zoho.href="https://mail.zoho.com/zm/#mail/folder/inbox";
@@ -432,7 +468,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
 
   });
   actions.append(zoho,gmail,whatsapp);
-  section.append(copyActions,actions);
+  section.append(directMail(lead,subject,body,"followup"),copyActions,actions);
   if(!number){
    const add=n("details",undefined,"crmPhone");add.append(n("summary","Agregar teléfono para WhatsApp"));
    const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";
