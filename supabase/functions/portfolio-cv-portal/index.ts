@@ -99,7 +99,7 @@ async function notifyRequester(lead: ConfirmationLead): Promise<void> {
 
 
 type SecurityResult = "verified" | "required" | "unavailable" | "legacy";
-async function verifyTurnstile(input: Record<string, unknown>): Promise<SecurityResult> {
+async function verifyTurnstile(input: Record<string, unknown>,expectedAction="portfolio_lead"): Promise<SecurityResult> {
   // During rollout cached clients may save leads, but no unverified submission may send mail.
   if (input.turnstile_token === undefined) return "legacy";
   const token=input.turnstile_token;
@@ -113,7 +113,7 @@ async function verifyTurnstile(input: Record<string, unknown>): Promise<Security
     });
     if(!response.ok){console.error("lead_security_unavailable","http",response.status);return "unavailable";}
     const result=await response.json();
-    if(result?.success===true && ["christianarleo.com","www.christianarleo.com"].includes(result.hostname) && result.action==="portfolio_lead")return "verified";
+    if(result?.success===true && ["christianarleo.com","www.christianarleo.com"].includes(result.hostname) && result.action===expectedAction)return "verified";
     const codes=Array.isArray(result?.["error-codes"])?result["error-codes"]:[];
     if(codes.some((c: string)=>["missing-input-secret","invalid-input-secret","internal-error"].includes(c))){console.error("lead_security_unavailable","provider_config");return "unavailable";}
     console.warn("lead_security_rejected","invalid_challenge");return "required";
@@ -138,6 +138,69 @@ function scheduleLeadNotification(lead: ConfirmationLead,security: SecurityResul
 }
 
 
+// Tracking grants are separate from admin Auth. They are signed, short-lived and only emailed
+// to a mailbox already associated with the exact company identifier. No public lead lookup.
+const trackingUUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const trackingEmail=/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
+const trackingEncoder=new TextEncoder();
+async function trackingKey(){
+  const secret=Deno.env.get("PORTFOLIO_TRACKING_SECRET")||"";
+  if(secret.length<32)throw Error("tracking_not_configured");
+  return crypto.subtle.importKey("raw",trackingEncoder.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"]);
+}
+const toHex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,"0")).join("");
+async function trackingSignature(value:string){
+  return toHex(await crypto.subtle.sign("HMAC",await trackingKey(),trackingEncoder.encode(value)));
+}
+async function trackingScope(identifier:string,email:string){
+  return trackingSignature("company-tracking-scope-v1:"+JSON.stringify([identifier,email]));
+}
+async function createTrackingToken(id:string,identifier:string,email:string){
+  if(!trackingUUID.test(id))throw Error("invalid_anchor");
+  const data=id+"."+String(Math.floor(Date.now()/1000)+3600)+"."+await trackingScope(identifier,email);
+  return data+"."+await trackingSignature("company-tracking-v1:"+data);
+}
+async function verifyTrackingToken(token:string){
+  const [id,expires,scope,signature,...extra]=token.split(".");
+  if(extra.length||!trackingUUID.test(id||"")||!/^\d{10}$/.test(expires||"")||! /^[a-f0-9]{64}$/.test(scope||"")||! /^[a-f0-9]{64}$/.test(signature||""))return null;
+  const expiry=Number(expires),now=Math.floor(Date.now()/1000);
+  if(expiry<=now||expiry>now+3600)return null;
+  const bytes=Uint8Array.from(signature.match(/../g)!,x=>parseInt(x,16));
+  return await crypto.subtle.verify("HMAC",await trackingKey(),bytes,trackingEncoder.encode("company-tracking-v1:"+id+"."+expires+"."+scope))?{id,scope}:null;
+}
+async function sendTrackingLink(identifier:string,email:string,language:string){
+  const {data,error}=await supabase.from("portfolio_cv_leads").select("id").eq("ruc",identifier).eq("email",email).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(error||!data?.id)return;
+  const token=await createTrackingToken(data.id,identifier,email);
+  const url=new URL("https://christianarleo.com/empresa/");
+  url.searchParams.set("ruc",identifier);url.searchParams.set("lang",language);
+  url.hash=new URLSearchParams({seguimiento:token}).toString();
+  const en=language==="en";
+  const from=Deno.env.get("PORTFOLIO_FROM_EMAIL")==="hola@christianarleo.com"?"hola@christianarleo.com":"alertas@notificaciones.christianarleo.com";
+  const key=Deno.env.get("RESEND_API_KEY");
+  if(!key)throw Error("tracking_mail_unavailable");
+  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({
+    from:"Christian Gabriel Arleo <"+from+">",to:[email],reply_to:"hola@christianarleo.com",
+    subject:en?"Private access to your requests":"Acceso privado a tus solicitudes",
+    text:(en?"Use this private link to view your requests. It expires in one hour. Do not share it. If you did not request it, ignore this email.":"Usá este enlace privado para consultar tus solicitudes. Vence en una hora. No lo compartas. Si no lo solicitaste, ignorá este correo.")+"\n\n"+url.toString()
+  }),signal:AbortSignal.timeout(8000)});
+  if(!response.ok)console.warn("tracking_mail_failed",response.status);
+}
+function trackingPublicState(row:Record<string,unknown>){
+  // Do not disclose a rejection or internal reason before a response is communicated.
+  if(row.email_sent_at||row.whatsapp_sent_at||row.rejection_confirmed===true)return row.status==="cerrado"?"closed":"responded";
+  return row.decision_status==="avanzar"?"reviewing":"received";
+}
+function trackingPublicRow(row:Record<string,unknown>){
+  const intake=row.intake_data&&typeof row.intake_data==="object"?row.intake_data as Record<string,unknown>:{};
+  const pick=(key:string,values:string[])=>typeof intake[key]==="string"&&values.includes(intake[key] as string)?intake[key]:undefined;
+  return {kind:row.kind,position:row.position_or_project,created_at:row.created_at,state:trackingPublicState(row),
+    dedication:pick("dedication",["full_time","part_time","por_horas"]),
+    work_mode:pick("work_mode",["remoto","presencial","hibrido"]),
+    project_need:pick("project_need",["mas_clientes","marketing_contenido","automatizacion_ia","solucion_digital","otro"]),
+    project_timing:pick("project_timing",["urgente","este_mes","mas_adelante","a_definir"])};
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(req) });
   if (req.method !== "POST") return reply(req, { error: "Metodo no permitido" }, 405);
@@ -148,6 +211,49 @@ Deno.serve(async (req: Request) => {
   let input: Record<string, unknown>;
   try { input = await req.json(); if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error(); }
   catch { return reply(req, { error: "Solicitud invalida" }, 400); }
+  if(input.action==="tracking_access"){
+    const identifier=companyId(input.ruc),email=text(input.email,200).toLowerCase(),language=input.language==="en"?"en":"es";
+    if(!validCompanyId(identifier)||!trackingEmail.test(email))return reply(req,{error:"Solicitud inválida"},400);
+    const security=await verifyTurnstile(input,"portfolio_tracking");
+    if(security!=="verified")return reply(req,{error:"Verificación requerida",code:security==="unavailable"?"security_unavailable":"security_required"},security==="unavailable"?503:400);
+    try{
+      if(!Deno.env.get("RESEND_API_KEY"))throw Error("tracking_mail_unavailable");
+      const recipientKey=await trackingSignature("company-tracking-rate-v1:"+email);
+      // Atomic rate budget; deny by default if the dedicated server-only RPC is absent.
+      const {data:reserved,error}=await supabase.rpc("portfolio_tracking_access_reserve",{recipient_key:recipientKey});
+      if(error||typeof reserved!=="boolean")throw Error("tracking_rate_unavailable");
+      if(reserved)EdgeRuntime.waitUntil(sendTrackingLink(identifier,email,language).catch(()=>console.warn("tracking_mail_failed")));
+      // Identical public response for unknown email, unknown company, and exhausted quota.
+      return reply(req,{status:"accepted"});
+    }catch{return reply(req,{error:"Servicio temporalmente no disponible"},503);}
+  }
+  if(input.action==="tracking_list"){
+    const identifier=companyId(input.ruc),token=text(input.token,180);
+    if(!validCompanyId(identifier))return reply(req,{error:"Acceso privado inválido"},403);
+    try{
+      const grant=await verifyTrackingToken(token);
+      if(!grant)return reply(req,{error:"Acceso privado inválido"},403);
+      const {data:anchor,error:anchorError}=await supabase.from("portfolio_cv_leads").select("ruc,email").eq("id",grant.id).maybeSingle();
+      if(anchorError)throw Error("tracking_lookup");
+      if(!anchor||anchor.ruc!==identifier||!trackingEmail.test(anchor.email||"")||grant.scope!==await trackingScope(anchor.ruc,anchor.email))return reply(req,{error:"Acceso privado inválido"},403);
+      const {data,error}=await supabase.from("portfolio_cv_leads").select("id,kind,position_or_project,created_at,decision_status,status,email_sent_at,whatsapp_sent_at,intake_data").eq("ruc",identifier).eq("email",anchor.email).order("created_at",{ascending:false}).limit(101);
+      if(error)throw Error("tracking_lookup");
+      const rows=data||[],visible=rows.slice(0,100);
+      const rejected=visible.filter(row=>row.decision_status==="rechazada").map(row=>row.id);
+      const confirmed=new Set<string>();
+      if(rejected.length){
+        const {data:activity,error:activityError}=await supabase.from("portfolio_cv_lead_activities").select("lead_id,event_type").in("lead_id",rejected).in("event_type",["rechazo_correo_confirmado","rechazo_correo_confirmacion_retirada"]).order("created_at",{ascending:false}).limit(1000);
+        if(!activityError){
+          const seen=new Set<string>();
+          for(const event of activity||[]){
+            if(seen.has(event.lead_id))continue;seen.add(event.lead_id);
+            if(event.event_type==="rechazo_correo_confirmado")confirmed.add(event.lead_id);
+          }
+        }
+      }
+      return reply(req,{status:"verified",requests:visible.map(row=>trackingPublicRow({...row,rejection_confirmed:confirmed.has(row.id)})),truncated:rows.length>100});
+    }catch{return reply(req,{error:"Servicio temporalmente no disponible"},503);}
+  }
   // El identificador de empresa es público y NO autentica al reclutador.
   // El campo ruc conserva su nombre por compatibilidad con versiones anteriores.
   // No exponer el estado interno de las postulaciones en este portal.
@@ -256,7 +362,7 @@ Deno.serve(async (req: Request) => {
     }).select("id,kind,company_name,created_at,email,contact_name,language").single();
     if (error) { console.error("lead_v3_insert", error.message); return reply(req, { error: "No se pudo registrar la propuesta." }, 503); }
     scheduleLeadNotification(savedLead as ConfirmationLead,security);
-    return reply(req, { status: "received" });
+    return reply(req, { status: "received",receipt:{kind,position,created_at:savedLead.created_at,state:"received",dedication:intake.dedication,work_mode:intake.work_mode,project_need:intake.project_need,project_timing:intake.project_timing} });
   }
   if (input.action === "lead_v2") {
     if (text(input.website, 300)) return reply(req, { status: "received" });
