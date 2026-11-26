@@ -89,21 +89,16 @@
     #requestSuccessActions .actionLink:focus-visible{outline:2px solid var(--cga-focus,#222);outline-offset:3px;}
     #requestSuccessActions .successSecondary{background:var(--cga-surface-2,#fff);color:var(--cga-text,#191919);border-color:var(--cga-border-strong,#aaa);}
     #requestSuccessActions .successSecondary:hover{border-color:var(--cga-focus,#191919);background:var(--cga-hover,#eee);}
-    /* Confirmation first, personal video second: neutral and accessible. */
-    #requestHeading.requestConfirmed{font-size:clamp(23px,3vw,32px);line-height:1.2;letter-spacing:-.025em;color:var(--cga-text,#161616);}
-    #requestIntro.requestConfirmed{color:var(--cga-muted,#555);font-size:14px;}
-    .requestNextSteps{margin-top:22px;padding-top:18px;border-top:1px solid var(--cga-border-strong,#aaa);}
-    .requestNextSteps h3{font-size:17px;color:var(--cga-text,#161616);margin:0 0 12px;}
-    .requestNextStepsList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;margin:0;list-style:none;counter-reset:successStep;}
-    .requestNextStepsList li{display:flex;align-items:flex-start;gap:12px;padding:15px;min-width:0;border:1px solid var(--cga-border,#ddd);border-radius:10px;background:var(--cga-surface-2,#fafafa);counter-increment:successStep;}
-    .requestNextStepsList li::before{content:counter(successStep);flex:0 0 24px;height:24px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--cga-border-strong,#aaa);color:var(--cga-text,#161616);font-size:12px;font-weight:700;}
-    .requestNextStepsList li>div{min-width:0;}
-    .requestNextStepsList h4{font-size:14px;line-height:1.35;margin:2px 0 6px;color:var(--cga-text,#161616);}
-    #requestNextSteps .requestNextStepsList p{margin:0;color:var(--cga-text,#161616);font-size:13px;overflow-wrap:anywhere;}
-    #requestNextSteps .requestNextStepsList .requestStepHint{font-size:12px;margin-top:7px;color:var(--cga-muted,#555);}
-    #requestNextSteps .requestVideoIntro{font-weight:650;color:var(--cga-text,#161616);font-size:14px;margin:20px 0 0;}
-    @media(max-width:760px),(hover:none) and (pointer:coarse){.requestNextStepsList{grid-template-columns:minmax(0,1fr);gap:9px;}.requestNextStepsList li{padding:12px;}}
-    .errorBox { font-size:13px;color:#a21d35;min-height:18px;margin:8px 0;}
+    /* Compact confirmation integrated with the video; no secondary cards. */
+    #requestHeading.requestConfirmed{display:flex;align-items:center;gap:10px;font-size:clamp(22px,3vw,29px);line-height:1.2;letter-spacing:-.025em;color:var(--cga-text,#161616);margin-bottom:9px;}
+    #requestHeading.requestConfirmed::before{content:"✓";display:grid;place-items:center;flex:0 0 28px;height:28px;border:1px solid var(--cga-border-strong,#999);border-radius:50%;font-size:18px;font-weight:600;line-height:1;}
+    #requestIntro.requestConfirmed{margin:0;color:var(--cga-text,#161616);font-size:14px;line-height:1.45;}
+    .requestNextSteps{display:flex;align-items:flex-start;gap:8px;margin:7px 0 0;color:var(--cga-muted,#555);}
+    .requestNextSteps svg{flex:0 0 17px;width:17px;height:17px;margin-top:1px;}
+    #requestNextSteps #requestEmailText{margin:0;color:var(--cga-muted,#555);font-size:13px;line-height:1.45;}
+    #requestSuccessLayout:has(#requestVideoIntro){margin-top:15px;padding-top:14px;border-top:1px solid var(--cga-border,#ddd);}
+    #requestVideoIntro{font-size:13px;font-weight:650;line-height:1.3;margin:0 0 2px;text-align:center;color:var(--cga-text,#161616);}
+        .errorBox { font-size:13px;color:#a21d35;min-height:18px;margin:8px 0;}
     .inlineCheck { display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:400; }
     .inlineCheck input {width:auto;min-height:0;margin:0;}
     .contactChoice { display:flex;gap:12px;flex-wrap:wrap;margin-top:9px; }
@@ -324,16 +319,13 @@
       <div id="formError" class="errorBox" role="alert" aria-live="polite"></div>
       <div id="leadMessage" class="message" role="status" aria-live="polite"></div>
     </form>
-    <div id="requestNextSteps" class="requestNextSteps" hidden aria-labelledby="requestNextStepsTitle">
-      <h3 id="requestNextStepsTitle"></h3>
-      <ol class="requestNextStepsList">
-        <li><div><h4 id="requestEmailTitle"></h4><p id="requestEmailText"></p><p id="requestEmailHint" class="requestStepHint"></p></div></li>
-        <li><div><h4 id="requestContactTitle"></h4><p id="requestContactText"></p></div></li>
-      </ol>
-      <p id="requestVideoIntro" class="requestVideoIntro"></p>
+    <div id="requestNextSteps" class="requestNextSteps" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
+      <p id="requestEmailText"></p>
     </div>
     <div id="requestSuccessLayout" class="requestSuccessLayout" hidden>
       <div class="requestVideoArea">
+        <h3 id="requestVideoIntro"></h3>
         <video id="requestSuccessVideo" class="requestSuccessVideo" controls playsinline preload="none" lang="es" aria-label="Video de agradecimiento"></video>
         <button id="requestVideoSound" class="messageSound" type="button" hidden>Activar sonido</button>
         <p id="requestVideoStatus" class="sub" role="status" aria-live="polite" hidden></p>
@@ -387,7 +379,7 @@
   </div>
 </main>
 <script src="/theme/message-video.js?v=20261125-1" defer></script>
-<script src="./empresa.js?v=20261126-nextsteps1" defer></script>
+<script src="./empresa.js?v=20261126-compact2" defer></script>
   <script src="/theme/theme.js?v=20261124-switch1" defer></script>
 <script src="/theme/modern.js?v=20261124-01" defer></script>
 </body></html>
