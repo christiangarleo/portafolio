@@ -370,3 +370,6 @@ Desde https://christianarleo.com/portafolio/ el reclutador ingresa el **identifi
 
 ## Lector: corregir destinos de capítulos ES — 2026-11-25 (Lima)
 - Por indicación del titular, Proyectos de autor → página 10; Experiencias profesionales → página 44. Actualizar manifest español y enlaces HTML iniciales, cache-bust del manifest. El menú móvil usa los mismos nodos. Edición EN conserva detección independiente y fallback de 55 páginas. Sin cambios al PDF, navegación o estilos. Manifest y destinos verificados estáticamente; navegación real pendiente. Base 9f71465e72bf2a09da0240ab8fef9556dfa4314e; rollback revertir commit.
+
+## Lector: corregir índice y presentación ES — 2026-11-25 (Lima)
+- Por indicación del titular: índice → página 4; presentación → página 6. Mantener proyectos → 10 y experiencias → 44. Resumen conserva provisionalmente página 5: requiere confirmación porque precede a presentación (6). Actualizar manifest ES y enlaces iniciales, cache-bust. Edición EN y navegación sin cambios. Verificados los cinco destinos HTML/manifest y configuración EN; prueba de navegador pendiente. Base 7aa1f9b788c0935e0e0e8375634271e2937cec5f; rollback revertir commit.
