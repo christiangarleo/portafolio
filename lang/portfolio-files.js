@@ -8,6 +8,8 @@
       file:"Christian_Arleo_Portafolio.pdf",
       url:bucket+"Christian_Arleo_Portafolio.pdf",
       filename:"Christian_Arleo_Portafolio_ES.pdf",
+      downloadFile:"Christian_Arleo_Portafolio_ES_A3.pdf",
+      downloadUrl:bucket+"Christian_Arleo_Portafolio_ES_A3.pdf",
       title:"Portafolio profesional de Christian Gabriel Arleo",
       // Spanish section destinations supplied by owner 2026-11-25 (Lima).
       sections:{index:4,intro:6,summary:8,projects:10,experience:44}
@@ -17,6 +19,8 @@
       file:"Christian_Arleo_Portfolio_EN.pdf",
       url:bucket+"Christian_Arleo_Portfolio_EN.pdf",
       filename:"Christian_Arleo_Portfolio_EN.pdf",
+      downloadFile:"Christian_Arleo_Portfolio_EN_A3.pdf",
+      downloadUrl:bucket+"Christian_Arleo_Portfolio_EN_A3.pdf",
       title:"Professional portfolio of Christian Gabriel Arleo",
       sections:null,
       // Fallback visual SOLO para la edición inglesa de 55 páginas (igual extensión que

@@ -321,7 +321,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <div class="publicPortfolioGrid">
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEs">
       <div class="publicPortfolioHead">
-        <h2 id="publicPortfolioTitleEs">🇪🇸 Español</h2>
+        <h2 id="publicPortfolioTitleEs">🇪🇸 Español · A4 <small>Vista web</small></h2>
         <span class="pill" id="publicPortfolioStateEs">Consultando…</span>
       </div>
       
@@ -335,7 +335,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
     </article>
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEn">
       <div class="publicPortfolioHead">
-        <h2 id="publicPortfolioTitleEn">🇬🇧 English <small>· Idioma principal</small></h2>
+        <h2 id="publicPortfolioTitleEn">🇬🇧 English · A4 <small>Vista web</small></h2>
         <span class="pill" id="publicPortfolioStateEn">Consultando…</span>
       </div>
       
@@ -348,13 +348,44 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       </form>
     </article>
   </div>
-  <p class="cgaMeta" data-cga-icon="info">Antes de reemplazar, guardá una copia del PDF anterior.</p>
+  <h2>Ediciones para descargar (A3)</h2>
+  <div class="publicPortfolioGrid">
+    <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEsA3">
+      <div class="publicPortfolioHead">
+        <h2 id="publicPortfolioTitleEsA3">🇪🇸 Español · A3 <small>Descarga</small></h2>
+        <span class="pill" id="publicPortfolioStateEsA3">Consultando…</span>
+      </div>
+      <p>Edición a doble página para descargar. No modifica la revista web.</p>
+      <a id="publicPortfolioLinkEsA3" href="#" target="_blank" rel="noopener noreferrer" data-cga-icon="eye" hidden>Ver PDF A3</a>
+      <div class="publicPortfolioActions"><button id="editPublicPortfolioEsA3" type="button" class="cgaSoftButton" data-cga-icon="upload" aria-controls="publicPortfolioFormEsA3" aria-expanded="false">Publicar PDF A3</button></div>
+      <form id="publicPortfolioFormEsA3" class="cgaGlassForm cgaFormControls cgaFormAsync" data-public-language="es_a3" hidden>
+        <label for="publicPortfolioFileEsA3">PDF A3 (máx. 45 MB)</label>
+        <input id="publicPortfolioFileEsA3" type="file" accept=".pdf,application/pdf" required>
+        <div class="row"><button id="publicPortfolioButtonEsA3" class="primary" data-cga-icon="check" type="submit">Guardar A3</button><button type="button" data-cancel-portfolio="es_a3">Cancelar</button></div>
+      </form>
+    </article>
+    <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEnA3">
+      <div class="publicPortfolioHead">
+        <h2 id="publicPortfolioTitleEnA3">🇬🇧 English · A3 <small>Descarga</small></h2>
+        <span class="pill" id="publicPortfolioStateEnA3">Consultando…</span>
+      </div>
+      <p>Edición a doble página para descargar. No modifica la revista web.</p>
+      <a id="publicPortfolioLinkEnA3" href="#" target="_blank" rel="noopener noreferrer" data-cga-icon="eye" hidden>Ver PDF A3</a>
+      <div class="publicPortfolioActions"><button id="editPublicPortfolioEnA3" type="button" class="cgaSoftButton" data-cga-icon="upload" aria-controls="publicPortfolioFormEnA3" aria-expanded="false">Publicar PDF A3</button></div>
+      <form id="publicPortfolioFormEnA3" class="cgaGlassForm cgaFormControls cgaFormAsync" data-public-language="en_a3" hidden>
+        <label for="publicPortfolioFileEnA3">PDF A3 (máx. 45 MB)</label>
+        <input id="publicPortfolioFileEnA3" type="file" accept=".pdf,application/pdf" required>
+        <div class="row"><button id="publicPortfolioButtonEnA3" class="primary" data-cga-icon="check" type="submit">Guardar A3</button><button type="button" data-cancel-portfolio="en_a3">Cancelar</button></div>
+      </form>
+    </article>
+  </div>
+  <p class="cgaMeta" data-cga-icon="info">Antes de reemplazar, guardá una copia del PDF anterior. Hasta publicar el A3, la descarga se identifica como A4.</p>
   <div id="publicPortfolioStatus" role="status" aria-live="polite"></div>
 </section></div>
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=20261126-crm-dialog1"></script>
+<script type="module" src="./panel.js?v=20261126-portfolio-editions1"></script>
 <script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
