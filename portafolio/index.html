@@ -322,7 +322,7 @@
   <script src="/lang/i18n.js?v=20261126-flag1" defer></script>
   <script src="/lang/portfolio-files.js?v=20261126-es-sections4" defer></script>
 
-  <link rel="stylesheet" href="./magazine.css?v=20261126-mobile4">
+  <link rel="stylesheet" href="./magazine.css?v=20261126-mobile5">
 </head>
 <body>
   <header class="siteHeader">
@@ -472,9 +472,9 @@
         }
       }
       function layout(){
-        closeChapters();closeOtherMenus();
         const landscape=landscapeMode();
         if(document.body.classList.contains("cgaMobileLandscape")===landscape && chapterButton.hidden===!landscape)return;
+        closeChapters();closeOtherMenus();
         document.body.classList.toggle("cgaMobileLandscape",landscape);
         chapterButton.hidden=!landscape;
         if(landscape){row.append(pageTools);footer.append(actions);chapterMenu.append(...sections);}

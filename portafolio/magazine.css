@@ -230,3 +230,7 @@ html.cgaModern #cvDialog[data-compact="true"] #cvLookupForm{margin-top:8px;gap:9
 html.cgaModern #cvDialog[data-compact="true"] .cgaFormField{min-height:44px}
 html.cgaModern #cvDialog #cvRuc{font-size:16px;scroll-margin-block:8px}
 html.cgaModern #cvDialog button.cgaFormButton{width:100%}
+
+/* Keep both page arrows within the existing rail on narrow landscape screens. */
+body.cgaMobileLandscape #gotoForm :is(#previousPage,#nextPage){display:inline-flex!important}
+body.cgaMobileLandscape .viewerShell>.sideNav{display:none!important}
