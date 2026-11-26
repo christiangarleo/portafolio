@@ -545,12 +545,14 @@
     } catch { showMessage("No se pudo activar pantalla completa"); }
   });
 
-  window.addEventListener("resize", () => {
+  function scheduleReaderResize(){
     if (!pdfDocument || nativeMode || magazineOpening) return;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {if(magazineActive)magazine?.resize();else void navigate(activePage,false);},180);
     if(focusDialog.open){clearTimeout(focusResizeTimer);focusResizeTimer=setTimeout(()=>void renderFocus(true),220);}
-  });
+  }
+  window.addEventListener("resize",scheduleReaderResize);
+  window.addEventListener("cga:reader-layout",scheduleReaderResize);
   document.addEventListener("fullscreenchange", () => {
     // Keep the controls accessible: request fullscreen on the whole application.
     const label = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa";

@@ -11,7 +11,7 @@
       #requestSuccessActions{width:100%;max-width:360px;}
     }
 
-/* Compact, neutral glass cards derived from HOME; no accent fill on video actions. */
+/* Sound control keeps compact neutral styling. Navigation cards use the HOME glass rules in modern.css. */
 .requestSuccessLayout{
   --message-glass:linear-gradient(145deg,rgba(255,255,255,.54),rgba(255,255,255,.19) 58%,rgba(255,255,255,.32));
   --message-glass-hover:linear-gradient(145deg,rgba(255,255,255,.68),rgba(255,255,255,.32) 58%,rgba(255,255,255,.44));
@@ -27,7 +27,7 @@
   --message-glass-shadow:rgba(0,0,0,.20);
 }
 #requestSuccessActions{display:flex;gap:10px;}
-#requestSuccessActions .messageCta,#requestVideoSound.messageSound{
+#requestVideoSound.messageSound{
   display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
   min-height:58px;padding:15px 18px;border:1px solid var(--message-glass-border);
   border-top-color:var(--message-glass-edge);border-radius:13px;
@@ -37,23 +37,26 @@
   text-decoration:none;text-align:left;font:650 14px/1.35 Arial,Helvetica,sans-serif;
   cursor:pointer;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
 }
-#requestSuccessActions .messageCta::after{content:"";width:8px;height:8px;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;transform:rotate(45deg);opacity:.65;flex:0 0 auto;margin-right:3px;}
-#requestSuccessActions .messageCta[target="_blank"]::after{transform:none;}
+#requestSuccessActions .messageCta{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:66px;padding:16px 18px;border-radius:16px;color:var(--cga-text);text-decoration:none;text-align:left;font:650 15px/1.35 Arial,Helvetica,sans-serif;overflow:hidden}
+#requestSuccessActions .messageCta[target="_blank"]::after{content:"↗";position:relative;z-index:1;font-size:20px;line-height:1;flex:0 0 auto;transition:transform .6s cubic-bezier(.2,.75,.25,1)}
+@media(hover:hover) and (pointer:fine){#requestSuccessActions .messageCta[target="_blank"]:is(:hover,:focus-visible)::after{transform:translate(3px,-3px)}}
+@media(prefers-reduced-motion:reduce){#requestSuccessActions .messageCta[target="_blank"]::after{transition:none;transform:none!important}}
+
 #requestVideoSound.messageSound{justify-content:center;text-align:center;min-height:44px;padding:9px 12px;font-size:13px;}
-#requestSuccessActions .messageCta:is(:hover,:focus-visible),#requestVideoSound.messageSound:is(:hover,:focus-visible){background:var(--message-glass-hover);color:var(--cga-text,#161616);border-color:var(--message-glass-border);border-top-color:var(--message-glass-edge);}
-#requestSuccessActions .messageCta:focus-visible,#requestVideoSound.messageSound:focus-visible{outline:2px solid var(--cga-text,#161616);outline-offset:3px;}
-@media(prefers-contrast:more){#requestSuccessActions .messageCta,#requestVideoSound.messageSound{background:var(--cga-surface,#fff);border:2px solid var(--cga-text,#161616);}}
-@media(prefers-reduced-motion:reduce){#requestSuccessActions .messageCta,#requestVideoSound.messageSound{transition:none;}}
+#requestVideoSound.messageSound:is(:hover,:focus-visible){background:var(--message-glass-hover);color:var(--cga-text,#161616);border-color:var(--message-glass-border);border-top-color:var(--message-glass-edge);}
+#requestVideoSound.messageSound:focus-visible{outline:2px solid var(--cga-text,#161616);outline-offset:3px;}
+@media(prefers-contrast:more){#requestVideoSound.messageSound{background:var(--cga-surface,#fff);border:2px solid var(--cga-text,#161616);}}
+@media(prefers-reduced-motion:reduce){#requestVideoSound.messageSound{transition:none;}}
 
 /* Both language entries use the HOME flags and direct magazine URLs, not the current UI language. */
-#requestSuccessActions .messageLanguageCard{gap:12px;min-height:80px;padding:14px 15px;}
+#requestSuccessActions .messageLanguageCard{gap:14px;min-height:100px;padding:18px;}
 #requestSuccessActions .messageLanguageCard::after{content:none;}
 #requestSuccessActions .messageFlag{display:block;width:35px;height:auto;aspect-ratio:5/3;flex:0 0 35px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px rgba(127,127,127,.3);}
 #requestSuccessActions .messageLanguageCopy{display:flex;flex-direction:column;flex:1;min-width:0;gap:4px;}
-#requestSuccessActions .messageLanguageName{font-size:19px;font-weight:700;line-height:1.15;letter-spacing:-.025em;}
-#requestSuccessActions .messageLanguageDescription{font-size:11px;font-weight:400;color:var(--cga-muted,#555);line-height:1.35;overflow-wrap:anywhere;}
+#requestSuccessActions .messageLanguageName{font-size:23px;font-weight:700;line-height:1.2;letter-spacing:-.025em;}
+#requestSuccessActions .messageLanguageDescription{font-size:12px;font-weight:400;color:var(--cga-muted,#555);line-height:1.35;overflow-wrap:anywhere;}
 #requestSuccessActions .messageLanguageRight{flex:0 0 auto;}
-#requestSuccessActions .messageLanguageArrow{font-size:17px;opacity:.78;line-height:1;}
+#requestSuccessActions .messageLanguageArrow{font-size:19px;line-height:1;}
 
 /* Confirmation uses the actual available mobile width; portrait stacks, landscape can use two columns. */
 #emptySection.cgaRequestComplete{max-width:none;scroll-margin-top:clamp(28px,7dvh,62px)}

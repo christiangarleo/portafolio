@@ -29,7 +29,7 @@
   }
   function layout(viewport,ratio,single=false){
     const mobileLandscape=viewport.ownerDocument?.body?.classList.contains("cgaMobileLandscape");
-    const padX=mobileLandscape?4:single||viewport.clientWidth<=820?4:42,padY=4,slots=single?1:2;
+    const padX=mobileLandscape?48:single||viewport.clientWidth<=820?4:42,padY=4,slots=single?1:2;
     const aw=Math.max(2,viewport.clientWidth-2*padX),ah=Math.max(2,viewport.clientHeight-2*padY);
     const width=Math.max(1,Math.floor(Math.min(aw/slots,ah*ratio)));
     const height=Math.max(1,Math.floor(width/ratio));
@@ -68,7 +68,7 @@
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
     function spreadSize(){return 2;}
     function applySize(){
-      const W=viewport.clientWidth,H=viewport.clientHeight,mobileLandscape=document.body.classList.contains("cgaMobileLandscape"),pad=mobileLandscape?4:W<650?8:28;
+      const W=viewport.clientWidth,H=viewport.clientHeight,mobileLandscape=document.body.classList.contains("cgaMobileLandscape"),pad=mobileLandscape?48:W<650?8:28;
       const verticalReserve=mobileLandscape?14:38;
       const width=Math.max(1,Math.floor(Math.min(Math.max(2,W-2*pad)/2,Math.max(2,H-verticalReserve)*ratio)));
       const height=Math.max(1,Math.floor(width/ratio));
