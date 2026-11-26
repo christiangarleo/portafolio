@@ -25,9 +25,15 @@ Deno.serve(async req=>{
  const reserve=await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context});
  if(reserve.error||!reserve.data)return reply(503,{status:"storage_unavailable"});
  if(reserve.data.status!=="reserved")return reply(200,{status:reserve.data.status});
+ let replyAddress="hola@christianarleo.com";
+ if(Deno.env.get("PORTFOLIO_CRM_INBOUND_ENABLED")==="true"){
+   replyAddress="reply-"+crypto.randomUUID()+"@respuestas.christianarleo.com";
+   const route=await db.from("portfolio_crm_mail").update({reply_address:replyAddress}).eq("id",id).eq("status","pending").select("id").maybeSingle();
+   if(route.error||!route.data){await db.from("portfolio_crm_mail").update({status:"failed"}).eq("id",id).eq("status","pending");return reply(503,{status:"storage_unavailable"});}
+ }
  let status="uncertain",providerId:string|null=null,providerHttp:number|null=null;
  try{
-   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:"hola@christianarleo.com",subject,text:body}),signal:AbortSignal.timeout(10000)});
+   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:replyAddress,subject,text:body}),signal:AbortSignal.timeout(10000)});
    providerHttp=r.status;
    if(r.ok){const result=await r.json().catch(()=>null);if(typeof result?.id==="string"&&result.id){status="accepted";providerId=result.id;}}
    else if(r.status>=400&&r.status<500&&![408,409,429].includes(r.status))status="failed";
