@@ -6,6 +6,7 @@
   by(en?"messageEN":"messageES").setAttribute("aria-current","page");
   if(en){
     document.title="A personal message | Christian Gabriel Arleo";
+    by("messageHeaderPortfolio").textContent=" · Portfolio";
     by("messageTitle").textContent="Thank you for your interest";
     by("messageIntro").textContent="I'd like to share this personal message with you.";
     by("successWhatsApp").textContent="Contact me on WhatsApp";

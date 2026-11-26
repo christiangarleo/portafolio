@@ -671,7 +671,7 @@ html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:wher
     -webkit-box-reflect:below 7px linear-gradient(to bottom,transparent 82%,rgba(0,0,0,.10));
   }
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):hover::before{opacity:1;}
-  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):is(:hover,:focus-visible) .arrow{transform:translate(3px,-3px);}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):is(:hover,:focus-visible) :is(.arrow,.messageLanguageArrow){transform:translate(3px,-3px);}
 }
 @media(hover:none),(pointer:coarse){
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):hover:not(:active):not(:focus-visible){
@@ -687,7 +687,7 @@ html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:wher
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)),
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):is(:hover,:focus-visible,:active){transition:none;transform:none;-webkit-box-reflect:none;}
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled))::before,html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)) :is(.arrow,.messageLanguageArrow){transition:none;transform:none;}
-  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):is(:hover,:focus-visible) .arrow{transform:none;}
+  html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)):is(:hover,:focus-visible) :is(.arrow,.messageLanguageArrow){transform:none;}
 }
 @media(prefers-contrast:more),(forced-colors:active){
   html.cgaModern :is(body:has(.languageGrid) .languageCard[data-lang-choice],:where(#requestSuccessActions) .messageCta,:where(#leadForm,#vacancies) .cgaGlassCTA:not(:disabled)),
@@ -1014,7 +1014,7 @@ html.cgaModern #leadForm #submitLead.cgaGlassCTA:disabled{background:var(--cga-s
 /* Public identity: same link on company, confirmation and video routes. */
 html.cgaModern body>header>a.cgaHomeIdentity{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:0;min-width:0;max-width:100%;padding:0;border:0;border-radius:0;color:var(--cga-text);background:transparent;text-decoration:none;white-space:normal;line-height:1.4;transition:color .2s ease}
 html.cgaModern body>header>a.cgaHomeIdentity strong{font-size:15px;font-weight:700}
-html.cgaModern body>header>a.cgaHomeIdentity small{color:var(--cga-muted);white-space:pre-wrap}
+html.cgaModern body>header>a.cgaHomeIdentity small{color:var(--cga-muted);white-space:pre-wrap;font-size:12px;font-weight:400}
 html.cgaModern body>header>a.cgaHomeIdentity:is(:hover,:focus-visible){color:var(--cga-focus)}
 html.cgaModern body>header>a.cgaHomeIdentity:focus-visible{outline:2px solid var(--cga-focus);outline-offset:4px}
 html.cgaModern #companySection #vacancies .card{transition:transform .22s ease,border-color .22s ease,box-shadow .24s ease;animation:cgaVacancyEnter .26s ease-out both}
