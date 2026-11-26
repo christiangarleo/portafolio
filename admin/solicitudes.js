@@ -1,9 +1,17 @@
-/* CRM 2: gestión simple por solicitud. El correo se prepara en el cliente configurado;
-   WhatsApp requiere confirmación en su app. No se afirma envío automático. */
+/* CRM: correo directo con historial persistente; WhatsApp conserva confirmación manual. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
  let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false,selectedLeadId=null,page=0,mobileDetail=false;
- const meetingExpanded=new Set(), historyExpanded=new Set();
+ const meetingExpanded=new Set(), historyExpanded=new Set(), mailExpanded=new Set(), rejectionExpanded=new Set(), sending=new Set();
+ let acceptedMail=new Map(),mailLoaded=false;
+ const mailKey=(lead,context)=>lead.id+":"+context;
+ const currentContext=lead=>lead.decision_status==="rechazada"?"rejection":"followup";
+ const latestMail=(lead,context=currentContext(lead))=>acceptedMail.get(mailKey(lead,context));
+ function legacyMail(lead,context=currentContext(lead)){
+   if(context==="followup")return lead.email_sent_at||null;
+   const e=events.find(x=>x.lead_id===lead.id&&["rechazo_correo_confirmado","rechazo_correo_confirmacion_retirada"].includes(x.event_type));
+   return e?.event_type==="rechazo_correo_confirmado"?e.created_at:null;
+ }
  const labels={pendiente:"Por decidir",avanzar:"En seguimiento",rechazada:"Rechazada"};
  const kinds={in_house:"Contratación In-house",proyecto:"Contratación por proyecto",solicitud_cv:"Solicitud histórica"};
  const fieldNames={position:"Puesto",dedication:"Dedicación",work_mode:"Modalidad",work_days:"Días de trabajo",
@@ -22,11 +30,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  const resetAdvanced=()=>{for(const id of filterIds)advanced[id].value=id==="leadSort"?"newest":"";};
  for(const control of Object.values(advanced))control.addEventListener("change",()=>{page=0;mobileDetail=false;render();});
  el("resetLeadAdvanced").addEventListener("click",()=>{resetAdvanced();searchInput.value="";page=0;mobileDetail=false;render();});
- function mailConfirmed(lead){
-   if(lead.decision_status!=="rechazada")return Boolean(lead.email_sent_at);
-   const recent=events.find(e=>e.lead_id===lead.id&&["rechazo_correo_confirmado","rechazo_correo_confirmacion_retirada"].includes(e.event_type));
-   return recent?.event_type==="rechazo_correo_confirmado";
- }
+ function mailConfirmed(lead){return Boolean(latestMail(lead)||legacyMail(lead));}
  function filterAdvanced(lead){
    const f=id=>advanced[id].value,now=Date.now(),meeting=Date.parse(lead.meeting_at||""),created=Date.parse(lead.created_at||"");
    const kind=f("leadKindFilter"),stage=f("leadStageFilter"),mode=f("leadModeFilter"),age=f("leadAgeFilter"),mail=f("leadMailFilter"),mt=f("leadMeetingFilter");
@@ -99,41 +103,76 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  }
  function directMail(lead,subject,body,context){
   const box=n("div",undefined,"crmDirectMail");
-  const send=btn("Enviar desde CRM","crmAccept");send.dataset.cgaIcon="send";
-  const status=n("p","Remitente: hola@christianarleo.com · El envío queda registrado.","crmHint");status.setAttribute("role","status");
-  send.disabled=!allowed(lead)||!/^([^\s@,;<>]+)@([^\s@,;<>]+)\.[^\s@,;<>]+$/.test(String(lead.email||""));
-  let busy=false;
+  const send=btn("Enviar desde CRM","crmAccept");send.dataset.cgaIcon="send";send.dataset.mailLead=lead.id;
+  const status=small("Remitente: hola@christianarleo.com");status.setAttribute("role","status");
+  const canSend=()=>allowed(lead)&&/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(String(lead.email||""))&&!sending.has(lead.id);
+  send.disabled=!canSend();
+  function showHistory(){
+   mailExpanded.add(lead.id);
+   if(selectedLeadId!==lead.id)return;
+   const history=root.querySelector(".crmMailHistory");if(history){history.open=true;history.dispatchEvent(new Event("crm-refresh"));}
+  }
   send.addEventListener("click",async()=>{
-   if(busy||send.disabled)return;
-   const s=subject.value.trim(),b=body.value.trim();if(!s||!b){notice("Completá el asunto y el mensaje.",true);return;}
-   busy=true;send.disabled=true;
+   if(!canSend()||send.disabled)return;
+   const s=subject.value.trim(),b=body.value.trim();
+   if(!s||!b){notice("Completá el asunto y el mensaje.",true);return;}
+   sending.add(lead.id);send.disabled=true;
    try{
     if(!await window.CGADialog.confirm("¿Enviar este mensaje a "+lead.email+" desde hola@christianarleo.com?"))return;
-    send.setAttribute("aria-busy","true");
+    send.setAttribute("aria-busy","true");status.textContent="Enviando correo…";
     const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:crypto.randomUUID(),lead_id:lead.id,subject:s,body:b,context}});
-    if(error){status.textContent="No se confirmó el resultado. Revisá el historial antes de volver a enviar.";notice(status.textContent,true);await refresh();return;}
-    const messages={accepted:"Correo aceptado por Resend. No confirma entrega al destinatario.",failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
+    if(error)throw Error("send_unconfirmed");
+    if(data?.status==="accepted"){
+      acceptedMail.set(mailKey(lead,context),{lead_id:lead.id,context,accepted_at:new Date().toISOString()});
+      mailExpanded.add(lead.id);rejectionExpanded.delete(lead.id);
+      status.textContent="Correo enviado";
+      notice("Correo enviado",false,{success:true,detail:"Registrado en el historial de la solicitud."});
+      try{await load();}catch{render();}
+      return;
+    }
+    const messages={failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
     const code=Number.isInteger(data?.provider_http)?data.provider_http:null;
     const reason=code===401||code===403?"Revisá la autorización de la clave y el dominio en Resend.":code===422||code===400?"Revisá los datos del correo en los logs de Resend.":code===429?"Límite del proveedor; consultá la cuota antes de reintentar.":"";
-    status.textContent=(messages[data?.status]||"No se pudo completar el envío.")+(data?.status!=="accepted"&&code?" (HTTP "+code+"). "+reason:"");
-    notice(status.textContent,data?.status!=="accepted");await refresh();
-    if(data?.status==="accepted")await load();
-   }catch{notice("No se confirmó el resultado. Consultá el historial antes de reenviar.",true);await refresh();}
-   finally{busy=false;send.disabled=false;send.removeAttribute("aria-busy");}
+    status.textContent=(messages[data?.status]||"No se pudo completar el envío.")+(code?" (HTTP "+code+"). "+reason:"");
+    notice(status.textContent,true);showHistory();
+   }catch{
+    status.textContent="No se confirmó el resultado. Consultá el historial antes de reenviar.";notice(status.textContent,true);showHistory();
+   }finally{sending.delete(lead.id);send.disabled=!canSend();send.removeAttribute("aria-busy");
+    if(!send.isConnected&&selectedLeadId===lead.id){const current=leads.find(x=>x.id===lead.id);root.querySelectorAll(".crmDirectMail button").forEach(b=>{if(b.dataset.mailLead===lead.id)b.disabled=!current||!allowed(current)||!canSend();});}}
   });
-  const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Correos enviados desde CRM"));
-  const list=n("div");details.append(list);
+  box.append(send,status);return box;
+ }
+ function mailRecord(lead){
+  const box=n("section",undefined,"crmStep crmMailRecord");
+  box.append(n("h4","Estado del correo"));
+  const context=currentContext(lead),sent=latestMail(lead,context),legacy=legacyMail(lead,context);
+  const badge=n("div",undefined,"crmMailState");
+  badge.dataset.state=sent?"sent":legacy?"legacy":mailLoaded?"pending":"unknown";
+  const icon=n("span",sent||legacy?"✓":"·","crmMailStateIcon");icon.setAttribute("aria-hidden","true");
+  const copy=n("div");
+  copy.append(n("strong",sent?"Correo enviado":legacy?"Envío registrado anteriormente":mailLoaded?"Sin correo enviado para esta respuesta":"Estado no disponible"),
+    small(sent?"Desde hola@christianarleo.com · "+when(sent.accepted_at):legacy?"Confirmación histórica · "+when(legacy):mailLoaded?"El estado se actualizará automáticamente cuando envíes un correo.":"No se pudo consultar el registro de envíos."));
+  badge.append(icon,copy);box.append(badge);
+  const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Historial de correos enviados"));details.open=mailExpanded.has(lead.id);
+  const list=n("div");details.append(list);let generation=0;
   async function refresh(){
-   list.replaceChildren(small("Consultando…"));
-   const {data,error}=await sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50);
-   list.replaceChildren();
-   if(error){list.append(small("Historial de correo no disponible."));return;}
-   if(!data.length){list.append(small("Todavía no hay correos enviados desde el CRM."));return;}
-   const labels={accepted:"Aceptado por proveedor",failed:"Rechazado por proveedor",uncertain:"Sin confirmación",pending:"Pendiente"};
-   for(const mail of data){const item=n("article",undefined,"crmMailItem");item.append(n("strong",mail.subject),small(when(mail.created_at)+" · "+(labels[mail.status]||mail.status)),small("Para: "+mail.recipient));const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);list.append(item);}
+   const g=++generation;list.replaceChildren(small("Consultando…"));
+   try{
+    const {data,error}=await sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at,context").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50);
+    if(g!==generation)return;list.replaceChildren();
+    if(error)throw error;
+    if(!data?.length){list.append(small("Todavía no hay correos registrados desde el CRM."));return;}
+    const labels={accepted:"Correo enviado · aceptado por proveedor (entrega no verificada)",failed:"Rechazado por proveedor",uncertain:"Sin confirmación",pending:"Pendiente"};
+    for(const mail of data){
+     const item=n("article",undefined,"crmMailItem");
+     item.append(n("strong",mail.subject),small(when(mail.accepted_at||mail.created_at)+" · "+(mail.context==="rejection"?"Rechazo":"Seguimiento")+" · "+(labels[mail.status]||mail.status)),small("Para: "+mail.recipient));
+     const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);list.append(item);
+    }
+    if(data.length===50)list.append(small("Se muestran los últimos 50 intentos."));
+   }catch{if(g===generation)list.replaceChildren(small("Historial de correo no disponible."));}
   }
-  details.addEventListener("toggle",()=>{if(details.open)void refresh();});
-  box.append(send,status,details);return box;
+  details.addEventListener("toggle",()=>{if(details.open){mailExpanded.add(lead.id);void refresh();}else mailExpanded.delete(lead.id);});
+  details.addEventListener("crm-refresh",()=>void refresh());box.append(details);return box;
  }
  function rejectionComposer(lead){
   const panel=n("div",undefined,"crmRejectionComposer");
@@ -145,80 +184,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   panel.append(n("h4","Respuesta de rechazo"),labeled("Para",(()=>{
     const input=n("input");input.type="text";input.readOnly=true;input.value=to||"Sin correo registrado";return input;
   })()),labeled("Asunto",subject),labeled("Mensaje",body));
-  if(!validEmail)panel.append(small("El contacto no tiene un correo válido. No es posible abrir un borrador dirigido a esta empresa."));
-  const copyActions=row("crmCopyActions crmInlineCompose");
-  async function copyValue(value,label){
-    try{
-      if(!navigator.clipboard?.writeText)throw Error("No se pudo copiar automáticamente");
-      await navigator.clipboard.writeText(value);
-      notice(label+" copiado.");
-    }catch{
-      await window.CGADialog.copy("Copiá "+label.toLowerCase()+":",value);
-    }
-  }
-  for(const [label,getValue] of [
-    ["Copiar destinatario",()=>to],
-    ["Copiar asunto",()=>subject.value],
-    ["Copiar mensaje",()=>body.value]
-  ]){
-    const button=btn(label,"crmSoftCopy");button.dataset.cgaIcon="files";
-    button.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
-    copyActions.append(button);
-  }
-  panel.append(directMail(lead,subject,body,"rejection"),copyActions);
-  const channels=row("crmDeliveryButtons");
-  const zoho=n("a","Zoho Mail ↗","crmAccept");
-  zoho.href="https://mail.zoho.com/zm/#mail/folder/inbox";
-  zoho.target="_blank";zoho.rel="noopener noreferrer";zoho.dataset.cgaIcon="mail";
-  zoho.title="Abrir Zoho Mail en otra pestaña; copiá los campos del mensaje desde acá";
-  const gmail=n("a","Gmail ↗","crmAccent");
-  gmail.href="https://mail.google.com/mail/";
-  gmail.target="_blank";gmail.rel="noopener noreferrer";gmail.dataset.cgaIcon="mail";
-  gmail.title="Abrir Gmail en otra pestaña con el mensaje precargado";
-  if(!validEmail){
-    for(const link of [zoho,gmail]){link.removeAttribute("href");link.setAttribute("aria-disabled","true");link.tabIndex=-1;}
-  }
-  zoho.addEventListener("click",event=>{
-    if(!validEmail){event.preventDefault();return;}
-    notice("Se abrió Zoho Mail en otra pestaña. Copiá allí destinatario, asunto y mensaje.");
-    void audit(lead,"rechazo_zoho_abierto");
-  });
-  gmail.addEventListener("click",event=>{
-    if(!validEmail){event.preventDefault();return;}
-    gmail.href="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(to)+
-      "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
-    notice("Se abrió Gmail en otra pestaña con el mensaje listo para revisar y enviar.");
-    void audit(lead,"rechazo_gmail_abierto");
-  });
-  channels.append(zoho,gmail);panel.append(channels);
-  const recent=events.find(e=>e.lead_id===lead.id&&
-    (e.event_type==="rechazo_correo_confirmado"||e.event_type==="rechazo_correo_confirmacion_retirada"));
-  const sent=recent?.event_type==="rechazo_correo_confirmado";
-  const toggle=n("label",undefined,"crmSwitchRow crmRejectionSwitch");
-  const check=n("input");check.type="checkbox";check.setAttribute("role","switch");
-  check.setAttribute("aria-label","Ya envié la respuesta de rechazo");check.checked=sent;
-  const track=n("span",undefined,"crmSwitchTrack");
-  const caption=n("span","Ya envié el rechazo","crmSwitchText");
-  const status=n("small",sent?"Confirmado · "+when(recent.created_at):"Sin confirmar","crmSwitchStatus");
-  check.addEventListener("change",async()=>{
-    const previous=!check.checked;
-    check.disabled=true;check.setAttribute("aria-busy","true");
-    try{
-      const {error}=await sb.from("portfolio_cv_lead_activities").insert({
-        lead_id:lead.id,
-        event_type:check.checked?"rechazo_correo_confirmado":"rechazo_correo_confirmacion_retirada",
-        details:{channel:"email",context:"rejection"}
-      });
-      if(error)throw error;
-      notice(check.checked?"Respuesta de rechazo registrada como enviada.":"Confirmación de rechazo retirada.");
-      await load();
-    }catch(error){
-      check.checked=previous;
-      notice(error.message||"No se pudo guardar la confirmación.",true);
-    }finally{check.disabled=false;check.removeAttribute("aria-busy");}
-  });
-  toggle.append(check,track,caption,status);panel.append(toggle);
-  panel.append(small("Abrir un correo no lo envía automáticamente. Confirmalo cuando lo hayas enviado desde Zoho o Gmail."));
+  if(!validEmail)panel.append(small("El contacto no tiene un correo válido. No es posible enviar un correo a esta empresa."));
+  panel.append(directMail(lead,subject,body,"rejection"));
   return panel;
  }
 
@@ -259,15 +226,18 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    r.append(reconsider);
    if(lead.decision_status==="rechazada"){
     if(lead.decision_reason)box.append(small("Motivo interno: "+lead.decision_reason));
-    const respond=btn("Preparar correo de rechazo");respond.dataset.cgaIcon="mail";
+    const draftLabel=mailConfirmed(lead)?"Redactar otro correo":"Redactar correo de rechazo";
+    const respond=btn(draftLabel);respond.dataset.cgaIcon="mail";
     respond.disabled=!allowed(lead);
-    const draftPanel=rejectionComposer(lead);draftPanel.hidden=true;
+    const draftPanel=rejectionComposer(lead);draftPanel.hidden=!rejectionExpanded.has(lead.id);
     rejectDraftPanel=draftPanel;
-    respond.setAttribute("aria-expanded","false");
+    respond.setAttribute("aria-expanded",String(!draftPanel.hidden));
+    if(!draftPanel.hidden)respond.textContent="Ocultar respuesta";
     respond.addEventListener("click",()=>{
       draftPanel.hidden=!draftPanel.hidden;
       respond.setAttribute("aria-expanded",String(!draftPanel.hidden));
-      respond.textContent=draftPanel.hidden?"Preparar correo de rechazo":"Ocultar respuesta";
+      if(draftPanel.hidden)rejectionExpanded.delete(lead.id);else rejectionExpanded.add(lead.id);
+      respond.textContent=draftPanel.hidden?draftLabel:"Ocultar respuesta";
       window.CGAIcons?.decorate(respond);
       if(!draftPanel.hidden)draftPanel.querySelector("input:not([readonly])")?.focus();
     });
@@ -416,61 +386,19 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const data=draft(lead);
   const subject=n("input");subject.type="text";subject.maxLength=180;subject.value=data.subject;
   const body=n("textarea");body.rows=7;body.maxLength=5000;body.value=data.body;
-  // Primero el editor, siempre visible; luego los proveedores de envío.
-  section.append(labeled("Asunto",subject),labeled("Mensaje (editable)",body));
+  const recipient=n("input");recipient.type="text";recipient.readOnly=true;recipient.value=lead.email||"Sin correo registrado";
+  section.append(labeled("Para",recipient),labeled("Asunto",subject),labeled("Mensaje (editable)",body));
   const actions=row("crmDeliveryButtons");
-  // Enlace directo y verificable: NO usa mailto ni el cliente predeterminado.
-  const zoho=n("a","Zoho Mail ↗","crmAccept");
-  zoho.href="https://mail.zoho.com/zm/#mail/folder/inbox";
-  zoho.target="_blank";zoho.rel="noopener noreferrer";
-  zoho.dataset.cgaIcon="mail";
-  zoho.title="Abrir mail.zoho.com en una pestaña nueva";
-  const gmail=btn("Gmail","crmAccent");gmail.dataset.cgaIcon="mail";
   const whatsapp=btn("WhatsApp","crmAccent");whatsapp.dataset.cgaIcon="chat";
-  const number=waNumber(lead),email=String(lead.email||"").trim();
-  const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  gmail.disabled=!validEmail;
-  whatsapp.disabled=!number;
-  // Controles compactos: copiar y elegir canal sin un panel informativo adicional.
-  const copyActions=row("crmCopyActions crmInlineCompose");
-  async function copyValue(value,label){
-    try{
-      if(!navigator.clipboard?.writeText)throw Error("clipboard-unavailable");
-      await navigator.clipboard.writeText(value);
-      notice(label+" copiado.");
-    }catch{
-      await window.CGADialog.copy("Copiá "+label.toLowerCase()+":",value);
-    }
-  }
-  for(const [label,getValue] of [
-   ["Copiar destinatario",()=>email],
-   ["Copiar asunto",()=>subject.value],
-   ["Copiar mensaje",()=>body.value]
-  ]){
-   const copy=btn(label,"crmSoftCopy");copy.dataset.cgaIcon="files";
-   copy.addEventListener("click",()=>void copyValue(getValue(),label.replace("Copiar ","")));
-   copyActions.append(copy);
-  }
-  zoho.addEventListener("click",()=>{
-   // Se navega por el href real del <a>, no por mailto ni window.open.
-   notice("Se abrió mail.zoho.com en otra pestaña. Desde Zoho, creá un correo y pegá los datos preparados.");
-   void audit(lead,"zoho_abierto",{cv_id:current?.id||null});
-  });
-  gmail.addEventListener("click",()=>{
-   const url="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(email)+
-     "&su="+encodeURIComponent(subject.value)+"&body="+encodeURIComponent(body.value);
-   window.open(url,"_blank","noopener,noreferrer,width=1100,height=760");
-   notice("Gmail se abrió aparte con el borrador preparado. Confirmá el envío desde Gmail.");
-   void audit(lead,"gmail_abierto",{cv_id:current?.id||null});
-  });
+  const number=waNumber(lead);whatsapp.disabled=!number;
   whatsapp.addEventListener("click",()=>{
    window.open("https://wa.me/"+number+"?text="+encodeURIComponent(body.value),"_blank","noopener,noreferrer");
    notice("WhatsApp se abrió con el mensaje preparado. Enviá allí y luego confirmá con el interruptor.");
    void audit(lead,"whatsapp_abierto",{cv_id:current?.id||null});
 
   });
-  actions.append(zoho,gmail,whatsapp);
-  section.append(directMail(lead,subject,body,"followup"),copyActions,actions);
+  actions.append(whatsapp);
+  section.append(directMail(lead,subject,body,"followup"),actions);
   if(!number){
    const add=n("details",undefined,"crmPhone");add.append(n("summary","Agregar teléfono para WhatsApp"));
    const phone=n("input");phone.type="tel";phone.inputMode="tel";phone.maxLength=65;phone.value=lead.phone||"";
@@ -507,16 +435,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    });
    return wrap;
   }
-  const mailStatus=deliverySwitch("el correo","Ya envié el correo","email_sent_at",lead.email_sent_at,
-    "correo_confirmado_enviado","correo_confirmacion_retirada");
   const waStatus=deliverySwitch("el WhatsApp","Ya envié por WhatsApp","whatsapp_sent_at",lead.whatsapp_sent_at,
     "whatsapp_confirmado_enviado","whatsapp_confirmacion_retirada");
   // Siempre visibles, incluso si el número de teléfono aún no está registrado.
   // Abrir un proveedor no marca un mensaje como enviado.
-  confirmations.append(mailStatus,waStatus);
+  confirmations.append(waStatus);
   section.append(confirmations);
   if(!number)section.append(small("No hay un teléfono válido. Podés agregarlo arriba para abrir WhatsApp. Si ya lo enviaste por otra vía, registrá la confirmación manualmente."));
-  section.append(small("Confirmá el envío con los interruptores después de enviarlo desde el correo o WhatsApp."));
+  section.append(small("Confirmá únicamente el envío de WhatsApp después de enviarlo desde su aplicación."));
   parent.append(section);
  }
  function archive(lead,card){
@@ -593,6 +519,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
      labeled("Etapa interna",select));
    area.append(status);card.append(area);
   }
+  card.append(mailRecord(lead));
   archive(lead,card);
   return card;
  }
@@ -618,10 +545,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     {day:"2-digit",month:"short",year:"numeric"})));
   const signals=[];
   if(lead.cv_document_id)signals.push("CV");
-  if(lead.email_sent_at)signals.push("Correo ✓");
-  const latestRejectionEmail=events.find(e=>e.lead_id===lead.id&&
-    (e.event_type==="rechazo_correo_confirmado"||e.event_type==="rechazo_correo_confirmacion_retirada"));
-  if(latestRejectionEmail?.event_type==="rechazo_correo_confirmado")signals.push("Rechazo ✓");
+  if(latestMail(lead,"followup")||legacyMail(lead,"followup"))signals.push("Correo ✓");
+  if(latestMail(lead,"rejection")||legacyMail(lead,"rejection"))signals.push("Rechazo ✓");
   if(lead.whatsapp_sent_at)signals.push("WA ✓");
   if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
   const openLabel=n("span","Ver detalle →","crmQueueOpen");
@@ -732,6 +657,21 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
      .order("created_at",{ascending:false}).limit(2000);
    if(!activityError)events=activities||[];
   }
+  // Read the canonical mail ledger; do not depend on manual/auxiliary events.
+  let nextMail=new Map(),complete=true;
+  if(leads.length){
+   try{
+    for(let offset=0;;offset+=500){
+     const {data:rows,error:mailError}=await sb.from("portfolio_crm_mail")
+       .select("id,lead_id,context,accepted_at").in("lead_id",leads.map(x=>x.id)).eq("status","accepted")
+       .order("accepted_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+499);
+     if(mailError){complete=false;break;}
+     for(const m of rows||[]){const key=m.lead_id+":"+m.context;if(!nextMail.has(key))nextMail.set(key,m);}
+     if((rows||[]).length<500)break;
+    }
+   }catch{complete=false;}
+  }
+  mailLoaded=complete;if(complete)acceptedMail=nextMail;
   loaded=true;
   render();
  }

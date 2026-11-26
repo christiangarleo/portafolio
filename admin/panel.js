@@ -1,17 +1,30 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=19-crm-mail-key";
+import { createLeadCRM } from "./solicitudes.js?v=20-crm-mail-ux";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
-function notice(msg,error=false){
-  status.replaceChildren(document.createTextNode(msg));
+let noticeTimer;
+function notice(msg,error=false,options={}){
+  clearTimeout(noticeTimer);
+  status.replaceChildren();
+  const success=options.success===true&&!error;
+  status.dataset.success=String(success);
+  if(success){
+    const check=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    check.setAttribute("viewBox","0 0 36 36");check.setAttribute("aria-hidden","true");check.classList.add("crmToastCheck");
+    const ring=document.createElementNS(check.namespaceURI,"circle");ring.setAttribute("cx","18");ring.setAttribute("cy","18");ring.setAttribute("r","15");
+    const mark=document.createElementNS(check.namespaceURI,"path");mark.setAttribute("d","M10 18 l5 5 l11 -11");check.append(ring,mark);
+    const copy=document.createElement("div");copy.className="crmToastCopy";
+    const title=document.createElement("strong");title.textContent=msg;copy.append(title);
+    if(options.detail){const detail=document.createElement("small");detail.textContent=options.detail;copy.append(detail);}
+    status.append(check,copy);
+  }else status.append(document.createTextNode(msg));
   const close=document.createElement("button");
-  close.type="button";close.textContent="×";
-  close.setAttribute("aria-label","Cerrar mensaje");
+  close.type="button";close.textContent="×";close.setAttribute("aria-label","Cerrar mensaje");
   close.style.cssText="float:right;margin:-6px -7px -6px 10px;padding:3px 8px;font-size:21px;background:transparent;border:0;color:inherit;cursor:pointer;";
-  close.addEventListener("click",()=>status.hidden=true);
-  status.append(close);
-  status.dataset.error=String(error);status.hidden=false;
+  close.addEventListener("click",()=>{clearTimeout(noticeTimer);status.hidden=true;});
+  status.append(close);status.dataset.error=String(error);status.hidden=false;
+  if(success)noticeTimer=setTimeout(()=>{status.hidden=true;},4000);
 }
 const bucket="cv-personalizados";
 const publicPortfolioBucket="portafolio";
