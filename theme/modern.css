@@ -695,85 +695,63 @@ html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]:active{
   html.cgaModern body:has(.languageGrid) .languageCard[data-lang-choice]::before{display:none;}
 }
 
-/* HOME · LinkedIn / WhatsApp: entrada vertical del icono y feedback táctil.
-   Estilos exclusivos del encabezado, sin reutilizar la clase global .card. */
+/* Contacto HOME y lector: cuadrados discretos; una sola microinteracción. */
 body:has(.languageGrid)>header .homeHeaderName{flex:1 1 auto;min-width:0;line-height:1.3;overflow-wrap:anywhere}
-body:has(.languageGrid)>header .homeSocialLinks{display:flex;align-items:center;flex:0 0 auto;gap:8px}
-body:has(.languageGrid)>header .homeSocialLink{
- box-sizing:border-box;display:flex;align-items:center;justify-content:center;
- width:52px;height:52px;flex:0 0 auto;border:1px solid var(--cga-border-strong);
- border-radius:10px;overflow:hidden;text-decoration:none;
- background:var(--cga-surface-2);color:var(--cga-text);
- box-shadow:0 3px 9px var(--cga-shadow);
- transition:background-color .3s ease,color .3s ease,border-color .3s ease,transform .3s ease;
+body:has(.languageGrid)>header .homeSocialLinks{display:flex;align-items:center;flex:0 0 auto;gap:5px}
+.siteHeader .siteNav{gap:3px}
+.siteHeader .readerContactGrid{display:flex;flex-wrap:wrap;gap:3px;padding:6px 0 2px}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink){
+ --contact-size:40px;--contact-icon:16px;--contact-inset:0px;
+ box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+ position:relative;isolation:isolate;flex:0 0 auto;
+ width:var(--contact-size);height:var(--contact-size);min-height:var(--contact-size);
+ padding:0;border:0;border-radius:0;overflow:hidden;text-decoration:none;
+ background:transparent;color:var(--cga-muted);box-shadow:none;
+ transition:color .3s ease,transform .3s ease;
  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
 }
-body:has(.languageGrid)>header .homeSocialLink--linkedin{--home-social-color:#0072b1}
-body:has(.languageGrid)>header .homeSocialLink--whatsapp{--home-social-color:#128c7e}
-body:has(.languageGrid)>header .homeSocialIcon{display:block;width:19px;height:19px;flex:0 0 auto;fill:currentColor;pointer-events:none}
-body:has(.languageGrid)>header .homeSocialLink:is(:focus-visible,:active){
- background:var(--home-social-color);border-color:var(--home-social-color);color:#fff;
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink)::before{
+ content:"";position:absolute;inset:var(--contact-inset);z-index:-1;pointer-events:none;
+ border:1px solid color-mix(in srgb,var(--cga-text) 13%,transparent);
+ border-radius:0;background:color-mix(in srgb,var(--cga-text) 4%,transparent);
+ transition:background-color .3s ease,border-color .3s ease;
 }
-body:has(.languageGrid)>header .homeSocialLink:focus-visible{outline:2px solid var(--cga-focus);outline-offset:3px}
-body:has(.languageGrid)>header .homeSocialLink:focus-visible .homeSocialIcon{animation:cgaHomeSocialSlideIn .3s both}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{--contact-size:30px;--contact-icon:15px}
+body:has(.languageGrid)>header .homeSocialLink--linkedin,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--linkedin{--contact-hover:#0072b1;--contact-ink:#fff}
+body:has(.languageGrid)>header .homeSocialLink--whatsapp,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--whatsapp{--contact-hover:#128c7e;--contact-ink:#fff}
+:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--email,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--phone{--contact-hover:var(--cga-accent);--contact-ink:var(--brand-black)}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink) :is(.homeSocialIcon,.cgaContactIcon){display:block;width:var(--contact-icon);height:var(--contact-icon);flex:0 0 auto;pointer-events:none}
+body:has(.languageGrid)>header .homeSocialLink .homeSocialIcon,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(.cgaContactLink--linkedin,.cgaContactLink--whatsapp) .cgaContactIcon{fill:currentColor}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):is(:focus-visible,:active){color:var(--contact-ink);background:transparent}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):is(:focus-visible,:active)::before{background:var(--contact-hover);border-color:var(--contact-hover)}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):focus-visible :is(.homeSocialIcon,.cgaContactIcon){animation:cgaHomeSocialSlideIn .3s both}
 @media(hover:hover) and (pointer:fine){
- body:has(.languageGrid)>header .homeSocialLink:hover{
-  background:var(--home-social-color);border-color:var(--home-social-color);color:#fff;
- }
- body:has(.languageGrid)>header .homeSocialLink:hover .homeSocialIcon{animation:cgaHomeSocialSlideIn .3s both}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):hover{color:var(--contact-ink);background:transparent}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):hover::before{background:var(--contact-hover);border-color:var(--contact-hover)}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):hover :is(.homeSocialIcon,.cgaContactIcon){animation:cgaHomeSocialSlideIn .3s both}
 }
-body:has(.languageGrid)>header .homeSocialLink:active{transform:scale(.9)}
+:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):active{transform:scale(.9)}
 @keyframes cgaHomeSocialSlideIn{
  from{transform:translateY(-50px);opacity:0}
  to{transform:translateY(0);opacity:1}
 }
+:root body .siteHeader .readerContactGrid a.cgaContactLink{--contact-size:44px;--contact-inset:5px;--contact-icon:16px}
+/* Reducir solo el control de apariencia de HOME y lector. Conservar su forma y morph. */
+html.cgaModern body:has(.languageGrid)>header .cgaThemeSwitch,
+html.cgaModern body .siteHeader .cgaThemeSwitch{--theme-switch-width:48px;--theme-switch-height:24px}
+html.cgaModern body.cgaMobileLandscape .siteHeader .siteActions .cgaThemeSwitch{--theme-switch-width:44px;--theme-switch-height:22px}
 @media(max-width:900px){
- body:has(.languageGrid)>header{gap:8px}
- body:has(.languageGrid)>header .homeSocialLinks{gap:6px}
- body:has(.languageGrid)>header .homeSocialLink{width:44px;height:44px}
+ body:has(.languageGrid)>header{gap:6px}
+ body:has(.languageGrid)>header .homeSocialLinks{gap:2px}
+ body:has(.languageGrid)>header .homeSocialLink{--contact-size:44px;--contact-inset:5px;--contact-icon:16px}
 }
 @media(max-width:360px){
- body:has(.languageGrid)>header{gap:6px}
  body:has(.languageGrid)>header .homeHeaderName{font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){
- body:has(.languageGrid)>header .homeSocialLink{transition:none}
- body:has(.languageGrid)>header .homeSocialLink:active{transform:none}
- body:has(.languageGrid)>header .homeSocialLink:is(:hover,:focus-visible) .homeSocialIcon{animation:none}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink),:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink)::before{transition:none}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):active{transform:none}
+ :is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink):is(:hover,:focus-visible) :is(.homeSocialIcon,.cgaContactIcon){animation:none}
 }
-@media(forced-colors:active){
- body:has(.languageGrid)>header .homeSocialLink{border:1px solid ButtonText;box-shadow:none}
-}
-
-/* Lector: mismos efectos de contacto que HOME, sin aumentar la barra de herramientas. */
-.siteHeader .siteNav{gap:4px}
-.siteHeader .readerContactGrid{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 2px}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{
- box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
- flex:0 0 auto;width:34px;height:34px;min-height:34px;padding:0;
- border:1px solid var(--cga-border-strong);border-radius:7px;overflow:hidden;
- background:var(--cga-surface-2);color:var(--cga-text);
- text-decoration:none;box-shadow:0 3px 9px var(--cga-shadow);
- transition:background-color .3s ease,color .3s ease,border-color .3s ease,transform .3s ease;
- touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--linkedin{--contact-hover:#0072b1;--contact-ink:#fff}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--whatsapp{--contact-hover:#128c7e;--contact-ink:#fff}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--email,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink.cgaContactLink--phone{--contact-hover:var(--cga-accent);--contact-ink:var(--brand-black)}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink .cgaContactIcon{display:block;width:17px;height:17px;flex:0 0 auto;pointer-events:none}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(.cgaContactLink--linkedin,.cgaContactLink--whatsapp) .cgaContactIcon{fill:currentColor}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(:focus-visible,:active){background:var(--contact-hover);border-color:var(--contact-hover);color:var(--contact-ink)}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:focus-visible .cgaContactIcon{animation:cgaHomeSocialSlideIn .3s both}
-@media(hover:hover) and (pointer:fine){
- :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:hover{background:var(--contact-hover);border-color:var(--contact-hover);color:var(--contact-ink)}
- :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:hover .cgaContactIcon{animation:cgaHomeSocialSlideIn .3s both}
-}
-:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:active{transform:scale(.9)}
-:root body .siteHeader .readerContactGrid a.cgaContactLink{width:44px;height:44px;min-height:44px;border-radius:9px}
-@media(prefers-reduced-motion:reduce){
- :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{transition:none}
- :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:active{transform:none}
- :root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink:is(:hover,:focus-visible) .cgaContactIcon{animation:none}
-}
-@media(forced-colors:active){:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink{border:1px solid ButtonText;box-shadow:none}}
+@media(forced-colors:active){:is(body:has(.languageGrid)>header .homeSocialLink,:root body .siteHeader :is(.siteNav,.readerContactGrid) a.cgaContactLink)::before{border:1px solid ButtonText}}
