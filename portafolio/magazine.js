@@ -29,7 +29,7 @@
   }
   function layout(viewport,ratio,single=false){
     const mobileLandscape=viewport.ownerDocument?.body?.classList.contains("cgaMobileLandscape");
-    const padX=mobileLandscape?52:single||viewport.clientWidth<=820?4:42,padY=4,slots=single?1:2;
+    const padX=mobileLandscape?4:single||viewport.clientWidth<=820?4:42,padY=4,slots=single?1:2;
     const aw=Math.max(2,viewport.clientWidth-2*padX),ah=Math.max(2,viewport.clientHeight-2*padY);
     const width=Math.max(1,Math.floor(Math.min(aw/slots,ah*ratio)));
     const height=Math.max(1,Math.floor(width/ratio));
@@ -50,7 +50,7 @@
   function safeExternal(value){
     try{const url=new URL(value);return ["https:","http:","mailto:","tel:"].includes(url.protocol)?url.href:null;}catch{return null;}
   }
-  function create({pdf,host,viewport,locale,onPage,onInternal,onError,onFocus=()=>{}}){
+  function create({pdf,host,viewport,locale,onPage,onInternal,onError,onFocus=()=>{},onBusy=()=>{}}){
     const count=pdf.numPages;
     const en=locale==="en";
     const msg={loading:en?"Loading page…":"Cargando página…",error:en?"Page unavailable":"Página no disponible",link:en?"Open portfolio link":"Abrir enlace del portafolio",page:en?"Page":"Página"};
@@ -68,13 +68,13 @@
     const reduced=matchMedia("(prefers-reduced-motion: reduce)");
     function spreadSize(){return 2;}
     function applySize(){
-      const W=viewport.clientWidth,H=viewport.clientHeight,mobileLandscape=document.body.classList.contains("cgaMobileLandscape"),pad=mobileLandscape?52:W<650?8:28;
-      const verticalReserve=mobileLandscape?22:38;
+      const W=viewport.clientWidth,H=viewport.clientHeight,mobileLandscape=document.body.classList.contains("cgaMobileLandscape"),pad=mobileLandscape?4:W<650?8:28;
+      const verticalReserve=mobileLandscape?14:38;
       const width=Math.max(1,Math.floor(Math.min(Math.max(2,W-2*pad)/2,Math.max(2,H-verticalReserve)*ratio)));
       const height=Math.max(1,Math.floor(width/ratio));
       const changed=!geometry||width!==geometry.width||height!==geometry.height;
       geometry={width,height,slots:2,single:false};
-      left=(W-2*width)/2;top=(H-height)/2-(mobileLandscape?8:5);
+      left=(W-2*width)/2;top=(H-height)/2-(mobileLandscape?4:5);
       viewport.parentElement.style.setProperty("--cga-book-gutter",left+"px");
       viewport.style.overflowX="hidden";viewport.style.overflowY="hidden";
       Object.assign(stage.style,{width:W+"px",height:H+"px",padding:"0"});
@@ -313,6 +313,9 @@
         if(!keep.has(page)){cache.delete(page);for(const leaf of leaves(page)){const layer=leaf.querySelector(".cgaMagazineLinks");if(layer)delete layer.dataset.rendered;}paint(page);URL.revokeObjectURL(entry.url);}
       }
     }
+    function visibleBusy(){
+      onBusy(active&&!disposed&&(!book||spreadSlots(current,count).some(p=>p&&!cache.has(p)&&!failed.has(p))));
+    }
     async function drain(){
       if(rendering||!active||disposed)return;
       rendering=true;
@@ -322,18 +325,18 @@
           try{
             const target=quality,entry=await raster(page,target);
             if(disposed){URL.revokeObjectURL(entry.url);break;}
-            const old=cache.get(page);cache.set(page,entry);paint(page);trim();if(old)URL.revokeObjectURL(old.url);
-          }catch(error){failed.add(page);paint(page);if(page===current)onError(error);}
+            const old=cache.get(page);cache.set(page,entry);paint(page);trim();if(old)URL.revokeObjectURL(old.url);visibleBusy();
+          }catch(error){failed.add(page);paint(page);visibleBusy();if(spreadSlots(current,count).includes(page))onError(error);}
         }
-      }finally{rendering=false;}
+      }finally{rendering=false;visibleBusy();}
     }
     function queue(page){
       desired=[page,page+1,page-1,page+2,page-2,page+3,page-3].filter((p,i,a)=>p>=1&&p<=count&&a.indexOf(p)===i);
-      for(const p of desired)paint(p);trim();void drain();
+      for(const p of desired)paint(p);trim();visibleBusy();void drain();
     }
     async function open(page){
       if(disposed)throw Error("Magazine disposed");
-      active=true;
+      active=true;onBusy(true);
       if(!book){
         if(!preparing)preparing=(async()=>{
           const PageFlip=await loadLibrary();
@@ -350,7 +353,7 @@
           if(!method)throw Error("Unsupported StPageFlip build");
           method.call(book,items);
         })();
-        try{await preparing;}catch(error){preparing=null;active=false;throw error;}
+        try{await preparing;}catch(error){preparing=null;active=false;onBusy(false);throw error;}
       }
       if(!active||disposed)return;
       applySize();book.update();book.turnToPage(page-1);sync(book.getCurrentPageIndex()+1);label();
@@ -367,7 +370,7 @@
       if(reduced.matches){delta>0?book.turnToNextPage():book.turnToPrevPage();return;}
       delta>0?book.flipNext("bottom"):book.flipPrev("bottom");
     }
-    function close(){clearTimeout(tapTimer);clearTimeout(qualityTimer);leave(false);active=false;desired=[];press=null;lastTap=null;drag=null;panTap=null;}
+    function close(){clearTimeout(tapTimer);clearTimeout(qualityTimer);leave(false);active=false;onBusy(false);desired=[];press=null;lastTap=null;drag=null;panTap=null;}
     function resize(){
       if(active&&book){
         const page=current,was=focused,p=focusPage;

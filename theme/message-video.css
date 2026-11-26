@@ -54,3 +54,21 @@
 #requestSuccessActions .messageLanguageDescription{font-size:11px;font-weight:400;color:var(--cga-muted,#555);line-height:1.35;overflow-wrap:anywhere;}
 #requestSuccessActions .messageLanguageRight{flex:0 0 auto;}
 #requestSuccessActions .messageLanguageArrow{font-size:17px;opacity:.78;line-height:1;}
+
+/* Confirmation uses the actual available mobile width; portrait stacks, landscape can use two columns. */
+#emptySection.cgaRequestComplete{max-width:none;scroll-margin-top:clamp(28px,7dvh,62px)}
+#emptySection.cgaRequestComplete #requestHeading{margin-top:8px;font-size:clamp(23px,5vw,30px);line-height:1.25}
+#emptySection.cgaRequestComplete #requestIntro{font-size:15px;line-height:1.5}
+@media(max-width:760px),(orientation:portrait) and (any-pointer:coarse){
+ .requestSuccessLayout{grid-template-columns:minmax(0,1fr);gap:22px;width:100%;justify-items:stretch}
+ .requestVideoArea,#requestSuccessActions{max-width:none;width:100%;min-width:0}
+ .requestSuccessVideo{width:100%;height:auto;max-height:none;aspect-ratio:9/16}
+ main:has(#emptySection.cgaRequestComplete),main:has(#messageTitle){width:calc(100% - 16px);margin-inline:auto}
+ #emptySection.cgaRequestComplete,main:has(#messageTitle)>.panel{padding:clamp(12px,3.5vw,24px)}
+ #requestSuccessActions .messageCta{box-sizing:border-box}
+}
+@media(orientation:landscape) and (min-width:761px) and (any-pointer:coarse){
+ .requestSuccessLayout{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}
+ .requestVideoArea,#requestSuccessActions{max-width:none}
+ .requestSuccessVideo{max-height:72dvh}
+}

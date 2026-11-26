@@ -22,6 +22,9 @@
   const spreads=window.CGAMagazine;
   const viewportBox = byId("pageViewport");
   const pageStatus = byId("pageStatus");
+  const readerLoadBar=byId("readerLoadBar");
+  function readerBusy(active){readerLoadBar.hidden=!active;}
+  readerLoadBar.setAttribute("aria-label",locale==="en"?"Loading portfolio":"Cargando portafolio");
   const pageContainer = byId("pageContainer");
   const pageStage = byId("pageStage");
   const focusButton=byId("focusMode"),focusDialog=byId("focusDialog"),focusScroll=byId("focusScroll"),focusPageNode=byId("focusPage"),focusStatus=byId("focusStatus");
@@ -240,7 +243,8 @@
     });
   }
 
-  function setLoading(text) {
+  function setLoading(text,busy=true) {
+    readerBusy(busy);
     pageStatus.textContent = t(text);
     pageStatus.hidden = false;
   }
@@ -327,11 +331,11 @@
       group.promise=Promise.all(pdfPages.map(p=>renderSheet(p,geometry,group)));
       const sheets=await group.promise;
       if(id!==ticket||group.cancelled)return;
-      pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;
+      pageContainer.replaceChildren(...sheets);pageContainer.hidden=false;pageStatus.hidden=true;readerBusy(false);
       viewportBox.scrollTop=viewportBox.scrollLeft=0;updateToolbar();
     }catch(error){
       if(id!==ticket||group.cancelled||error.name==="RenderingCancelledException")return;
-      console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.");
+      console.error("Falló renderizado de pliego",error);setLoading("No se pudo mostrar esa página. Usá el enlace de descarga o recargá el sitio.",false);
     }finally{if(activeRender===group)activeRender=null;}
   }
 
@@ -572,14 +576,14 @@
     setFocusControl(active&&magazine?.isFocused());
   }
   function closeMagazine(render=true){
-    magazineActive=false;magazineNav=null;magazine?.close();magazineStage.hidden=true;
+    magazineActive=false;readerBusy(false);magazineNav=null;magazine?.close();magazineStage.hidden=true;
     pageStage.hidden=false;setMagazineControls(false);syncMagazineURL();updateToolbar();
     if(render&&pdfDocument)void navigate(activePage,false);
   }
   async function openMagazine(){
     if(!pdfDocument||magazineOpening||magazineActive)return;
     if(!window.CGAMagazine){showMessage(locale==="en"?"Magazine unavailable":"Vista revista no disponible");void navigate(activePage,false);return;}
-    magazineOpening=true;magazineButton.disabled=true;viewerModeButton.disabled=true;
+    magazineOpening=true;readerBusy(true);magazineButton.disabled=true;viewerModeButton.disabled=true;
     const initial=activePage;
     try{
       ticket++; // Cancel pending getPage/render work before switching modes.
@@ -590,6 +594,7 @@
         onPage:(page,nav)=>{if(!magazineActive)return;activePage=page;magazineNav=nav;updateToolbar();syncMagazineURL();},
         onInternal:page=>{if(validPage(page))magazine.go(page);},
         onFocus:focused=>setFocusControl(focused),
+        onBusy:busy=>{if(magazineActive)readerBusy(busy);},
         onError:error=>{console.warn("Magazine page",error);showMessage(locale==="en"?"Page could not load. Exit magazine to retry.":"No se pudo cargar la página. Salí de revista para reintentar.");}
       });
       await magazine.open(initial);if(magazineActive){setMagazineControls(true);viewportBox.scrollLeft=Math.max(0,(viewportBox.scrollWidth-viewportBox.clientWidth)/2);viewportBox.scrollTop=0;}
@@ -657,7 +662,7 @@
       if (verifiedPdfBlobUrl) {
         nativeMode=true;
         viewportBox.style.overflowX="hidden";viewportBox.style.overflowY="hidden";
-        setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.");
+        setLoading("No se pudo iniciar el lector avanzado. Se muestra el PDF actualizado en el visor del navegador.",false);
         nativeFallback.hidden = false;
         nativeFallback.src = verifiedPdfBlobUrl + "#page=1";
         viewerButtonLabel.textContent=t("Visor PDF clásico");
@@ -665,7 +670,7 @@
         const missingEnglish=locale==="en" && /(?:HTTP 404|HTTP 400)/.test(String(error.message));
         setLoading(missingEnglish
           ? "English portfolio not published yet. Please check back soon or switch to Español."
-          : "No se pudo obtener la versión actual del PDF. Probá «Actualizar PDF» o «Descargar PDF».");
+          : "No se pudo obtener la versión actual del PDF. Probá «Actualizar PDF» o «Descargar PDF».",false);
         nativeFallback.hidden = true;
         viewerModeButton.disabled = true;
       }
