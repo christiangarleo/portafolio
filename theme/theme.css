@@ -60,25 +60,64 @@
 .cgaThemeTrack{
  box-sizing:border-box;display:block;position:relative;overflow:hidden;
  width:calc(var(--theme-switch-width) - 4px);min-width:calc(var(--theme-switch-width) - 4px);height:var(--theme-switch-height);flex:0 0 auto;border-radius:999px;
- border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);
- transition:background-color .2s ease,border-color .2s ease;
+ border:1px solid var(--cga-border-strong);
+ background:color-mix(in srgb,var(--brand-yellow) 30%,var(--cga-surface-2));
+ box-shadow:inset 0 1px 3px var(--cga-shadow);
+ transition:background-color .3s ease-in-out,border-color .3s ease-in-out;
 }
 .cgaThemeThumb{
  position:absolute;top:2px;left:2px;width:calc(50% - 3px);height:calc(100% - 4px);
+ display:grid;place-items:center;
  border-radius:999px;background:var(--brand-yellow);box-shadow:0 1px 4px var(--cga-shadow);
- transition:transform .22s ease,background-color .2s ease;
+ transition:transform .3s ease-in-out,background-color .3s ease-in-out;
 }
-.cgaThemeSwitch[aria-checked="true"] .cgaThemeThumb{transform:translateX(calc(100% + 2px));background:var(--brand-cyan)}
-.cgaThemeSymbol{
- position:absolute;top:0;bottom:0;width:50%;display:grid;place-items:center;
- font:700 16px/1 system-ui,sans-serif;color:var(--cga-muted);pointer-events:none;
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeTrack{
+ background:color-mix(in srgb,var(--brand-cyan) 15%,var(--brand-black));
 }
-.cgaThemeSymbol--sun{left:0}
-.cgaThemeSymbol--moon{right:0}
-.cgaThemeSwitch[aria-checked="false"] .cgaThemeSymbol--sun,
-.cgaThemeSwitch[aria-checked="true"] .cgaThemeSymbol--moon{color:var(--brand-black)}
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeThumb{
+ transform:translateX(calc(100% + 2px));background:var(--brand-cyan);
+}
+.cgaThemeIcon{
+ position:relative;display:block;width:1.5em;height:1.5em;
+ font-size:calc(var(--theme-switch-height) * .4);color:var(--brand-black);
+ pointer-events:none;flex:0 0 auto;
+}
+.cgaThemeIconPart{
+ position:absolute;display:block;
+ transition:box-shadow .3s ease-in-out,opacity .3s ease-in-out,transform .3s ease-in-out;
+}
+.cgaThemeIconPart:first-child{
+ width:1em;height:1em;left:calc(50% - .5em);top:calc(50% - .5em);
+ border-radius:50%;box-shadow:inset 0 0 0 .5em currentColor;transform:scale(.53);
+}
+.cgaThemeIconPart:not(:first-child){
+ width:.1em;height:.2em;left:calc(50% - .05em);top:50%;border-radius:.05em;
+ background:currentColor;transform-origin:50% 0;
+ transform:rotate(var(--ray-angle)) translateY(.49em);
+}
+.cgaThemeIconPart:nth-child(2){--ray-angle:0deg;}
+.cgaThemeIconPart:nth-child(3){--ray-angle:45deg;}
+.cgaThemeIconPart:nth-child(4){--ray-angle:90deg;}
+.cgaThemeIconPart:nth-child(5){--ray-angle:135deg;}
+.cgaThemeIconPart:nth-child(6){--ray-angle:180deg;}
+.cgaThemeIconPart:nth-child(7){--ray-angle:225deg;}
+.cgaThemeIconPart:nth-child(8){--ray-angle:270deg;}
+.cgaThemeIconPart:nth-child(9){--ray-angle:315deg;}
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeIconPart:first-child{
+ box-shadow:inset .30em -.23em 0 .035em currentColor;
+ transform:translate(-.035em,.025em) scale(1.15) rotate(-10deg);
+}
+.cgaThemeSwitch[aria-checked="true"] .cgaThemeIconPart:not(:first-child){
+ opacity:0;transform:rotate(calc(var(--ray-angle) + 45deg)) translateY(.8em);
+}
 .cgaThemeSwitch:hover .cgaThemeTrack{border-color:var(--cga-text)}
 .cgaThemeSwitch:focus-visible{outline:2px solid var(--cga-focus)!important;outline-offset:2px}
+@media(forced-colors:active){
+ .cgaThemeTrack{border:1px solid ButtonText;box-shadow:none}
+ .cgaThemeThumb{forced-color-adjust:none;background:Highlight!important;color:HighlightText;box-shadow:none}
+ .cgaThemeIcon{color:HighlightText}
+ .cgaThemeSwitch:focus-visible{outline-color:Highlight!important}
+}
 
 :root[data-theme="dark"] body{background:var(--cga-bg);color:var(--cga-text)}
 :root[data-theme="dark"] body>header:not(.siteHeader){border-bottom-color:var(--cga-border)}
@@ -206,7 +245,7 @@
 :root[data-theme="dark"] .cvDocCard .cvDocStatus{background:var(--cga-chip);color:var(--cga-text)}
 :root[data-theme="dark"] .cvDocCard .cvDocStatus--expired{color:var(--cga-muted)}
 :root[data-theme="dark"] .toast{background:#303944;color:#fff}
-@media(prefers-reduced-motion:reduce){.cgaThemeTrack,.cgaThemeThumb{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.cgaThemeTrack,.cgaThemeThumb,.cgaThemeIconPart{transition:none!important}}
 
 /* Language selection + appearance on narrow screens without clipping reader tools. */
 @media(max-width:430px){

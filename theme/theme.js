@@ -28,13 +28,16 @@
   track.setAttribute("aria-hidden","true");
   const thumb=document.createElement("span");
   thumb.className="cgaThemeThumb";
-  track.append(thumb);
-  for(const [name,icon] of [["sun","☀︎"],["moon","☾"]]){
-    const symbol=document.createElement("span");
-    symbol.className="cgaThemeSymbol cgaThemeSymbol--"+name;
-    symbol.textContent=icon;
-    track.append(symbol);
+  // One animated symbol travels with the thumb; the existing switch state remains authoritative.
+  const icon=document.createElement("span");
+  icon.className="cgaThemeIcon";
+  for(let i=0;i<9;i++){
+    const part=document.createElement("span");
+    part.className="cgaThemeIconPart";
+    icon.append(part);
   }
+  thumb.append(icon);
+  track.append(thumb);
   toggle.append(track);
   control.append(toggle);
 
