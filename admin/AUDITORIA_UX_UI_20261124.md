@@ -186,3 +186,8 @@ Las flechas de navegación se conservan en la barra izquierda (controles ya exis
 ### Restauración de controles aprobados y continuidad visual HOME — 26/11/2026
 
 La evidencia móvil del titular confirma la pérdida visual de flechas laterales y lupa, causada por reglas introducidas en el PR #2. Se retiran esas reglas, se recuperan los chevrons animados originales con sus IDs/eventos y el SVG de zoom +/−, se reservan 48 px para evitar tapar el pliego y se ocultan duplicados del rail. Las tarjetas de agradecimiento de /empresa/ y /video/ comparten las reglas glass originales de HOME (incluido brillo por tema, focus y press), conservando layout, enlaces, idiomas y botones de contacto. No se revierten otros cambios del PR #2. Validación estática, pendiente prueba visual real y autorización de publicación.
+
+
+### Índice lateral y paginación superior (escritorio) — 26/11/2026
+
+Solicitud del titular: mover exclusivamente los capítulos de la barra inferior a un índice plegable izquierdo y Anterior/Página/total/Siguiente a la parte superior. Se reutilizan los nodos de navegación existentes sin duplicarlos; el panel compacto mide 48 px, con control accesible de expansión, y se recalcula el pliego al compactar/expandir. El modo se aplica desde 1000 px con puntero fino y hover, respetando el modo apaisado móvil prioritario y la navegación vertical original. Se conserva el tema y las traducciones ES/EN; no se modifica el PDF ni se altera la lógica de navegación. Cambios incorporados al PR #3 abierto. Validación estática; pendiente verificación visual y autorización de producción.

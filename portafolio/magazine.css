@@ -231,3 +231,29 @@ html.cgaModern #cvDialog button.cgaFormButton{width:100%}
 html body.cgaMobileLandscape .siteHeader #focusMode>svg{display:block}
 html body.cgaMobileLandscape .siteHeader #focusMode::before{content:none;display:none}
 
+
+/* Desktop-only contents panel. Original chapter links and pagination are moved, not copied. */
+body.cgaDesktopReader #readerPanel{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-width:0;min-height:0}
+body.cgaDesktopReader .viewerShell{grid-column:2;grid-row:1;min-width:0;min-height:0}
+body.cgaDesktopReader #desktopIndex{grid-column:1;grid-row:1;width:clamp(208px,17vw,256px);min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--cga-surface);color:var(--cga-text);border-right:1px solid var(--cga-border);padding:12px 10px;display:flex;flex-direction:column;gap:14px}
+body.cgaDesktopReader #desktopIndex.isCompact{width:48px;padding:12px 4px;align-items:center}
+body.cgaDesktopReader .desktopIndexHead{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+body.cgaDesktopReader #desktopIndexTitle{font-size:14px;font-weight:700;padding-inline-start:9px}
+body.cgaDesktopReader #desktopIndexToggle{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:4px;border:1px solid var(--cga-border-strong);background:var(--cga-surface-2);color:var(--cga-text);padding:7px}
+body.cgaDesktopReader #desktopIndexToggle svg{width:20px;height:20px;transition:transform .2s ease}
+body.cgaDesktopReader #desktopIndex.isCompact #desktopIndexToggle svg{transform:scaleX(-1)}
+body.cgaDesktopReader #desktopIndexToggle:hover{background:var(--cga-hover);border-color:var(--cga-focus)}
+body.cgaDesktopReader #desktopIndexToggle:focus-visible{outline:2px solid var(--cga-focus);outline-offset:2px}
+body.cgaDesktopReader #desktopIndexLinks{display:grid;gap:4px;min-width:0}
+body.cgaDesktopReader #desktopIndexLinks .sectionLinks{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px;min-width:0}
+body.cgaDesktopReader #desktopIndexLinks .sectionJump{justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere;line-height:1.35;min-height:42px;padding:10px 12px;border-radius:5px;color:var(--cga-text);font-size:13px;border:1px solid transparent}
+body.cgaDesktopReader #desktopIndexLinks .sectionJump:hover{background:var(--cga-hover)}
+body.cgaDesktopReader #desktopIndexLinks .sectionJump[aria-current="location"]{background:var(--cga-accent-soft);box-shadow:inset 3px 0 var(--cga-focus);color:var(--cga-text)}
+body.cgaDesktopReader #desktopIndexLinks .sectionJump[aria-disabled="true"]{opacity:.55;cursor:default}
+body.cgaDesktopReader #desktopPagination{display:flex;justify-content:center;align-items:center;min-width:0;padding:3px 12px 6px;border-top:1px solid var(--cga-border);background:var(--cga-surface)}
+body.cgaDesktopReader #desktopPagination #gotoForm{flex-wrap:nowrap;gap:7px;margin:0}
+body.cgaDesktopReader #desktopPagination #gotoForm :is(button,input){min-height:34px;font-size:13px}
+body.cgaDesktopReader #desktopPagination #pageNumber{width:54px}
+body.cgaDesktopReader #desktopIndex[hidden],body.cgaDesktopReader #desktopIndexLinks[hidden],body.cgaDesktopReader #desktopIndexTitle[hidden],body.cgaDesktopReader #desktopPagination[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){body.cgaDesktopReader #desktopIndexToggle svg{transition:none}}
+@media(forced-colors:active){body.cgaDesktopReader #desktopIndexLinks .sectionJump[aria-current="location"]{border-color:Highlight;box-shadow:none}}
