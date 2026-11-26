@@ -201,3 +201,8 @@ Se reemplaza el aviso visual central de descarga/preparación por la barra exist
 ### Paginación compacta en una sola barra de escritorio — 26/11/2026
 
 Solicitud: eliminar segunda fila superior y textos visibles Anterior/Página/de/Siguiente. El formulario original se mueve dentro de .readerTools; las flechas SVG reutilizan los estilos de los iconos del visor (30×30 px), número editable de 42×30 px y separador /. Se conservan etiquetas accesibles, títulos ES/EN, IDs, listeners, estado disabled y enlaces de capítulos. En móvil se mantiene la distribución anterior y su texto, sin duplicar controles. Validación estática; pendiente QA visual y publicación autorizada.
+
+
+### Control único de vista revista — 26/11/2026
+
+Solicitud del titular: retirar el botón redundante Visor PDF clásico. Se elimina su nodo, listener y reglas CSS del visor. El botón original Vista revista / Salir de revista conserva la alternancia, estado activo, rótulo ES/EN y recuperación del modo clásico al salir. Se conserva el fallback PDF nativo ante error y se desactiva el botón cuando no existe documento avanzado disponible. Sin cambios de PDF, backend ni restantes controles. Validación estática; publicación pendiente de autorización.
