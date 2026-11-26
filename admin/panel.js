@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=16-glass-forms";
+import { createLeadCRM } from "./solicitudes.js?v=17-crm-filters";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -17,8 +17,11 @@ const bucket="cv-personalizados";
 const publicPortfolioBucket="portafolio";
 const publicPortfolioFiles={
   en:"Christian_Arleo_Portfolio_EN.pdf",
-  es:"Christian_Arleo_Portafolio.pdf"
+  es:"Christian_Arleo_Portafolio.pdf",
+  es_a3:"Christian_Arleo_Portafolio_ES_A3.pdf",
+  en_a3:"Christian_Arleo_Portfolio_EN_A3.pdf"
 };
+const portfolioSuffix={es:"Es",en:"En",es_a3:"EsA3",en_a3:"EnA3"};
 let publishedPortfolios=new Set();
 
 const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -132,7 +135,7 @@ function refreshOverview(){
   el("statPending").textContent=totals.loaded?String(totals.pending):"—";
   el("statActive").textContent=totals.loaded?String(totals.active):"—";
   el("statCV").textContent=documentsLoaded?String(documents.length):"—";
-  el("statPortfolios").textContent=portfoliosLoaded?String(publishedPortfolios.size):"—";
+  el("statPortfolios").textContent=portfoliosLoaded?String(Object.values(publicPortfolioFiles).filter(name=>publishedPortfolios.has(name)).length):"—";
   const target=el("adminPriorities");
   target.replaceChildren();
   function suggestion(message,label,view){
@@ -197,21 +200,21 @@ function setCVFormOpen(open){
 el("newCVToggle").addEventListener("click",()=>setCVFormOpen(el("cvUploadForm").hidden));
 el("cancelCVUpload").addEventListener("click",()=>setCVFormOpen(false));
 function togglePortfolioForm(lang,open){
-  const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
-  const toggle=el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn");
+  const form=el("publicPortfolioForm"+portfolioSuffix[lang]);
+  const toggle=el("editPublicPortfolio"+portfolioSuffix[lang]);
   form.hidden=!open;
   toggle.setAttribute("aria-expanded",String(open));
   if(open){
-    el(lang==="es"?"publicPortfolioFileEs":"publicPortfolioFileEn").focus();
+    el("publicPortfolioFile"+portfolioSuffix[lang]).focus();
   }else{
     form.reset();
     toggle.focus();
   }
 }
-for(const lang of ["es","en"]){
-  el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn")
+for(const lang of Object.keys(portfolioSuffix)){
+  el("editPublicPortfolio"+portfolioSuffix[lang])
     .addEventListener("click",()=>{
-      const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
+      const form=el("publicPortfolioForm"+portfolioSuffix[lang]);
       togglePortfolioForm(lang,form.hidden);
     });
 }
@@ -221,8 +224,10 @@ el("publicPortfolios").addEventListener("click",event=>{
 });
 
 const publicPortfolioDisplay={
-  es:{label:"español",state:"publicPortfolioStateEs",link:"publicPortfolioLinkEs",button:"publicPortfolioButtonEs",file:"publicPortfolioFileEs"},
-  en:{label:"inglés",state:"publicPortfolioStateEn",link:"publicPortfolioLinkEn",button:"publicPortfolioButtonEn",file:"publicPortfolioFileEn"}
+  es:{label:"español · A4 web",state:"publicPortfolioStateEs",link:"publicPortfolioLinkEs",button:"publicPortfolioButtonEs",file:"publicPortfolioFileEs"},
+  en:{label:"inglés · A4 web",state:"publicPortfolioStateEn",link:"publicPortfolioLinkEn",button:"publicPortfolioButtonEn",file:"publicPortfolioFileEn"},
+  es_a3:{label:"español · A3 descarga",state:"publicPortfolioStateEsA3",link:"publicPortfolioLinkEsA3",button:"publicPortfolioButtonEsA3",file:"publicPortfolioFileEsA3"},
+  en_a3:{label:"inglés · A3 descarga",state:"publicPortfolioStateEnA3",link:"publicPortfolioLinkEnA3",button:"publicPortfolioButtonEnA3",file:"publicPortfolioFileEnA3"}
 };
 function setPublicPortfolioState(lang,exists){
   const display=publicPortfolioDisplay[lang];
@@ -237,7 +242,7 @@ function setPublicPortfolioState(lang,exists){
   }else{
     link.removeAttribute("href");
   }
-  const toggle=el(lang==="es"?"editPublicPortfolioEs":"editPublicPortfolioEn");
+  const toggle=el("editPublicPortfolio"+portfolioSuffix[lang]);
   const text=exists?"Reemplazar PDF":"Publicar PDF";
   toggle.replaceChildren(document.createTextNode(text));
   window.CGAIcons?.decorate(toggle);
@@ -263,7 +268,7 @@ async function loadPublicPortfolios(){
 el("refreshPublicPortfolios").addEventListener("click",loadPublicPortfolios);
 for(const lang of Object.keys(publicPortfolioDisplay)){
   const display=publicPortfolioDisplay[lang];
-  const form=el(lang==="es"?"publicPortfolioFormEs":"publicPortfolioFormEn");
+  const form=el("publicPortfolioForm"+portfolioSuffix[lang]);
   form.addEventListener("submit",async event=>{
     event.preventDefault();
     if(!isAdmin){notice("No autorizado.",true);return;}
@@ -275,7 +280,7 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
     const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
     if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
     const exists=publishedPortfolios.has(path);
-    if(exists&&!confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará este idioma. Guardá una copia del anterior.")){
+    if(exists&&!await window.CGADialog.confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará esta edición. Guardá una copia del anterior.")){
       return;
     }
     const button=el(display.button);
@@ -291,7 +296,7 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
       publishedPortfolios.add(path);
       setPublicPortfolioState(lang,true);
       togglePortfolioForm(lang,false);
-      notice("PDF en "+display.label+" actualizado. El otro idioma no cambió.");
+      notice("PDF en "+display.label+" actualizado. Las demás ediciones no cambiaron.");
       await loadPublicPortfolios();
     }catch(error){
       notice("No se pudo actualizar el PDF en "+display.label+": "+(error.message||"Error desconocido"),true);
@@ -417,7 +422,7 @@ el("documents").addEventListener("click",async e=>{
       const {data,error}=await sb.storage.from(bucket).createSignedUrl(x.storage_path,60,{download:x.original_filename});
       if(error)throw error;window.open(data.signedUrl,"_blank","noopener");
     }else if(action==="edit"){
-      const newName=prompt("Nombre de la vacante o puesto",x.role_name);
+      const newName=await window.CGADialog.edit("Nombre de la vacante o puesto",x.role_name);
       if(newName===null)return;
       const value=newName.trim();
       if(!value || value.length>180){notice("Ingresá una vacante de 1 a 180 caracteres.",true);return;}
@@ -434,7 +439,7 @@ el("documents").addEventListener("click",async e=>{
       const a=await sb.from("portfolio_cv_documents").update({is_active:!x.is_active}).eq("id",x.id);
       if(a.error)throw a.error;notice(x.is_active?"CV desactivado.":"CV activado.");await loadDocuments();
     }else if(action==="delete"){
-      if(!confirm("¿Eliminar definitivamente este CV y su archivo?"))return;
+      if(!await window.CGADialog.confirm("¿Eliminar definitivamente este CV y su archivo?",{danger:true}))return;
       const a=await sb.storage.from(bucket).remove([x.storage_path]);if(a.error)throw a.error;
       const b=await sb.from("portfolio_cv_documents").delete().eq("id",x.id);if(b.error)throw b.error;
       notice("CV eliminado.");await loadDocuments();

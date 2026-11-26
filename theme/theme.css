@@ -19,7 +19,8 @@
   --cga-border-strong:color-mix(in srgb,var(--brand-black) 36%,var(--brand-white));
   --cga-chip:color-mix(in srgb,var(--brand-white) 82%,white);
   --cga-hover:color-mix(in srgb,var(--brand-white) 72%,white);
-  --cga-accent:var(--brand-yellow);
+  --cga-ui-gold:#F6C928; /* Owner-approved UI yellow; use translucent surfaces for restrained accents. */
+  --cga-accent:var(--cga-ui-gold);
   --cga-focus:#806600; /* Dark gold provides a visible focus boundary on light surfaces. */
   --cga-accent-soft:color-mix(in srgb,var(--cga-surface) 91%,var(--cga-accent) 9%);
   --cga-primary:var(--cga-accent);

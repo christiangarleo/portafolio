@@ -64,6 +64,53 @@
       if(node)observer.observe(node,{childList:true,subtree:true});
     }
   }
+  // One reusable, accessible confirmation/text dialog; no business actions here.
+  let activeDialog=null;
+  function askDialog(message,{mode="confirm",value="",danger=false}={}){
+    if(activeDialog)return Promise.resolve(mode==="confirm"?false:null);
+    return new Promise(resolve=>{
+      const previous=document.activeElement;
+      const dialog=document.createElement("dialog");
+      dialog.className="cgaGlassForm cgaFormControls cgaAdminDialog";
+      dialog.setAttribute("aria-labelledby","cgaAdminDialogTitle");
+      dialog.setAttribute("aria-describedby","cgaAdminDialogMessage");
+      const form=document.createElement("form");
+      const heading=document.createElement("h2");
+      heading.id="cgaAdminDialogTitle";
+      heading.textContent=mode==="confirm"?"Confirmar acción":mode==="copy"?"Copiar información":"Editar información";
+      const text=document.createElement("p");text.id="cgaAdminDialogMessage";text.textContent=message;
+      form.append(heading,text);
+      let field;
+      if(mode!=="confirm"){
+        field=document.createElement(mode==="copy"?"textarea":"input");
+        field.value=String(value??"");field.setAttribute("aria-label",message);
+        if(mode==="copy"){field.readOnly=true;field.rows=5;}
+        else{field.type="text";field.maxLength=180;field.required=true;}
+        form.append(field);
+      }
+      const actions=document.createElement("div");actions.className="cgaDialogActions";
+      const cancel=document.createElement("button");cancel.type="button";cancel.className="cgaFormButton";cancel.textContent=mode==="copy"?"Cerrar":"Cancelar";
+      cancel.autofocus=true;
+      const ok=document.createElement("button");ok.type=mode==="copy"?"button":"submit";ok.className="cgaFormButton cgaDialogConfirm";
+      ok.textContent=mode==="copy"?"Seleccionar texto":mode==="edit"?"Guardar":danger?"Confirmar eliminación":"Confirmar";
+      if(danger)ok.classList.add("cgaDialogDanger");
+      actions.append(cancel,ok);form.append(actions);dialog.append(form);document.body.append(dialog);activeDialog=dialog;
+      let result=mode==="confirm"?false:null;
+      const close=()=>dialog.close();
+      cancel.addEventListener("click",close);
+      form.addEventListener("submit",event=>{event.preventDefault();if(mode==="copy")return;if(mode==="edit"&&!form.reportValidity())return;result=mode==="confirm"?true:field.value;close();});
+      if(mode==="copy")ok.addEventListener("click",()=>{field.focus();field.select();});
+      dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
+      dialog.addEventListener("close",()=>{dialog.remove();activeDialog=null;if(previous?.isConnected&&!previous.disabled)previous.focus({preventScroll:true});resolve(result);},{once:true});
+      try{dialog.showModal();if(field){field.focus();field.select();}else cancel.focus();}
+      catch{dialog.remove();activeDialog=null;resolve(result);}
+    });
+  }
+  window.CGADialog={
+    confirm:(message,options={})=>askDialog(message,{...options,mode:"confirm"}),
+    edit:(message,value)=>askDialog(message,{mode:"edit",value}),
+    copy:(message,value)=>askDialog(message,{mode:"copy",value})
+  };
   window.CGAIcons={makeIcon,decorate};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
   else start();

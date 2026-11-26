@@ -17,6 +17,35 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   marketing_contenido:"Marketing y contenido",automatizacion_ia:"Automatización e IA",
   solucion_digital:"Solución digital",urgente:"Urgente",este_mes:"Este mes",mas_adelante:"Más adelante",a_definir:"A definir"};
  const n=(tag,text,cls)=>node(tag,text,cls);
+ const filterIds=["leadKindFilter","leadStageFilter","leadModeFilter","leadAgeFilter","leadMailFilter","leadMeetingFilter","leadSort"];
+ const advanced=Object.fromEntries(filterIds.map(id=>[id,el(id)]));
+ const resetAdvanced=()=>{for(const id of filterIds)advanced[id].value=id==="leadSort"?"newest":"";};
+ for(const control of Object.values(advanced))control.addEventListener("change",()=>{page=0;mobileDetail=false;render();});
+ el("resetLeadAdvanced").addEventListener("click",()=>{resetAdvanced();searchInput.value="";page=0;mobileDetail=false;render();});
+ function mailConfirmed(lead){
+   if(lead.decision_status!=="rechazada")return Boolean(lead.email_sent_at);
+   const recent=events.find(e=>e.lead_id===lead.id&&["rechazo_correo_confirmado","rechazo_correo_confirmacion_retirada"].includes(e.event_type));
+   return recent?.event_type==="rechazo_correo_confirmado";
+ }
+ function filterAdvanced(lead){
+   const f=id=>advanced[id].value,now=Date.now(),meeting=Date.parse(lead.meeting_at||""),created=Date.parse(lead.created_at||"");
+   const kind=f("leadKindFilter"),stage=f("leadStageFilter"),mode=f("leadModeFilter"),age=f("leadAgeFilter"),mail=f("leadMailFilter"),mt=f("leadMeetingFilter");
+   const actualMode=lead.intake_data?.work_mode;
+   return (!kind||lead.kind===kind)&&(!stage||(lead.status||"nuevo")===stage)&&
+    (!mode||(mode==="unknown"?!actualMode:actualMode===mode))&&
+    (!age||(Number.isFinite(created)&&created>=now-Number(age)*86400000))&&
+    (!mail||(mail==="blocked"?!allowed(lead):mail==="yes"?mailConfirmed(lead):allowed(lead)&&!mailConfirmed(lead)))&&
+    (!mt||(mt==="none"?!Number.isFinite(meeting):mt==="future"?meeting>=now:meeting<now));
+ }
+ function sortAdvanced(rows){
+   const date=x=>Date.parse(x.created_at)||0, meeting=x=>{const t=Date.parse(x.meeting_at||"");return Number.isFinite(t)&&t>=Date.now()?t:Infinity;};
+   const cmp=(a,b)=>String(a||"").localeCompare(String(b||""),"es",{sensitivity:"base"});
+   const sort=advanced.leadSort.value;
+   return rows.sort((a,b)=>{
+     const primary=sort==="oldest"?date(a)-date(b):sort==="company"?cmp(a.company_name,b.company_name):sort==="position"?cmp(a.position_or_project,b.position_or_project):sort==="meeting"?meeting(a)-meeting(b):date(b)-date(a);
+     return primary||date(b)-date(a)||cmp(a.id,b.id);
+   });
+ }
  searchInput.addEventListener("input",()=>{page=0;mobileDetail=false;render();});
  function btn(text,cls){const x=n("button",text,cls);x.type="button";return x;}
  function row(cls="crmActions"){return n("div",undefined,cls);}
@@ -86,7 +115,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
       await navigator.clipboard.writeText(value);
       notice(label+" copiado.");
     }catch{
-      window.prompt("Copiá "+label.toLowerCase()+":",value);
+      await window.CGADialog.copy("Copiá "+label.toLowerCase()+":",value);
     }
   }
   for(const [label,getValue] of [
@@ -179,7 +208,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     const note=n("textarea");note.placeholder="Motivo interno (opcional)";note.maxLength=500;note.rows=2;
     const yes=btn("Confirmar rechazo","crmReject"),cancel=btn("Cancelar");
     r.replaceChildren(labeled("Motivo del rechazo",note),yes,cancel);
-    action(yes,async()=>{if(!confirm("¿Confirmás que querés rechazar esta solicitud?"))return;activeFilter="rechazada";
+    action(yes,async()=>{if(!await window.CGADialog.confirm("¿Confirmás que querés rechazar esta solicitud?"))return;activeFilter="rechazada";
      await persist(lead,{decision_status:"rechazada",decision_at:new Date().toISOString(),decision_reason:note.value.trim()||null,status:"cerrado"},"decision_rechazada",{motivo:note.value.trim()});});
     cancel.addEventListener("click",()=>r.replaceChildren(accept,decline));
    });
@@ -187,7 +216,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   }else{
    box.append(small("Decisión: "+(labels[lead.decision_status]||lead.decision_status)+(lead.decision_at?" · "+when(lead.decision_at):"")));
    const reconsider=btn("Reconsiderar");reconsider.dataset.cgaIcon="refresh";
-   action(reconsider,async()=>{if(!confirm("¿Volver esta solicitud a Por decidir?"))return;activeFilter="pendiente";
+   action(reconsider,async()=>{if(!await window.CGADialog.confirm("¿Volver esta solicitud a Por decidir?"))return;activeFilter="pendiente";
     await persist(lead,{decision_status:"pendiente",decision_at:null,decision_reason:null,status:"nuevo"},"decision_reconsiderada");});
    r.append(reconsider);
    if(lead.decision_status==="rechazada"){
@@ -307,7 +336,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   if(lead.meeting_at){
    const clear=btn("Quitar propuesta");
    clear.addEventListener("click",async()=>{
-    if(!confirm("¿Quitar la propuesta de reunión?"))return;
+    if(!await window.CGADialog.confirm("¿Quitar la propuesta de reunión?"))return;
     try{await persist(lead,{meeting_at:null,meeting_mode:null,meeting_link:null},"reunion_propuesta_borrada");notice("Reunión retirada.");}
     catch(err){notice(err.message,true);}
    });
@@ -338,7 +367,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    section.append(n("p","La empresa eligió «Nosotros te devolvemos la llamada». Necesitás autorización posterior para iniciar contacto.","crmWarning"));
    const authorize=btn("Registrar autorización posterior");
    action(authorize,async()=>{
-    if(!confirm("¿La empresa te autorizó después a contactarla? Registralo solo si ocurrió."))return;
+    if(!await window.CGADialog.confirm("¿La empresa te autorizó después a contactarla? Registralo solo si ocurrió."))return;
     await persist(lead,{contact_override_at:new Date().toISOString()},"autorizacion_contacto_posterior");
     notice("Autorización registrada.");
    });
@@ -372,7 +401,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
       await navigator.clipboard.writeText(value);
       notice(label+" copiado.");
     }catch{
-      window.prompt("Copiá "+label.toLowerCase()+":",value);
+      await window.CGADialog.copy("Copiá "+label.toLowerCase()+":",value);
     }
   }
   for(const [label,getValue] of [
@@ -494,7 +523,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
         await navigator.clipboard.writeText(companyId);
         notice("Identificador copiado.");
       }catch{
-        window.prompt("Copiá el identificador:",companyId);
+        await window.CGADialog.copy("Copiá el identificador:",companyId);
       }
     });
     identifier.append(copy);
@@ -588,10 +617,12 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const subset=leads.filter(x=>activeFilter==="todas"||x.decision_status===activeFilter);
   const matches=subset.filter(x=>!query||[
    x.company_name,x.contact_name,x.email,x.position_or_project,x.ruc,x.phone,x.kind
-  ].some(text=>String(text||"").toLocaleLowerCase().includes(query)));
+  ].some(text=>String(text||"").toLocaleLowerCase().includes(query))).filter(filterAdvanced);
+  sortAdvanced(matches);
+  summary.textContent+=" · "+matches.length+" coincidencias";
   if(!matches.length){
    selectedLeadId=null;mobileDetail=false;
-   const empty=small(query?"No hay solicitudes con esos criterios.":"No hay solicitudes en esta bandeja.");
+   const empty=small(query||filterIds.slice(0,-1).some(id=>advanced[id].value)?"No hay solicitudes con esos criterios.":"No hay solicitudes en esta bandeja.");
    root.append(empty);
    if(query){
     const reset=btn("Limpiar búsqueda");reset.dataset.cgaIcon="refresh";

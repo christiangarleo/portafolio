@@ -9,9 +9,11 @@
   // Cache-busting per visit prevents older PDFs being reused after a replacement.
   // Keep the nonce constant within the current visit, allowing page-to-page reuse.
   const CACHE_NONCE = String(Date.now());
-  // The reader and the download must consume the exact same response.
+  // The reader always consumes A4; an independent A3 edition is used for download when available.
   // Download is retrieved with no-store, then passed directly to PDF.js.
-  const DOWNLOAD_URL = SOURCE_PDF + "?download=" + encodeURIComponent(manifest.filename) + "&cacheNonce=" + CACHE_NONCE;
+  const VIEW_URL = SOURCE_PDF + "?download=" + encodeURIComponent(manifest.filename) + "&cacheNonce=" + CACHE_NONCE;
+  const A3_URL=manifest.downloadUrl?manifest.downloadUrl+"?download="+encodeURIComponent(manifest.downloadFile)+"&cacheNonce="+CACHE_NONCE:null;
+  let a3Available=false,a4Available=false;
   let verifiedPdfBlobUrl = null;
   const BASE_URL = "https://christianarleo.com/portafolio/";
   const TITLE=manifest.title;
@@ -155,17 +157,29 @@
   const sideNext = byId("sideNext");
   const printButton = byId("printPdf");
   const downloadLink = byId("downloadPortfolio");
-  if(downloadLink) {
-    // EN download stays disabled until the correct PDF is successfully fetched.
-    downloadLink.href=locale==="es"?DOWNLOAD_URL:"#";
-    if(locale==="en")downloadLink.setAttribute("aria-disabled","true");
-    downloadLink.addEventListener("click",event=>{
-      if(locale==="en"&&!verifiedPdfBlobUrl){
-        event.preventDefault();
-        showMessage("English portfolio not published yet. Please check back soon or switch to Español.");
-      }
-    });
+  function syncDownloadLink(){
+    if(!downloadLink)return;
+    const available=a3Available||a4Available;
+    downloadLink.href=a3Available?A3_URL:a4Available?VIEW_URL:"#";
+    downloadLink.textContent=locale==="en"?(a3Available?"Download portfolio PDF · A3":a4Available?"Download portfolio PDF · A4 (reading edition)":"Download portfolio PDF"):(a3Available?"Descargar portafolio PDF · A3":a4Available?"Descargar portafolio PDF · A4 (edición de lectura)":"Descargar portafolio PDF");
+    if(available)downloadLink.removeAttribute("aria-disabled");
+    else downloadLink.setAttribute("aria-disabled","true");
   }
+  async function checkA3(){
+    if(!A3_URL)return;
+    try{
+      const r=await fetch(A3_URL,{method:"HEAD",cache:"no-store",credentials:"omit"});
+      a3Available=r.ok&&/application\/pdf/i.test(r.headers.get("content-type")||"");
+    }catch{a3Available=false;}
+    syncDownloadLink();
+  }
+  syncDownloadLink();
+  downloadLink?.addEventListener("click",event=>{
+    if(a3Available||a4Available)return;
+    event.preventDefault();
+    showMessage(locale==="en"?"PDF download is not available yet.":"La descarga todavía no está disponible.");
+  });
+  void checkA3();
   const shareMenu = byId("actionsMenu");
   const shareButton = byId("actionsToggle");
   let pdfDocument = null, activeRender = null, activePage = 1, totalPages = locale==="es"?55:0, ticket = 0, resizeTimer, toastTimer;
@@ -660,13 +674,14 @@
       // Fetching the same URL used for the confirmed-correct download
       // avoids serving an older cached PDF from the plain public URL.
       setLoading(locale==="en"?"Downloading PDF":"Descargando PDF",true,"download");
-      const response = await fetch(DOWNLOAD_URL, { cache: "no-store", credentials: "omit" });
+      const response = await fetch(VIEW_URL, { cache: "no-store", credentials: "omit" });
       if (!response.ok) throw new Error("HTTP " + response.status + " al descargar el PDF");
       const pdfBytes = await readPdfBytes(response);
       if (pdfBytes.byteLength < 1024) throw new Error("Respuesta PDF vacía o incompleta");
       const signature = new TextDecoder("latin1").decode(pdfBytes.slice(0, 1024));
       if (!signature.includes("%PDF-")) throw new Error("La descarga no es un documento PDF");
       verifiedPdfBlobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+      a4Available=true;syncDownloadLink();
       setLoading(locale==="en"?"Preparing PDF":"Preparando PDF",true,"startup");
       pdfDocument = await library.getDocument({ data: new Uint8Array(pdfBytes) }).promise;
       totalPages = pdfDocument.numPages;
@@ -677,10 +692,6 @@
         refreshSectionLinks();
         // Escaneo posterior al primer render para evitar retrasar la portada.
         setTimeout(()=>{void discoverEnglishSections();},0);
-      }
-      if(locale==="en" && downloadLink){
-        downloadLink.href=DOWNLOAD_URL;
-        downloadLink.removeAttribute("aria-disabled");
       }
       const requested = new URLSearchParams(location.search).get("pagina");
       nativeFallback.hidden = true;

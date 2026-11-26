@@ -216,3 +216,25 @@ Se reemplaza el relleno sólido del botón Enviar invitación / Proponer proyect
 ### Microinteracciones CV y acceso HOME (26/11/2026)
 
 Autorización explícita del titular para mejoras anteriores y actuales. Se incorporan al PR #7: tarjetas de vacantes con entrada y elevación discreta, badge con shimmer de una sola pasada (sin animación perpetua), botón Descargar CV reutilizando Glass HOME con icono local y estado busy real, filtros con contraste activo y feedback de pulsación, contador con transición breve. El nombre del titular en /empresa/ (incluido estado de confirmación) y /video/ es un enlace al HOME, con tipografía de 15 px (+1 px). Se preservan IDs de botones, validación, endpoints, datos, permisos e idiomas; no se modifican backend ni PDF. Validación estática y revisión de diferencias; QA visual real pendiente.
+
+
+### Auditoría de regresión visual /video/ y confirmación de /empresa/ — 26/11/2026
+
+Evidencia: capturas del titular de /video/ con nombre subrayado y cuatro CTA sin superficie Glass; GitHub Pages confirmó éxito del commit 76a4321. Causa comprobada en fuente: /video/ enlazaba modern.css pero no incluía modern.js ni la clase raíz cgaModern, por lo que los selectores de HOME y la identidad no coincidían. HOME, /empresa/, /admin/ y /portafolio/ sí cargaban modern.js. Las rutas /portfolio/ y /mensaje/ redirigen a las correspondientes rutas canónicas. Se corrige activación declarativa cgaModern en las cinco páginas reales, se unifica versión de caché de modern.css y modern.js, se incluye el inicializador en /video/, se iguala el subtítulo Portafolio/Portfolio y la tipografía del encabezado, y se corrige selector de animación de flecha de las tarjetas de idioma en ambas vistas de agradecimiento. Enlaces a HOME, revista ES/EN y contactos conservados. La confirmación de /empresa/ usa los mismos IDs/clases, revela acciones tras éxito y conserva su lógica de envío. No se envía ninguna propuesta de prueba ni se modifican datos, Auth, RLS o PDF. Validación estática de contratos y rutas; publicación y QA real pendientes. Reversión: descartar PR o revertir su commit.
+
+QA adicional: Chromium local con fixture aislado basado en los selectores y declaraciones de las hojas compartidas: se reprodujo fondo none/borde 0 px sin cgaModern; al activarla pasaron 32 combinaciones (video/confirmación × dark/light × ES/EN × 320/390/768/1440 px) con cuatro CTA por caso, gradiente, borde 1 px, blur 18 px, identidad 15 px sin subrayado, enlace HOME y sin overflow horizontal. No equivale a cargar páginas completas, ni a probar video, backend, envío, navegación real o producción.
+
+
+### Segunda iteración CRM y UI — 26/11/2026
+
+Se reemplazan confirm/prompt nativos del admin por un diálogo accesible compartido con CGA Glass, cancelación segura, copia manual y edición. Se agregan filtros avanzados de tipo, etapa, modalidad, antigüedad, correo confirmado (registro manual), reunión y orden; se combinan con búsqueda y pestañas existentes en las últimas 200 solicitudes. Se corrige ejemplo de cargo a Gerente de Marketing / Marketing Manager. Se propone y aplica en rama de revisión el dorado UI #D6B84B, preservando amarillo de marca #F6DB0E y el PDF; se elimina regla contradictoria de filtro sólido. No se modifica base de datos, correo, permisos, archivos PDF ni se publica. Pendientes: envío manual registrado, acceso privado a solicitudes por verificación de titularidad y doble edición A4/A3. Validación estática y QA real pendiente.
+
+
+### Separación de ediciones públicas del portafolio — 26/11/2026
+
+Se preparan cuatro slots independientes (ES/EN × A4 web/A3 descarga) conservando los dos nombres de A4 ya utilizados. Nuevas rutas A3: Christian_Arleo_Portafolio_ES_A3.pdf y Christian_Arleo_Portfolio_EN_A3.pdf. Se comprueba disponibilidad A3 mediante HEAD antes de ofrecer la descarga; si no está disponible, el A4 validado se identifica explícitamente como edición de lectura. Impresión y revista conservan A4. Las nuevas opciones de administración reutilizan el upload y las comprobaciones existentes. No se han cargado los PDF A3, no se ha verificado Storage/RLS para los nuevos nombres y no se afirma que los documentos existentes sean dimensionalmente A4 sin inspección. Pendiente autorización de publicación, validación de permisos y archivos reales. No se tocan CV personalizados por empresa.
+
+
+### Decisión cromática aprobada — 26/11/2026
+
+El titular confirma que sus referencias amarillas son #F6C928, #FDD500 y #FCD406 y aprueba #F6C928 como acento UI Premium Glass. Sustituye la propuesta provisional #D6B84B de la rama no publicada. Se conservan el contraste del foco #806600, las mezclas translúcidas, los degradados de marca existentes y los PDF. Se actualiza la referencia de caché de theme.css en las cinco páginas reales. Aprobación cromática registrada; integración y publicación del PR completo pendientes de autorización expresa.
