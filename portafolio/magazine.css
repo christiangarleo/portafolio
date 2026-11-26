@@ -212,8 +212,13 @@ body.cgaMobileLandscape #gotoForm #pageNumber{min-height:34px;font-size:16px;bor
 #readerLoadBar{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:min(240px,70%);height:5px;overflow:hidden;border-radius:3px;z-index:12;pointer-events:none;background:color-mix(in srgb,var(--cga-text) 16%,var(--cga-surface))}
 #readerLoadBar[hidden]{display:none}
 #readerLoadBar>span{display:block;width:48%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--brand-cyan),var(--brand-pink));animation:cgaReaderLoading 1.15s ease-in-out infinite alternate}
+#readerLoadBar:is([data-phase="startup"],[data-phase="download"]){top:50%;width:min(320px,72%);height:8px;transform:translate(-50%,-50%)}
+#readerLoadBar[aria-valuenow]>span{width:var(--reader-progress,0%);animation:none;transform:none;transition:width .18s linear;background-size:100% 100%}
+#readerLoadPercent{position:absolute;top:calc(50% + 16px);left:50%;transform:translateX(-50%);font-size:13px;font-variant-numeric:tabular-nums;color:var(--cga-text);z-index:12;pointer-events:none}
+#readerLoadPercent[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){#readerLoadBar[aria-valuenow]>span{width:var(--reader-progress,0%);transition:none}}
 @keyframes cgaReaderLoading{from{transform:translateX(0)}to{transform:translateX(108%)}}
-@media(prefers-reduced-motion:reduce){#readerLoadBar>span{width:100%;animation:none}}
+@media(prefers-reduced-motion:reduce){#readerLoadBar:not([aria-valuenow])>span{width:100%;animation:none}}
 @media(forced-colors:active){#readerLoadBar{background:Canvas;border:1px solid CanvasText}#readerLoadBar>span{background:Highlight}}
 /* Fit the CV dialog into the visual viewport, not the area covered by the keyboard. */
 html.cgaModern #cvDialog.cgaGlassForm{max-height:min(88dvh,780px);overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:12px}
