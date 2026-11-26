@@ -138,7 +138,7 @@
     else by("choices").querySelector("button")?.focus();
   });
   by("requestAccessLogout").addEventListener("click",()=>{
-    ++historyGeneration;historyToken="";historyVerified=false;removeStored(tokenKey());renderRequests(receipt?[receipt]:[],false);
+    ++historyGeneration;historyToken="";historyVerified=false;removeStored(tokenKey());receipt=null;renderRequests([],false);
     by("requestAccessToggle").hidden=false;by("requestAccessLogout").hidden=true;by("requestAccessStatus").textContent=lang("Acceso privado cerrado.","Private access closed.");
     if(!receivedHere&&!by("emptySection").classList.contains("cgaRequestComplete"))regularProposal();
   });
