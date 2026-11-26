@@ -246,7 +246,7 @@
     by("jobRole").required=kind==="in_house";
     by("leadTitle").textContent=t(titles[kind][0]);
     by("leadSubtitle").textContent=t(titles[kind][1]);
-    by("submitLead").textContent=t(kind==="in_house"?"Enviar invitación":"Proponer proyecto");
+    by("submitLeadLabel").textContent=t(kind==="in_house"?"Enviar invitación":"Proponer proyecto");
     by("moreInfo").open=false;
     for(const item of by("choices").querySelectorAll("button")){
       item.setAttribute("aria-pressed",String(item===button));

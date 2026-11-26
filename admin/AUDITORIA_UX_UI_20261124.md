@@ -206,3 +206,8 @@ Solicitud: eliminar segunda fila superior y textos visibles Anterior/Página/de/
 ### Control único de vista revista — 26/11/2026
 
 Solicitud del titular: retirar el botón redundante Visor PDF clásico. Se elimina su nodo, listener y reglas CSS del visor. El botón original Vista revista / Salir de revista conserva la alternancia, estado activo, rótulo ES/EN y recuperación del modo clásico al salir. Se conserva el fallback PDF nativo ante error y se desactiva el botón cuando no existe documento avanzado disponible. Sin cambios de PDF, backend ni restantes controles. Validación estática; publicación pendiente de autorización.
+
+
+### CTA de propuestas — acabado Glass HOME (26/11/2026)
+
+Se reemplaza el relleno sólido del botón Enviar invitación / Proponer proyecto por el mismo conjunto de reglas Glass de las tarjetas de idiomas, con acento de tema en interacción, borde suave, blur, reflejo y animaciones. Se mantiene el icono de envío, etiqueta dinámica ES/EN, ancho móvil, estados disabled, formulario y verificación de seguridad. Cambio visual localizado en #submitLead, sin alterar el flujo de envío. Validación estática; pendiente QA visual y autorización de producción.
