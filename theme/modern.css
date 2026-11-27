@@ -1117,3 +1117,80 @@ html.cgaModern .crmConversationItem[data-direction="in"]{border-left:3px solid v
 html.cgaModern .crmConversationItem[data-unread="true"]{background:var(--cga-accent-soft)}
 html.cgaModern .crmConversationItem>button{margin:8px 8px 0 0}
 html.cgaModern .crmReplyEditor{display:grid;gap:8px;margin-top:14px;padding:12px;border:1px solid var(--cga-border);border-radius:10px}
+
+
+/* ========== OWNER · Admin app shell (mobile first) ==========
+   Layout only. The official brand, Glass controls, semantic states and theme
+   switch remain owned by the existing shared tokens and component styles. */
+html.cgaModern body.cgaAdminShell{
+ --admin-nav-height:64px;
+ --admin-safe-bottom:env(safe-area-inset-bottom,0px);
+ --admin-safe-left:env(safe-area-inset-left,0px);
+ --admin-safe-right:env(safe-area-inset-right,0px);
+}
+html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) main{
+ max-width:1600px;margin:16px auto 0;
+ padding:0 max(12px,var(--admin-safe-right)) calc(var(--admin-nav-height) + var(--admin-safe-bottom) + 28px) max(12px,var(--admin-safe-left));
+}
+html.cgaModern body.cgaAdminShell .adminHeader{
+ min-height:58px;gap:8px;flex-wrap:wrap;padding:12px max(12px,var(--admin-safe-right)) 12px max(12px,var(--admin-safe-left));
+ padding-top:max(12px,env(safe-area-inset-top,0px));
+}
+html.cgaModern body.cgaAdminShell .adminHeader strong{min-width:0;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .adminHeaderTools{gap:6px;flex-wrap:wrap;min-width:0}
+html.cgaModern body.cgaAdminShell .adminHeaderTools>a,
+html.cgaModern body.cgaAdminShell .adminHeaderLogout{min-height:44px;padding:8px 9px;display:inline-flex;align-items:center}
+html.cgaModern body.cgaAdminShell .adminHeaderTools .cgaThemeSwitch{--theme-size:44px;--theme-inset:4px}
+html.cgaModern body.cgaAdminShell #app:not([hidden]){display:block;min-width:0}
+html.cgaModern body.cgaAdminShell #app>.adminPane{min-width:0;max-width:100%}
+html.cgaModern body.cgaAdminShell #app>.adminPane>.panel{padding:clamp(14px,3vw,27px);min-width:0}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;
+ position:fixed;inset:auto 0 0 0;z-index:30;overflow:visible;
+ min-height:calc(var(--admin-nav-height) + var(--admin-safe-bottom));margin:0;
+ border-width:1px 0 0;border-radius:0;
+ padding:5px max(4px,var(--admin-safe-right)) calc(5px + var(--admin-safe-bottom)) max(4px,var(--admin-safe-left));
+ box-shadow:0 -6px 20px var(--cga-shadow);
+}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button{
+ min-width:0;min-height:54px;flex-direction:column;justify-content:center;align-items:center;gap:3px;
+ font-size:clamp(10px,2.75vw,12px);padding:4px 2px;white-space:normal;
+}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button .adminNavLabel{max-width:100%;line-height:1.15;overflow-wrap:anywhere;text-align:center}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button .cgaIcon{width:21px;height:21px}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button[aria-selected="true"]{
+ box-shadow:inset 0 -2px var(--cga-focus)!important;
+}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button:focus-visible{outline-offset:-3px}
+html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) #status{
+ bottom:calc(var(--admin-nav-height) + var(--admin-safe-bottom) + 12px);
+}
+html.cgaModern body.cgaAdminShell #app :is(.adminSectionActions,.adminFilterLine,.crmFilters,.crmActions,.itemActions,.adminQuickLinks,.publicPortfolioActions) button{min-height:44px}
+html.cgaModern body.cgaAdminShell #app :is(.adminSectionActions,.adminFilterLine,.adminQuickLinks) a{min-height:44px}
+html.cgaModern body.cgaAdminShell #app :is(.adminSearchWrap,.adminSectionHeader,.adminFilterLine){min-width:0;max-width:100%}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell #app :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){font-size:16px;max-width:100%}
+ html.cgaModern body.cgaAdminShell #app .adminFilterLine #documentsFilter{min-width:0;width:100%}
+ html.cgaModern body.cgaAdminShell #app .adminFilterLine .adminSearchWrap{flex:1 1 180px;min-width:0}
+ html.cgaModern body.cgaAdminShell #app .crmFilters{gap:6px}
+}
+@media(min-width:760px){
+ html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) main{margin:24px auto;padding:0 max(20px,var(--admin-safe-right)) 48px max(20px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell #app:not([hidden]){display:grid;grid-template-columns:112px minmax(0,1fr);gap:20px;align-items:start}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation{
+  position:sticky;inset:auto;top:16px;display:flex;flex-direction:column;align-items:stretch;gap:5px;
+  border-width:1px;border-radius:12px;min-height:0;padding:8px;box-shadow:0 8px 24px var(--cga-shadow);
+ }
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation button{min-height:64px;flex:0 0 auto;font-size:12px;padding:8px 4px}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation button[aria-selected="true"]{box-shadow:inset 3px 0 var(--cga-focus)!important}
+ html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) #status{bottom:18px}
+ html.cgaModern body.cgaAdminShell .adminHeader{min-height:70px;padding-inline:clamp(20px,4vw,50px)}
+}
+@media(min-width:1080px){
+ html.cgaModern body.cgaAdminShell #app:not([hidden]){grid-template-columns:206px minmax(0,1fr);gap:24px}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation button{flex-direction:row;justify-content:flex-start;min-height:48px;gap:10px;font-size:14px;padding:10px 13px}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation button .adminNavLabel{text-align:left}
+}
+@media(prefers-reduced-motion:reduce){
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation button{transition:none!important;transform:none!important}
+}
