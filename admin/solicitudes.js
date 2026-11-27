@@ -600,7 +600,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    const heading=el("crmDetailTitle");
    heading?.focus({preventScroll:true});
    // En móvil el listado se oculta y la ficha ocupa la pantalla.
-   if(matchMedia("(max-width: 820px)").matches)el("crmDetailPane")?.scrollIntoView({block:"start"});
+   if(matchMedia("(max-width: 1179px)").matches)el("crmDetailPane")?.scrollIntoView({block:"start"});
   });
   return item;
  }
