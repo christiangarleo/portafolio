@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM, CRM_SENDERS, crmSenderChoice } from "./solicitudes.js?v=23-admin-shell1";
+import { createLeadCRM, CRM_SENDERS, crmSenderChoice } from "./solicitudes.js?v=24-admin-ops3";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -51,7 +51,7 @@ function show(screen){
   el("pendingPanel").hidden=screen!=="pending";
   el("app").hidden=screen!=="app";
   el("adminLogoutHeader").hidden=screen!=="app";
-  if(screen!=="app")resetMailbox();
+  if(screen!=="app"){resetMailbox();leadCRM.reset();resetOperations();}
 }
 async function verifyAdmin(){
   const {data:{user},error}=await sb.auth.getUser();
@@ -111,6 +111,8 @@ document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async
 
 let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0,mailboxEpoch=0;
 let mailboxSearch="",mailboxRows=[],mailboxSelected=null,mailboxOpened=false,mailboxBusy=false,mailboxDraftDirty=false;
+let mailboxLeadId=null,mailboxIssues=false;
+const mailIssueStatuses=["pending","uncertain","failed"];
 const mailPageSize=30,mailWide=matchMedia("(min-width:1180px)");
 const adminViews=["overview","leads","mail","cv","portfolio"];
 const adminNavigation=el("app").querySelector(".adminNavigation");
@@ -135,13 +137,19 @@ function navigateAdmin(view){
   try{sessionStorage.setItem("cga-admin-view",view)}catch{}
   // List refresh is independent from the session-only composer.
   if(view==="mail")void loadMailbox();
+  if(view==="overview"){refreshOverview();void refreshOverviewMail();}
 }
 el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
   if(!button)return;
   if(button.dataset.adminView)navigateAdmin(button.dataset.adminView);
   if(button.dataset.goView){
+    if(!isAdmin)return;
+    if(button.dataset.goView==="mail"&&button.dataset.mailFolder){openMailContext({mode:button.dataset.mailFolder,issues:button.dataset.mailIssues==="true"});return;}
     navigateAdmin(button.dataset.goView);
+    if(button.dataset.goView==="leads"&&button.dataset.leadId){void openLeadContext(button.dataset.leadId);return;}
+    if(button.dataset.goView==="leads"&&button.dataset.leadFilter)leadCRM.setFilter(button.dataset.leadFilter);
+    if(button.dataset.composeMail==="true"){openMailboxComposer();return;}
     if(button.id==="quickUploadCV"||button.dataset.goUpload==="true")setCVFormOpen(true);
     else document.querySelector('button[data-admin-view="'+button.dataset.goView+'"]')?.focus();
   }
@@ -158,43 +166,56 @@ adminNavigation.addEventListener("keydown",event=>{
   document.querySelector('button[data-admin-view="'+adminViews[next]+'"]').focus();
 });
 let documentsLoaded=false,portfoliosLoaded=false;
-function refreshOverview(){
-  const totals=leadCRM.getSummary();
-  el("statPending").textContent=totals.loaded?String(totals.pending):"—";
-  el("statActive").textContent=totals.loaded?String(totals.active):"—";
-  el("statCV").textContent=documentsLoaded?String(documents.length):"—";
-  el("statPortfolios").textContent=portfoliosLoaded?String(Object.values(publicPortfolioFiles).filter(name=>publishedPortfolios.has(name)).length):"—";
-  const target=el("adminPriorities");
-  target.replaceChildren();
-  function suggestion(message,label,view){
-    const item=node("div",undefined,"adminPriorityItem");
-    const text=node("p",message);
-    const button=node("button",label);
-    button.type="button";button.dataset.goView=view;button.dataset.cgaIcon="arrow";
-    if(label==="Nuevo CV")button.dataset.goUpload="true";
-    item.append(text,button);target.append(item);
-  }
-  if(totals.loaded&&totals.pending>0)suggestion(
-    (totals.pending===1?"1 solicitud por decidir.":totals.pending+" solicitudes por decidir."),
-    "Revisar","leads"
-  );
-  if(totals.loaded&&totals.active>0)suggestion(
-    (totals.active===1?"1 solicitud en seguimiento.":totals.active+" solicitudes en seguimiento."),
-    "Ver","leads"
-  );
-  if(documentsLoaded&&documents.length===0)suggestion(
-    "No hay CV cargados.",
-    "Nuevo CV","cv"
-  );
-  if(portfoliosLoaded&&!publishedPortfolios.has("Christian_Arleo_Portfolio_EN.pdf"))suggestion(
-    "Falta el PDF en inglés.",
-    "Publicar","portfolio"
-  );
-  if(!target.children.length){
-    const p=node("p",totals.loaded?"No hay tareas urgentes pendientes en el panel.":"Consultando datos de la oficina…");
-    target.append(p);
-  }
+let opsUnread=null,opsIssues=null,opsGeneration=0;
+function resetOperations(){
+ ++opsGeneration;opsUnread=null;opsIssues=null;documentsLoaded=false;portfoliosLoaded=false;
+ for(const id of ["statPending","statActive","statCV","statPortfolios","statUnreadMail","statMailIssues"])el(id).textContent="—";
+ el("adminPriorities").replaceChildren();el("adminAgenda").replaceChildren();
+ el("refreshOverviewMail").disabled=false;
 }
+async function refreshOverviewMail(){
+ if(!isAdmin)return;
+ const g=++opsGeneration,button=el("refreshOverviewMail");button.disabled=true;
+ try{
+  const [inbound,outbound]=await Promise.allSettled([
+   sb.from("portfolio_crm_inbound").select("id",{count:"exact",head:true}).is("read_at",null),
+   sb.from("portfolio_crm_mail").select("id",{count:"exact",head:true}).in("status",mailIssueStatuses)
+  ]);
+  if(g!==opsGeneration||!isAdmin)return;
+  const count=r=>r.status==="fulfilled"&&!r.value.error&&typeof r.value.count==="number"?r.value.count:null;
+  opsUnread=count(inbound);opsIssues=count(outbound);refreshOverview();
+ }catch{if(g===opsGeneration&&isAdmin){opsUnread=null;opsIssues=null;refreshOverview();}}
+ finally{if(g===opsGeneration)button.disabled=false;}
+}
+function refreshOverview(){
+ if(!isAdmin)return;
+ const totals=leadCRM.getSummary(),stats={statPending:totals.loaded?totals.pending:null,statActive:totals.loaded?totals.active:null,statCV:documentsLoaded?documents.length:null,statPortfolios:portfoliosLoaded?Object.values(publicPortfolioFiles).filter(name=>publishedPortfolios.has(name)).length:null,statUnreadMail:opsUnread,statMailIssues:opsIssues};
+ for(const [id,v] of Object.entries(stats))el(id).textContent=v===null?"—":String(v);
+ const target=el("adminPriorities");target.replaceChildren();
+ function suggestion(message,label,view,extra={}){
+  const item=node("div",undefined,"adminPriorityItem"),copy=node("p",message),button=node("button",label);
+  button.type="button";button.dataset.goView=view;button.dataset.cgaIcon="arrow";Object.assign(button.dataset,extra);item.append(copy,button);target.append(item);
+ }
+ if(opsIssues>0)suggestion(opsIssues+" envío(s) pendiente(s), sin confirmar o rechazado(s). Revisalos antes de reenviar.","Ver envíos","mail",{mailFolder:"sent",mailIssues:"true"});
+ if(totals.loaded&&totals.pending>0)suggestion(totals.pending+" solicitud(es) por decidir.","Revisar","leads",{leadFilter:"pendiente"});
+ if(opsUnread>0)suggestion(opsUnread+" correo(s) sin leer.","Leer correo","mail",{mailFolder:"unread"});
+ if(totals.loaded&&totals.active>0)suggestion(totals.active+" solicitud(es) en seguimiento.","Continuar","leads",{leadFilter:"avanzar"});
+ if(documentsLoaded&&documents.length===0)suggestion("No hay CV cargados.","Nuevo CV","cv",{goUpload:"true"});
+ if(portfoliosLoaded&&!publishedPortfolios.has("Christian_Arleo_Portfolio_EN.pdf"))suggestion("Falta el PDF en inglés.","Publicar","portfolio");
+ const incomplete=!totals.loaded||!documentsLoaded||!portfoliosLoaded||opsUnread===null||opsIssues===null;
+ if(incomplete)target.append(node("p","Algunos indicadores todavía no están disponibles. Actualizá los módulos correspondientes.","cgaMeta"));
+ else if(!target.children.length)target.append(node("p","No hay prioridades detectadas en los registros consultados."));
+ const agenda=el("adminAgenda");agenda.replaceChildren();
+ if(!totals.loaded)agenda.append(node("p","Agenda no disponible.","cgaMeta"));
+ else if(!totals.meetings.length)agenda.append(node("p","No hay próximas reuniones propuestas en las solicitudes cargadas.","cgaMeta"));
+ else for(const meeting of totals.meetings){
+  const item=node("div",undefined,"adminAgendaItem"),copy=node("div"),title=node("strong",meeting.company||"Empresa"),when=node("p",mailDate(meeting.at,true)+" · "+({virtual:"Virtual",presencial:"Presencial",a_definir:"A definir"}[meeting.mode]||"A definir"),"cgaMeta");
+  copy.append(title,node("p",meeting.position||"Propuesta","cgaMeta"),when);
+  const button=node("button","Ver solicitud");button.type="button";button.dataset.goView="leads";button.dataset.leadId=meeting.id;button.dataset.cgaIcon="arrow";item.append(copy,button);agenda.append(item);
+ }
+ window.CGAIcons?.decorate(agenda);
+}
+el("refreshOverviewMail").onclick=()=>void refreshOverviewMail();
 function applyDocumentFilter(){
   const query=el("documentsFilter").value.toLocaleLowerCase().trim();
   const cards=[...el("documents").querySelectorAll("article.item")];
@@ -474,8 +495,15 @@ el("documents").addEventListener("click",async e=>{
     }
   }catch(err){notice(err.message,true);}finally{btn.disabled=false;}
 });
-const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDocuments,bucket});
-async function loadLeads(){await leadCRM.load();refreshOverview();}
+const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDocuments,bucket,onChange:refreshOverview,openMail:id=>openMailContext({leadId:id})});
+async function loadLeads(){await leadCRM.load();refreshOverview();void refreshOverviewMail();}
+async function openLeadContext(id){
+ if(!isAdmin)return;
+ const epoch=mailboxEpoch;
+ if(!leadCRM.getSummary().loaded)await leadCRM.load();
+ if(!isAdmin||epoch!==mailboxEpoch)return;
+ if(!leadCRM.openLead(id))notice("La solicitud no está entre las últimas 200 cargadas. No se abrió otra solicitud por aproximación.",true);
+}
 el("reloadLeads").addEventListener("click",loadLeads);
 // Private general mailbox: text-only reading, server-side filters, one session-only draft.
 const mailStatusLabels={accepted:"Aceptado por Resend",pending:"Pendiente",uncertain:"Sin confirmar",failed:"Rechazado",reserved:"Reservado"};
@@ -492,16 +520,27 @@ function setMailDraftActive(active){
 }
 function resetMailbox(){
  ++mailboxGeneration;++mailboxEpoch;
- mailboxMode="received";mailboxAccount="";mailboxPage=0;mailboxSearch="";mailboxRows=[];mailboxSelected=null;mailboxOpened=false;mailboxBusy=false;
+ mailboxMode="received";mailboxAccount="";mailboxPage=0;mailboxSearch="";mailboxLeadId=null;mailboxIssues=false;mailboxRows=[];mailboxSelected=null;mailboxOpened=false;mailboxBusy=false;
  setMailDraftActive(false);
  el("mailComposerHost").replaceChildren();el("mailComposerHost").hidden=true;
  el("mailDraftBar").hidden=true;el("mailWorkspace").hidden=false;el("mailWorkspace").dataset.detail="false";
  el("mailList").replaceChildren();el("mailList").setAttribute("aria-busy","false");el("mailReader").replaceChildren();el("mailListStatus").textContent="";
- el("mailSearch").value="";el("mailAccount").value="";el("mailClearSearch").hidden=true;el("mailPagination").hidden=true;
+ el("mailSearch").value="";el("mailAccount").value="";el("mailClearSearch").hidden=true;el("mailPagination").hidden=true;renderMailContext();
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode==="received"));
 }
 function mailResetSelection(){mailboxSelected=null;mailboxOpened=false;renderMailReader();}
 function mailApplyFilters(){mailboxPage=0;mailResetSelection();void loadMailbox();}
+function renderMailContext(){
+ const active=Boolean(mailboxLeadId||mailboxIssues);el("mailContextBar").hidden=!active;
+ el("mailContextLabel").textContent=mailboxLeadId?"Correos de la solicitud seleccionada":mailboxIssues?"Envíos pendientes, sin confirmar o rechazados":"";
+}
+function openMailContext({mode="received",leadId=null,issues=false}={}){
+ if(!isAdmin)return;
+ if(mailboxBusy){notice("Terminá la operación de correo antes de cambiar de bandeja.",true);return;}
+ if(el("mailComposerHost").querySelector("form"))setMailComposerVisible(false);
+ mailboxMode=mode;mailboxLeadId=leadId;mailboxIssues=Boolean(issues&&mode==="sent");mailboxAccount="";mailboxSearch="";mailboxPage=0;el("mailSearch").value="";mailResetSelection();
+ navigateAdmin("mail");el("mailTitle").scrollIntoView({block:"start"});
+}
 function mailSearchFilter(term,sent){
  // Quote the value for PostgREST's OR grammar and escape SQL LIKE metacharacters.
  // Asterisks are treated as the PostgREST alias for a wildcard; normalize to space
@@ -552,6 +591,7 @@ function renderMailReader(){
   const read=mailButton(m.read_at?"Marcar no leído":"Marcar leído",m.read_at?"mail":"check");read.onclick=()=>void toggleMailRead(m,read);
   toolbar.append(reply,read);
  }
+ if(m.lead_id){const link=mailButton("Ver solicitud","briefcase");link.onclick=()=>{navigateAdmin("leads");void openLeadContext(m.lead_id);};toolbar.append(link);}
  const title=node("h2",m.subject||"Sin asunto","mailReaderTitle");title.id="mailReaderTitle";title.tabIndex=-1;
  const meta=node("dl",undefined,"mailReaderMeta");
  for(const [key,value] of [["De",m.sender],["Para",sent?m.recipient:(m.recipients||[]).join(", ")],["Fecha",mailDate(sent?m.created_at:m.received_at,true)],["Estado",sent?(mailStatusLabels[m.status]||"Estado desconocido"):(m.read_at?"Leído":"No leído")]]){
@@ -574,6 +614,7 @@ async function toggleMailRead(m,button){
   if(r.error)throw r.error;
   if(!r.data){notice("El estado cambió. Actualizá el correo.",true);await loadMailbox();return;}
   if(mailboxSelected?.id===m.id)mailboxSelected={...mailboxSelected,read_at:r.data.read_at};
+  void leadCRM.syncUnread(m.lead_id);void refreshOverviewMail();
   await loadMailbox({keepReader:true});
  }catch{if(epoch===mailboxEpoch&&isAdmin)notice("No se pudo actualizar el estado de lectura.",true);}
  finally{button.disabled=false;}
@@ -585,11 +626,13 @@ async function loadMailbox({keepReader=false}={}){
  status.textContent="Consultando…";list.setAttribute("aria-busy","true");
  el("mailPagination").hidden=true;mailboxRows=[];list.replaceChildren();
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode===mailboxMode));
- el("mailAccount").value=mailboxAccount;el("mailClearSearch").hidden=!mailboxSearch;
- let query=sent?sb.from("portfolio_crm_mail").select("id,subject,body,recipient,sender,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
+ el("mailAccount").value=mailboxAccount;el("mailClearSearch").hidden=!mailboxSearch;renderMailContext();
+ let query=sent?sb.from("portfolio_crm_mail").select("id,lead_id,subject,body,recipient,sender,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
  if(mailboxAccount)query=sent?query.eq("sender",mailboxAccount):query.contains("recipients",[mailboxAccount]);
  if(mailboxMode==="unread")query=query.is("read_at",null);
  if(mailboxMode==="unassigned")query=query.is("lead_id",null);
+ if(mailboxLeadId)query=query.eq("lead_id",mailboxLeadId);
+ if(mailboxIssues&&sent)query=query.in("status",mailIssueStatuses);
  if(mailboxSearch)query=query.or(mailSearchFilter(mailboxSearch,sent));
  try{
   const {data,error,count}=await query.order(sent?"created_at":"received_at",{ascending:false}).order("id",{ascending:false}).range(from,from+mailPageSize-1);
@@ -656,7 +699,7 @@ function openMailboxComposer(message=null){
    const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:attemptId,context:"general",recipient:to.value,subject:subject.value,body:body.value,sender:from,in_reply_to:message?.id||null}});
    if(epoch!==mailboxEpoch||!isAdmin)return;
    if(error)throw error;
-   if(data?.status==="accepted"){closeMailComposer({focus:false});notice("Correo aceptado por Resend.",false,{success:true});mailboxMode="sent";mailboxAccount=from;mailboxPage=0;mailboxSearch="";el("mailSearch").value="";mailResetSelection();await loadMailbox();return;}
+   if(data?.status==="accepted"){closeMailComposer({focus:false});notice("Correo aceptado por Resend.",false,{success:true});mailboxMode="sent";mailboxAccount=from;mailboxPage=0;mailboxSearch="";mailboxLeadId=null;mailboxIssues=false;void refreshOverviewMail();el("mailSearch").value="";mailResetSelection();await loadMailbox();return;}
    const labels={invalid_sender:"Seleccioná una cuenta autorizada.",sender_mismatch:"La cuenta no coincide con el correo original.",conflict:"El intento no coincide con el envío registrado.",contact_blocked:"Contacto no autorizado.",decision_changed:"Revisá la decisión de la solicitud.",limit:"Límite de 10 intentos de CRM por 24 horas.",duplicate:"Ya se envió un mensaje idéntico recientemente.",uncertain_previous:"Existe un envío sin confirmar. Consultá Enviados.",failed:"El proveedor rechazó el envío.",invalid_reply:"El destinatario no coincide con el mensaje.",sender_not_configured:"Remitente no habilitado."};
    status.textContent=labels[data?.status]||"Resultado no confirmado. Consultá Enviados antes de repetir.";
    if(["contact_blocked","decision_changed","limit","duplicate","failed","invalid_reply","sender_not_configured","invalid_sender","sender_mismatch"].includes(data?.status)){attemptId=null;setLocked(false);}
@@ -670,7 +713,8 @@ function initMailbox(){
  el("mailCompose").onclick=()=>openMailboxComposer();
  el("mailResumeDraft").onclick=()=>setMailComposerVisible(true);
  el("mailRefresh").onclick=()=>void loadMailbox();
- for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.onclick=()=>{mailboxMode=b.dataset.mailMode;mailApplyFilters();};
+ for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.onclick=()=>{mailboxMode=b.dataset.mailMode;if(mailboxMode!=="sent")mailboxIssues=false;if(mailboxMode==="unassigned")mailboxLeadId=null;mailApplyFilters();};
+ el("mailClearContext").onclick=()=>{mailboxLeadId=null;mailboxIssues=false;mailApplyFilters();};
  el("mailAccount").onchange=()=>{mailboxAccount=el("mailAccount").value;mailApplyFilters();};
  el("mailSearchForm").addEventListener("submit",e=>{e.preventDefault();mailboxSearch=normalizeMailSearch(el("mailSearch").value);el("mailSearch").value=mailboxSearch;mailApplyFilters();});
  el("mailClearSearch").onclick=()=>{mailboxSearch="";el("mailSearch").value="";mailApplyFilters();};
