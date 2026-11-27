@@ -1,3 +1,13 @@
+export const CRM_SENDERS=Object.freeze(["hola@christianarleo.com","correo@christianarleo.com"]);
+export function crmSenderChoice(makeNode,message=null){
+ const select=makeNode("select");select.required=true;
+ const matches=message?CRM_SENDERS.filter(a=>(message.recipients||[]).includes(a)):[];
+ if(message&&matches.length!==1){const placeholder=makeNode("option","Seleccioná una cuenta");placeholder.value="";placeholder.disabled=true;select.append(placeholder);}
+ for(const address of CRM_SENDERS){const option=makeNode("option",address);option.value=address;select.append(option);}
+ select.value=message?(matches.length===1?matches[0]:""):CRM_SENDERS[0];
+ select.disabled=Boolean(message&&matches.length===1);
+ return {select,locked:select.disabled};
+}
 /* CRM: correo directo con historial persistente; WhatsApp conserva confirmación manual. */
 export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,bucket}){
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
@@ -101,12 +111,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const body=hello+"\n\n"+intro+cv+(rejection?"":suggestion(lead))+(en?"\n\nKind regards,\nChristian Gabriel Arleo":"\n\nQuedo atento.\nChristian Gabriel Arleo");
   return {subject,body};
  }
- function directMail(lead,subject,body,context){
+ function directMail(lead,subject,body,context,message=null){
   const box=n("div",undefined,"crmDirectMail");
   const send=btn("Enviar desde CRM","crmAccept");send.dataset.cgaIcon="send";send.dataset.mailLead=lead.id;
-  const status=small("Remitente: hola@christianarleo.com");status.setAttribute("role","status");
-  const canSend=()=>allowed(lead)&&/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(String(lead.email||""))&&!sending.has(lead.id);
-  send.disabled=!canSend();
+  const {select:sender,locked}=crmSenderChoice(n,message);
+  const status=small("");status.setAttribute("role","status");
+  let attemptId=null,attemptPayload=null;
+  const canSend=()=>CRM_SENDERS.includes(sender.value)&&allowed(lead)&&/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(String(lead.email||""))&&!sending.has(lead.id);
+  send.disabled=!canSend();sender.addEventListener("change",()=>{send.disabled=!canSend();});
   function showHistory(){
    mailExpanded.add(lead.id);
    if(selectedLeadId!==lead.id)return;
@@ -114,33 +126,37 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   }
   send.addEventListener("click",async()=>{
    if(!canSend()||send.disabled)return;
-   const s=subject.value.trim(),b=body.value.trim();
+   const s=subject.value.trim(),b=body.value.trim(),from=sender.value;
    if(!s||!b){notice("Completá el asunto y el mensaje.",true);return;}
-   sending.add(lead.id);send.disabled=true;
+   sending.add(lead.id);send.disabled=true;sender.disabled=true;
    try{
-    if(!await window.CGADialog.confirm("¿Enviar este mensaje a "+lead.email+" desde hola@christianarleo.com?"))return;
+    if(!await window.CGADialog.confirm("¿Enviar este mensaje a "+lead.email+" desde "+from+"?"))return;
     send.setAttribute("aria-busy","true");status.textContent="Enviando correo…";
-    const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:crypto.randomUUID(),lead_id:lead.id,subject:s,body:b,context}});
+    const payload={lead_id:lead.id,subject:s,body:b,context,sender:from,in_reply_to:message?.id||null};
+    const signature=JSON.stringify(payload);
+    if(attemptPayload!==signature){attemptId=crypto.randomUUID();attemptPayload=signature;}
+    const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:attemptId,...payload}});
     if(error)throw Error("send_unconfirmed");
     if(data?.status==="accepted"){
-      acceptedMail.set(mailKey(lead,context),{lead_id:lead.id,context,accepted_at:new Date().toISOString()});
+      acceptedMail.set(mailKey(lead,context),{lead_id:lead.id,context,sender:from,accepted_at:new Date().toISOString()});
       mailExpanded.add(lead.id);rejectionExpanded.delete(lead.id);
       status.textContent="Correo enviado";
       notice("Correo enviado",false,{success:true,detail:"Registrado en el historial de la solicitud."});
       try{await load();}catch{render();}
       return;
     }
-    const messages={failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
+    const messages={invalid_sender:"Seleccioná una cuenta autorizada.",sender_mismatch:"La cuenta no coincide con la recepción original.",invalid_reply:"El mensaje original no corresponde a esta solicitud o destinatario.",conflict:"El intento no coincide con el envío registrado.",failed:"El proveedor rechazó el envío.",uncertain:"Resultado incierto. Revisá el historial antes de reenviar.",pending:"Envío pendiente de confirmar.",limit:"Alcanzaste el límite de 10 intentos de CRM por 24 h.",duplicate:"Ya se aceptó un mensaje idéntico recientemente.",uncertain_previous:"Hay un envío anterior sin resolver. No se enviará otro todavía.",contact_blocked:"La empresa no autorizó el contacto.",decision_changed:"La decisión cambió. Actualizá la solicitud.",sender_not_configured:"El remitente aún no está habilitado."};
+    if(["failed","limit","duplicate","contact_blocked","decision_changed","invalid_sender","sender_mismatch","invalid_reply","sender_not_configured"].includes(data?.status)){attemptId=null;attemptPayload=null;}
     const code=Number.isInteger(data?.provider_http)?data.provider_http:null;
     const reason=code===401||code===403?"Revisá la autorización de la clave y el dominio en Resend.":code===422||code===400?"Revisá los datos del correo en los logs de Resend.":code===429?"Límite del proveedor; consultá la cuota antes de reintentar.":"";
     status.textContent=(messages[data?.status]||"No se pudo completar el envío.")+(code?" (HTTP "+code+"). "+reason:"");
     notice(status.textContent,true);showHistory();
    }catch{
     status.textContent="No se confirmó el resultado. Consultá el historial antes de reenviar.";notice(status.textContent,true);showHistory();
-   }finally{sending.delete(lead.id);send.disabled=!canSend();send.removeAttribute("aria-busy");
+   }finally{sending.delete(lead.id);sender.disabled=locked;send.disabled=!canSend();send.removeAttribute("aria-busy");
     if(!send.isConnected&&selectedLeadId===lead.id){const current=leads.find(x=>x.id===lead.id);root.querySelectorAll(".crmDirectMail button").forEach(b=>{if(b.dataset.mailLead===lead.id)b.disabled=!current||!allowed(current)||!canSend();});}}
   });
-  box.append(send,status);return box;
+  box.append(labeled("De",sender),send,status);return box;
  }
  function mailRecord(lead){
   const box=n("section",undefined,"crmStep crmMailRecord");
@@ -151,7 +167,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   const icon=n("span",sent||legacy?"✓":"·","crmMailStateIcon");icon.setAttribute("aria-hidden","true");
   const copy=n("div");
   copy.append(n("strong",sent?"Correo enviado":legacy?"Envío registrado anteriormente":mailLoaded?"Sin correo enviado para esta respuesta":"Estado no disponible"),
-    small(sent?"Desde hola@christianarleo.com · "+when(sent.accepted_at):legacy?"Confirmación histórica · "+when(legacy):mailLoaded?"El estado se actualizará automáticamente cuando envíes un correo.":"No se pudo consultar el registro de envíos."));
+    small(sent?"Desde "+(sent.sender||"Cuenta no disponible")+" · "+when(sent.accepted_at):legacy?"Confirmación histórica · "+when(legacy):mailLoaded?"El estado se actualizará automáticamente cuando envíes un correo.":"No se pudo consultar el registro de envíos."));
   badge.append(icon,copy);box.append(badge);
   const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Conversación por correo"));details.open=mailExpanded.has(lead.id);
   const list=n("div");details.append(list);let generation=0;
@@ -159,8 +175,8 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    const g=++generation;list.replaceChildren(small("Consultando…"));
    try{
     const [outgoing,incoming]=await Promise.all([
-     sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at,context").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50),
-     sb.from("portfolio_crm_inbound").select("id,subject,body,sender,body_limited,received_at,read_at").eq("lead_id",lead.id).order("received_at",{ascending:false}).limit(50)
+     sb.from("portfolio_crm_mail").select("subject,body,recipient,sender,status,created_at,accepted_at,context").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50),
+     sb.from("portfolio_crm_inbound").select("id,subject,body,sender,recipients,body_limited,received_at,read_at").eq("lead_id",lead.id).order("received_at",{ascending:false}).limit(50)
     ]);
     if(g!==generation)return;list.replaceChildren();if(outgoing.error)throw outgoing.error;
     if(incoming.error)list.append(small("Recepción no disponible; se muestran los envíos."));
@@ -170,7 +186,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
     for(const mail of rows){
      const received=mail.direction==="in",item=n("article",undefined,"crmMailItem crmConversationItem");
      item.dataset.direction=mail.direction;item.dataset.unread=String(received&&!mail.read_at);
-     item.append(n("strong",mail.subject||"Sin asunto"),small(when(mail.at)+" · "+(received?"Recibido"+(!mail.read_at?" · Nuevo":""):labels[mail.status]||mail.status)),small((received?"De: ":"Para: ")+(received?mail.sender:mail.recipient)));
+     item.append(n("strong",mail.subject||"Sin asunto"),small(when(mail.at)+" · "+(received?"Recibido"+(!mail.read_at?" · Nuevo":""):labels[mail.status]||mail.status)),small(received?"De: "+mail.sender+" · Para: "+(mail.recipients||[]).join(", "):"De: "+mail.sender+" · Para: "+mail.recipient));
      const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);
      if(received){
       item.append(small("Remitente declarado; identidad no verificada de forma independiente."));
@@ -179,14 +195,14 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
        const result=await sb.from("portfolio_crm_inbound").update({read_at:new Date().toISOString()}).eq("id",mail.id).is("read_at",null).select("id").maybeSingle();
        if(result.error)throw result.error;mailExpanded.add(lead.id);await load();
       });item.append(read);}
-      if(allowed(lead)&&["avanzar","rechazada"].includes(lead.decision_status)){
+      if(allowed(lead)&&["avanzar","rechazada"].includes(lead.decision_status)&&String(lead.email||"").trim().toLowerCase()===String(mail.sender||"").trim().toLowerCase()){
        const respond=btn("Responder","cgaSoftButton");respond.dataset.cgaIcon="mail";
        respond.addEventListener("click",()=>{
         const editor=n("div",undefined,"crmReplyEditor"),subject=n("input"),body=n("textarea");
         subject.maxLength=180;subject.value=(/^re:/i.test(mail.subject)?mail.subject:"Re: "+mail.subject).slice(0,180);
         body.rows=6;body.maxLength=5000;const cancel=btn("Cancelar");
         cancel.addEventListener("click",()=>{editor.remove();respond.disabled=false;});
-        editor.append(labeled("Para",Object.assign(n("input"),{readOnly:true,value:lead.email})),labeled("Asunto",subject),labeled("Mensaje",body),directMail(lead,subject,body,currentContext(lead)),cancel);
+        editor.append(labeled("Para",Object.assign(n("input"),{readOnly:true,value:lead.email})),labeled("Asunto",subject),labeled("Mensaje",body),directMail(lead,subject,body,currentContext(lead),mail),cancel);
         item.append(editor);respond.disabled=true;window.CGAIcons?.decorate(editor);body.focus();
        });item.append(respond);
       }
@@ -689,7 +705,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    try{
     for(let offset=0;;offset+=500){
      const {data:rows,error:mailError}=await sb.from("portfolio_crm_mail")
-       .select("id,lead_id,context,accepted_at").in("lead_id",leads.map(x=>x.id)).eq("status","accepted")
+       .select("id,lead_id,context,sender,accepted_at").in("lead_id",leads.map(x=>x.id)).eq("status","accepted")
        .order("accepted_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+499);
      if(mailError){complete=false;break;}
      for(const m of rows||[]){const key=m.lead_id+":"+m.context;if(!nextMail.has(key))nextMail.set(key,m);}
