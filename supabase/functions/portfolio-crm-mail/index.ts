@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 const db=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false,autoRefreshToken:false}});
+const senders=new Set(["hola@christianarleo.com","correo@christianarleo.com"]);
 const origins=new Set(["https://christianarleo.com","https://www.christianarleo.com"]);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 Deno.serve(async req=>{
@@ -22,17 +23,21 @@ Deno.serve(async req=>{
  try{const raw=await req.text();if(raw.length>24000)return reply(413,{status:"invalid"});input=JSON.parse(raw);}catch{return reply(400,{status:"invalid"});}
  const id=input?.id,lead=input?.lead_id,subject=typeof input?.subject==="string"?input.subject.trim():"",body=typeof input?.body==="string"?input.body.trim():"",context=input?.context;
  const general=context==="general",recipient=typeof input?.recipient==="string"?input.recipient.trim().toLowerCase():"",replyId=input?.in_reply_to??null;
+ const sender=input?.sender;
+ if(typeof sender!=="string"||!senders.has(sender))return reply(200,{status:"invalid_sender"});
+ if(replyId!==null&&(typeof replyId!=="string"||!uuid.test(replyId)))return reply(400,{status:"invalid_reply"});
  if(typeof id!=="string"||!uuid.test(id)||!subject||subject.length>180||/[\r\n\x00]/.test(subject)||!body||body.length>5000||!["rejection","followup","general"].includes(context))return reply(400,{status:"invalid"});
  if(general){if(!recipient||recipient.length>254||! /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(recipient)||(replyId!==null&&(typeof replyId!=="string"||!uuid.test(replyId))))return reply(400,{status:"invalid"});}
  else if(typeof lead!=="string"||!uuid.test(lead))return reply(400,{status:"invalid"});
- const reserve=general?await db.rpc("reserve_portfolio_crm_general_mail",{p_id:id,p_actor:user.id,p_recipient:recipient,p_subject:subject,p_body:body,p_reply:replyId}):await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context});
+ const reserve=general?await db.rpc("reserve_portfolio_crm_general_mail",{p_id:id,p_actor:user.id,p_recipient:recipient,p_subject:subject,p_body:body,p_reply:replyId,p_sender:sender}):await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context,p_sender:sender,p_reply:replyId});
  if(reserve.error||!reserve.data)return reply(503,{status:"storage_unavailable"});
  if(reserve.data.status!=="reserved")return reply(200,{status:reserve.data.status});
- // Fixed professional address for every message. Legacy inbound routes remain receivable.
- const replyAddress="hola@christianarleo.com";
+ // The reservation is authoritative; never substitute a different sender.
+ const replyAddress=reserve.data.sender;
+ if(replyAddress!==sender||!senders.has(replyAddress))return reply(503,{status:"uncertain"});
  let status="uncertain",providerId:string|null=null,providerHttp:number|null=null;
  try{
-   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:replyAddress,subject,text:body}),signal:AbortSignal.timeout(10000)});
+   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <"+replyAddress+">",to:[reserve.data.recipient],reply_to:replyAddress,subject,text:body}),signal:AbortSignal.timeout(10000)});
    providerHttp=r.status;
    if(r.ok){const result=await r.json().catch(()=>null);if(typeof result?.id==="string"&&result.id){status="accepted";providerId=result.id;}}
    else if(r.status>=400&&r.status<500&&![408,409,429].includes(r.status))status="failed";
@@ -51,5 +56,5 @@ Deno.serve(async req=>{
    if(audit.error)console.warn("crm_mail_diagnostic_write_failed");
    console.warn("crm_mail_provider_result",status,providerHttp);
  }
- return reply(200,{status,provider_http:providerHttp});
+ return reply(200,{status,provider_http:providerHttp,sender:replyAddress});
 });
