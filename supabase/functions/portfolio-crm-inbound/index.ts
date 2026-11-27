@@ -29,7 +29,9 @@ function mailbox(value:unknown){
  const m=value.trim().match(/<([^<>]+)>$/);const a=(m?m[1]:value).trim().toLowerCase();
  return /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(a)&&a.length<=320?a:"";
 }
-function routes(value:unknown){return Array.isArray(value)?[...new Set(value.map(mailbox).filter(x=>routePattern.test(x)))]:[];}
+function addresses(value:unknown){return Array.isArray(value)?[...new Set(value.map(mailbox).filter(Boolean))]:[];}
+function routes(value:unknown){return addresses(value).filter(x=>routePattern.test(x));}
+const fixed=new Set(["hola@christianarleo.com","correo@christianarleo.com","hola@respuestas.christianarleo.com","correo@respuestas.christianarleo.com"]);
 const reply=(status:number,result:string)=>new Response(JSON.stringify({status:result}),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 Deno.serve(async req=>{
  if(req.method!=="POST")return reply(405,"method");
@@ -41,16 +43,19 @@ Deno.serve(async req=>{
  if(event?.type!=="email.received")return reply(200,"ignored");
  const data=event?.data,emailId=data?.email_id;
  if(typeof emailId!=="string"||!uuid.test(emailId))return reply(400,"invalid_event");
- const route=routes(data?.to);
- if(route.length!==1)return reply(200,"unmatched");
+ const route=routes(data?.to),direct=addresses(data?.to).filter(x=>fixed.has(x));
+ if(route.length===0&&direct.length===0)return reply(200,"unmatched");
  const existing=await db.from("portfolio_crm_inbound").select("id").eq("provider_email_id",emailId).maybeSingle();
  if(existing.error)return reply(503,"storage_unavailable");
  if(existing.data)return reply(200,"duplicate");
- const out=await db.from("portfolio_crm_mail").select("id,lead_id,recipient,status,reply_address").eq("reply_address",route[0]).maybeSingle();
- if(out.error)return reply(503,"storage_unavailable");
- if(!out.data)return reply(200,"unmatched");
- if(out.data.status==="pending"||out.data.status==="uncertain")return reply(503,"outbound_pending");
- if(out.data.status!=="accepted"||!mailbox(data?.from)||mailbox(data.from)!==mailbox(out.data.recipient))return reply(200,"unmatched");
+ let outboundId:string|null=null,leadId:string|null=null;
+ if(route.length===1){
+  const out=await db.from("portfolio_crm_mail").select("id,lead_id,recipient,status").eq("reply_address",route[0]).maybeSingle();
+  if(out.error)return reply(503,"storage_unavailable");
+  if(out.data&&["pending","uncertain"].includes(out.data.status)&&direct.length===0)return reply(503,"outbound_pending");
+  if(out.data?.status==="accepted"&&mailbox(data?.from)&&mailbox(data.from)===mailbox(out.data.recipient)){outboundId=out.data.id;leadId=out.data.lead_id;}
+  else if(direct.length===0)return reply(200,"unmatched");
+ }else if(direct.length===0)return reply(200,"unmatched");
  const apiKey=Deno.env.get("RESEND_CRM_INBOUND_API_KEY")||"";
  if(!apiKey)return reply(503,"reader_not_configured");
  let received;
@@ -59,12 +64,20 @@ Deno.serve(async req=>{
   if(!response.ok){console.warn("crm_inbound_provider_http",response.status);return reply(503,"provider_unavailable");}
   received=JSON.parse(new TextDecoder().decode(await boundedBody(response.body,2097152)));
  }catch{console.warn("crm_inbound_provider_read_failed");return reply(503,"provider_unavailable");}
- if(received?.id!==emailId||mailbox(received?.from)!==mailbox(out.data.recipient)||!routes(received?.to).includes(route[0]))return reply(422,"routing_mismatch");
+ const sender=mailbox(received?.from), recipients=addresses(received?.to);
+ if(received?.id!==emailId||!sender||sender!==mailbox(data?.from)||!recipients.some(x=>direct.includes(x)||(outboundId!==null&&route.includes(x))))return reply(422,"routing_mismatch");
+ // An exact single match is only a routing hint, never authentication of the sender.
+ if(!leadId&&direct.length){
+  const candidates=await db.from("portfolio_cv_leads").select("id,email").ilike("email",sender.replace(/[\\%_]/g,c=>"\\"+c)).limit(2);
+  if(candidates.error)return reply(503,"storage_unavailable");
+  const exact=(candidates.data||[]).filter(x=>mailbox(x.email)===sender);
+  if(exact.length===1)leadId=exact[0].id;
+ }
  const plain=typeof received.text==="string"?received.text:"";
  const limited=plain.length>20000||(!plain.trim()&&Boolean(received.html));
  const body=plain.trim()?plain.replace(/\x00/g,"").slice(0,20000):"[Mensaje sin texto plano disponible. Revisar en Resend.]";
  const subject=typeof received.subject==="string"?received.subject.replace(/[\r\n\x00]/g," ").slice(0,500):"Sin asunto";
- const inserted=await db.from("portfolio_crm_inbound").insert({provider_email_id:emailId,outbound_id:out.data.id,lead_id:out.data.lead_id,sender:mailbox(received.from),subject,body,body_limited:limited});
+ const inserted=await db.from("portfolio_crm_inbound").insert({provider_email_id:emailId,outbound_id:outboundId,lead_id:leadId,sender,recipients:recipients.filter(x=>fixed.has(x)||(outboundId!==null&&route.includes(x))).slice(0,100),attachment_count:Array.isArray(received.attachments)?received.attachments.length:Array.isArray(data?.attachments)?data.attachments.length:0,subject,body,body_limited:limited});
  if(inserted.error?.code==="23505")return reply(200,"duplicate");
  if(inserted.error){console.warn("crm_inbound_store_failed");return reply(503,"storage_unavailable");}
  return reply(200,"stored");

@@ -105,7 +105,8 @@ document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async
   notice("Sesión cerrada correctamente.");
 }));
 
-const adminViews=["overview","leads","cv","portfolio"];
+let mailboxMode="received",mailboxPage=0,mailboxGeneration=0;
+const adminViews=["overview","leads","mail","cv","portfolio"];
 function readAdminView(){
   try{const v=sessionStorage.getItem("cga-admin-view");return adminViews.includes(v)?v:"overview"}
   catch{return "overview"}
@@ -114,13 +115,14 @@ function navigateAdmin(view){
   if(!adminViews.includes(view))view="overview";
   for(const name of adminViews){
     const selected=name===view;
-    const pane=el({overview:"adminPaneOverview",leads:"adminPaneLeads",cv:"adminPaneCV",portfolio:"adminPanePortfolio"}[name]);
+    const pane=el({overview:"adminPaneOverview",leads:"adminPaneLeads",mail:"adminPaneMail",cv:"adminPaneCV",portfolio:"adminPanePortfolio"}[name]);
     const tab=document.querySelector('button[data-admin-view="'+name+'"]');
     pane.hidden=!selected;
     tab.setAttribute("aria-selected",String(selected));
     tab.tabIndex=selected?0:-1;
   }
   try{sessionStorage.setItem("cga-admin-view",view)}catch{}
+  if(view==="mail")void loadMailbox();
 }
 el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
@@ -463,3 +465,36 @@ const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDo
 async function loadLeads(){await leadCRM.load();refreshOverview();}
 el("reloadLeads").addEventListener("click",loadLeads);
 verifyAdmin().catch(e=>notice(e.message,true));
+// Private general mailbox. No raw HTML rendering and no external resources.
+async function loadMailbox(){
+ if(!isAdmin)return;
+ const generation=++mailboxGeneration,root=el("crmMailbox");
+ const controls=node("div",undefined,"crmFilters"),list=node("div"),status=node("p","Consultando…");
+ for(const [key,label] of [["received","Recibidos"],["unread","No leídos"],["unassigned","Sin solicitud"],["sent","Enviados"]]){
+  const b=node("button",label);b.type="button";b.setAttribute("aria-pressed",String(mailboxMode===key));b.onclick=()=>{mailboxMode=key;mailboxPage=0;void loadMailbox()};controls.append(b);
+ }
+ const refresh=node("button","Actualizar");refresh.type="button";refresh.onclick=()=>void loadMailbox();controls.append(refresh);root.replaceChildren(controls,status,list);
+ const sent=mailboxMode==="sent",from=mailboxPage*30;
+ let query=sent?sb.from("portfolio_crm_mail").select("id,subject,body,recipient,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
+ if(mailboxMode==="unread")query=query.is("read_at",null);
+ if(mailboxMode==="unassigned")query=query.is("lead_id",null);
+ const {data,error,count}=await query.order(sent?"created_at":"received_at",{ascending:false}).order("id",{ascending:false}).range(from,from+29);
+ if(generation!==mailboxGeneration||!isAdmin)return;
+ if(error){status.textContent="No se pudo consultar el correo.";return;}
+ status.textContent=(count??0)+" mensajes";
+ for(const m of data||[]){
+  const card=node("article",undefined,"crmMailItem crmConversationItem");card.dataset.direction=sent?"out":"in";card.dataset.unread=String(!sent&&!m.read_at);
+  card.append(node("strong",m.subject||"Sin asunto"),node("p",(sent?"Para: "+m.recipient:"De: "+m.sender+" · Para: "+(m.recipients||[]).join(", "))),node("small",new Date(sent?m.created_at:m.received_at).toLocaleString("es-PE")+" · "+(sent?m.status:m.read_at?"Leído":"Nuevo")));
+  const content=node("details");content.append(node("summary","Ver mensaje"),node("p",m.body,"crmMailBody"));card.append(content);
+  if(!sent){
+   card.append(node("small",m.lead_id?"Solicitud asociada por ruta o correo coincidente. Identidad no verificada.":"Sin solicitud asociada. Identidad no verificada."));
+   if(m.body_limited||m.attachment_count)card.append(node("p","Contenido parcial o adjuntos ("+m.attachment_count+"). Revisar el original en Resend."));
+   if(!m.read_at){const read=node("button","Marcar como leído");read.type="button";read.onclick=async()=>{read.disabled=true;const r=await sb.from("portfolio_crm_inbound").update({read_at:new Date().toISOString()}).eq("id",m.id).is("read_at",null).select("id").maybeSingle();if(r.error){notice("No se pudo marcar como leído.",true);read.disabled=false;}else void loadMailbox();};card.append(read);}
+  }
+  list.append(card);
+ }
+ if(!data?.length)list.append(node("p","No hay mensajes en esta bandeja."));
+ const pag=node("div",undefined,"crmFilters");
+ for(const [label,delta,disabled] of [["Anterior",-1,mailboxPage===0],["Siguiente",1,from+30>=(count??0)]]){const b=node("button",label);b.type="button";b.disabled=disabled;b.onclick=()=>{mailboxPage+=delta;void loadMailbox()};pag.append(b);}
+ root.append(pag);
+}
