@@ -51,6 +51,7 @@ function show(screen){
   el("pendingPanel").hidden=screen!=="pending";
   el("app").hidden=screen!=="app";
   el("adminLogoutHeader").hidden=screen!=="app";
+  if(screen!=="app")resetMailbox();
 }
 async function verifyAdmin(){
   const {data:{user},error}=await sb.auth.getUser();
@@ -98,6 +99,9 @@ el("authForm").addEventListener("submit",async e=>{
 });
 el("recheck").addEventListener("click",verifyAdmin);
 document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{
+  if(mailboxBusy){notice("Esperá a que termine la operación de correo.",true);return;}
+  if(mailboxDraftDirty&&!await window.CGADialog.confirm("Hay un borrador de correo sin guardar. ¿Cerrar sesión y descartarlo?"))return;
+  if(mailboxBusy)return;
   await sb.auth.signOut();
   currentUser=null;isAdmin=false;
   try{sessionStorage.removeItem("cga-admin-view")}catch{}
@@ -105,7 +109,9 @@ document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async
   notice("Sesión cerrada correctamente.");
 }));
 
-let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0;
+let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0,mailboxEpoch=0;
+let mailboxSearch="",mailboxRows=[],mailboxSelected=null,mailboxOpened=false,mailboxBusy=false,mailboxDraftDirty=false;
+const mailPageSize=30,mailWide=matchMedia("(min-width:1180px)");
 const adminViews=["overview","leads","mail","cv","portfolio"];
 const adminNavigation=el("app").querySelector(".adminNavigation");
 const adminWide=matchMedia("(min-width: 760px)");
@@ -127,8 +133,8 @@ function navigateAdmin(view){
     tab.tabIndex=selected?0:-1;
   }
   try{sessionStorage.setItem("cga-admin-view",view)}catch{}
-  // Switching modules must not discard an in-progress composer.
-  if(view==="mail"&&!el("crmMailbox").querySelector(".crmGeneralComposer"))void loadMailbox();
+  // List refresh is independent from the session-only composer.
+  if(view==="mail")void loadMailbox();
 }
 el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
@@ -471,77 +477,205 @@ el("documents").addEventListener("click",async e=>{
 const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDocuments,bucket});
 async function loadLeads(){await leadCRM.load();refreshOverview();}
 el("reloadLeads").addEventListener("click",loadLeads);
-verifyAdmin().catch(e=>notice(e.message,true));
-// Private general mailbox. No raw HTML rendering and no external resources.
-async function loadMailbox(){
- if(!isAdmin)return;
- const generation=++mailboxGeneration,root=el("crmMailbox");
- const controls=node("div",undefined,"crmFilters"),list=node("div"),status=node("p","Consultando…");
- for(const [key,label] of [["received","Recibidos"],["unread","No leídos"],["unassigned","Sin solicitud"],["sent","Enviados"]]){
-  const b=node("button",label);b.type="button";b.setAttribute("aria-pressed",String(mailboxMode===key));b.onclick=()=>{mailboxMode=key;mailboxPage=0;void loadMailbox()};controls.append(b);
+// Private general mailbox: text-only reading, server-side filters, one session-only draft.
+const mailStatusLabels={accepted:"Aceptado por Resend",pending:"Pendiente",uncertain:"Sin confirmar",failed:"Rechazado",reserved:"Reservado"};
+function mailButton(label,icon,cls="cgaSoftButton"){
+ const b=node("button",undefined,cls+" cgaWithIcon");b.type="button";
+ const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");svg.setAttribute("focusable","false");svg.classList.add("cgaIcon");
+ const use=document.createElementNS(svg.namespaceURI,"use");use.setAttribute("href","/theme/icons.svg#"+icon);svg.append(use);b.append(svg,document.createTextNode(label));return b;
+}
+function warnMailUnload(e){if(mailboxDraftDirty||mailboxBusy){e.preventDefault();e.returnValue="";}}
+function setMailDraftActive(active){
+ mailboxDraftDirty=active;
+ window.removeEventListener("beforeunload",warnMailUnload);
+ if(active)window.addEventListener("beforeunload",warnMailUnload);
+}
+function resetMailbox(){
+ ++mailboxGeneration;++mailboxEpoch;
+ mailboxMode="received";mailboxAccount="";mailboxPage=0;mailboxSearch="";mailboxRows=[];mailboxSelected=null;mailboxOpened=false;mailboxBusy=false;
+ setMailDraftActive(false);
+ el("mailComposerHost").replaceChildren();el("mailComposerHost").hidden=true;
+ el("mailDraftBar").hidden=true;el("mailWorkspace").hidden=false;el("mailWorkspace").dataset.detail="false";
+ el("mailList").replaceChildren();el("mailReader").replaceChildren();el("mailListStatus").textContent="";
+ el("mailSearch").value="";el("mailAccount").value="";el("mailClearSearch").hidden=true;el("mailPagination").hidden=true;
+ for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode==="received"));
+}
+function mailResetSelection(){mailboxSelected=null;mailboxOpened=false;renderMailReader();}
+function mailApplyFilters(){mailboxPage=0;mailResetSelection();void loadMailbox();}
+function mailSearchFilter(term,sent){
+ // Quote the value for PostgREST's OR grammar and escape SQL LIKE metacharacters.
+ // Asterisks are treated as the PostgREST alias for a wildcard; normalize to space
+ // in the search box instead of permitting implicit wildcards.
+ const literal=term.replace(/[\\%_]/g,"\\$&");
+ const quoted='"'+("%"+literal+"%").replace(/\\/g,"\\\\").replace(/"/g,'\\"')+'"';
+ return ["sender","subject","body",...(sent?["recipient"]:[])].map(field=>field+".ilike."+quoted).join(",");
+}
+function normalizeMailSearch(value){return String(value).replace(/[\u0000-\u001f\u007f*]/g," ").trim().slice(0,100);}
+function mailDate(value,full=false){
+ const date=new Date(value);if(!Number.isFinite(date.getTime()))return "Fecha no disponible";
+ return full?date.toLocaleString("es-PE"):date.toDateString()===new Date().toDateString()?date.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"}):date.toLocaleDateString("es-PE",{day:"numeric",month:"short",...(date.getFullYear()!==new Date().getFullYear()?{year:"numeric"}:{})});
+}
+function mailAccountsLabel(m,sent){
+ const addresses=sent?[m.sender]:(m.recipients||[]);
+ const roots=CRM_SENDERS.filter(a=>addresses.includes(a));
+ return roots.length?roots.map(a=>a.split("@")[0]+"@").join(" · "):"Otra ruta";
+}
+function renderMailList(){
+ const list=el("mailList"),sent=mailboxMode==="sent";list.replaceChildren();
+ if(!mailboxRows.length){list.append(node("p",mailboxSearch?"No encontramos mensajes con esta búsqueda.":"No hay mensajes en esta bandeja.","mailEmpty"));return;}
+ for(const m of mailboxRows){
+  const row=node("button",undefined,"mailRow");row.type="button";row.dataset.mailId=m.id;
+  row.dataset.unread=String(!sent&&!m.read_at);row.setAttribute("aria-pressed",String(mailboxSelected?.id===m.id));
+  const top=node("span",undefined,"mailRowTop"),who=node("span",sent?"Para: "+m.recipient:m.sender,"mailRowWho"),date=node("time",mailDate(sent?m.created_at:m.received_at),"mailRowDate");
+  date.dateTime=sent?m.created_at:m.received_at;top.append(who,date);
+  const subject=node("strong",m.subject||"Sin asunto","mailRowSubject");
+  const preview=node("span",String(m.body||"").replace(/\s+/g," ").trim().slice(0,180)||"Sin contenido de texto","mailRowPreview");
+  const meta=node("span",undefined,"mailRowMeta");meta.append(node("span",mailAccountsLabel(m,sent),"mailAccountTag"));
+  if(!sent&&!m.read_at)meta.append(node("span","No leído","mailUnreadLabel"));
+  if(sent)meta.append(node("span",mailStatusLabels[m.status]||"Estado desconocido","mailRowState"));
+  if(!sent&&m.attachment_count)meta.append(node("span",m.attachment_count+" adj.","mailRowState"));
+  row.append(top,subject,preview,meta);
+  row.onclick=()=>{mailboxSelected=m;mailboxOpened=true;renderMailList();renderMailReader();el("mailReaderTitle")?.focus({preventScroll:true});if(!mailWide.matches)el("mailReader").scrollIntoView({block:"start"});};
+  list.append(row);
  }
- const account=node("select");account.setAttribute("aria-label","Filtrar por cuenta corporativa");
- for(const [value,label] of [["","Todas las cuentas"],...CRM_SENDERS.map(a=>[a,a])]){const option=node("option",label);option.value=value;account.append(option);}
- account.value=mailboxAccount;account.onchange=()=>{mailboxAccount=account.value;mailboxPage=0;void loadMailbox();};controls.append(account);
- const compose=node("button","Redactar");compose.type="button";compose.onclick=()=>openMailboxComposer(root);controls.append(compose);
- const refresh=node("button","Actualizar");refresh.type="button";refresh.onclick=()=>void loadMailbox();controls.append(refresh);root.replaceChildren(controls,status,list);
- const sent=mailboxMode==="sent",from=mailboxPage*30;
+}
+function renderMailReader(){
+ const reader=el("mailReader");reader.replaceChildren();el("mailWorkspace").dataset.detail=String(mailboxOpened&&Boolean(mailboxSelected));
+ const m=mailboxSelected,sent=mailboxMode==="sent";
+ if(!m){reader.append(node("p","Seleccioná un mensaje para leerlo.","mailReaderEmpty"));return;}
+ const toolbar=node("div",undefined,"mailReaderToolbar");
+ const back=mailButton("Bandeja","return","cgaSoftButton mailReaderBack");
+ back.onclick=()=>{mailboxOpened=false;el("mailWorkspace").dataset.detail="false";const row=[...el("mailList").children].find(x=>x.dataset.mailId===m.id);(row||el("mailSearch")).focus({preventScroll:true});};
+ toolbar.append(back);
+ if(!sent){
+  const reply=mailButton("Responder","return","cgaSoftButton mailReplyAction");reply.onclick=()=>openMailboxComposer(m);
+  const read=mailButton(m.read_at?"Marcar no leído":"Marcar leído",m.read_at?"mail":"check");read.onclick=()=>void toggleMailRead(m,read);
+  toolbar.append(reply,read);
+ }
+ const title=node("h2",m.subject||"Sin asunto","mailReaderTitle");title.id="mailReaderTitle";title.tabIndex=-1;
+ const meta=node("dl",undefined,"mailReaderMeta");
+ for(const [key,value] of [["De",m.sender],["Para",sent?m.recipient:(m.recipients||[]).join(", ")],["Fecha",mailDate(sent?m.created_at:m.received_at,true)],["Estado",sent?(mailStatusLabels[m.status]||"Estado desconocido"):(m.read_at?"Leído":"No leído")]]){
+  const line=node("div");line.append(node("dt",key),node("dd",value||"—"));meta.append(line);
+ }
+ reader.append(toolbar,title,meta);
+ if(!sent)reader.append(node("p",m.lead_id?"Solicitud asociada por ruta o correo coincidente. Identidad no verificada.":"Sin solicitud asociada. Identidad no verificada.","mailReaderNote"));
+ if(!sent&&(m.body_limited||m.attachment_count))reader.append(node("p","Contenido parcial o adjuntos ("+(m.attachment_count||0)+"). Consultá el original en Resend.","mailReaderNote"));
+ reader.append(node("div",m.body||"Sin contenido de texto.","crmMailBody mailReaderBody"));
+}
+async function toggleMailRead(m,button){
+ if(!isAdmin||button.disabled)return;
+ const epoch=mailboxEpoch;button.disabled=true;
+ try{
+  const next=m.read_at?null:new Date().toISOString();
+  let query=sb.from("portfolio_crm_inbound").update({read_at:next}).eq("id",m.id);
+  query=m.read_at?query.eq("read_at",m.read_at):query.is("read_at",null);
+  const r=await query.select("id,read_at").maybeSingle();
+  if(epoch!==mailboxEpoch||!isAdmin)return;
+  if(r.error)throw r.error;
+  if(!r.data){notice("El estado cambió. Actualizá el correo.",true);await loadMailbox();return;}
+  if(mailboxSelected?.id===m.id)mailboxSelected={...mailboxSelected,read_at:r.data.read_at};
+  await loadMailbox({keepReader:true});
+ }catch{if(epoch===mailboxEpoch&&isAdmin)notice("No se pudo actualizar el estado de lectura.",true);}
+ finally{button.disabled=false;}
+}
+async function loadMailbox({keepReader=false}={}){
+ if(!isAdmin)return;
+ const generation=++mailboxGeneration,sent=mailboxMode==="sent",from=mailboxPage*mailPageSize;
+ const list=el("mailList"),status=el("mailListStatus");
+ status.textContent="Consultando…";list.setAttribute("aria-busy","true");
+ el("mailPagination").hidden=true;mailboxRows=[];list.replaceChildren();
+ for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode===mailboxMode));
+ el("mailAccount").value=mailboxAccount;el("mailClearSearch").hidden=!mailboxSearch;
  let query=sent?sb.from("portfolio_crm_mail").select("id,subject,body,recipient,sender,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
  if(mailboxAccount)query=sent?query.eq("sender",mailboxAccount):query.contains("recipients",[mailboxAccount]);
  if(mailboxMode==="unread")query=query.is("read_at",null);
  if(mailboxMode==="unassigned")query=query.is("lead_id",null);
- const {data,error,count}=await query.order(sent?"created_at":"received_at",{ascending:false}).order("id",{ascending:false}).range(from,from+29);
- if(generation!==mailboxGeneration||!isAdmin)return;
- if(error){status.textContent="No se pudo consultar el correo.";return;}
- status.textContent=(count??0)+" mensajes";
- for(const m of data||[]){
-  const card=node("article",undefined,"crmMailItem crmConversationItem");card.dataset.direction=sent?"out":"in";card.dataset.unread=String(!sent&&!m.read_at);
-  card.append(node("strong",m.subject||"Sin asunto"),node("p",(sent?"De: "+m.sender+" · Para: "+m.recipient:"De: "+m.sender+" · Para: "+(m.recipients||[]).join(", "))),node("small",new Date(sent?m.created_at:m.received_at).toLocaleString("es-PE")+" · "+(sent?m.status:m.read_at?"Leído":"Nuevo")));
-  const content=node("details");content.append(node("summary","Ver mensaje"),node("p",m.body,"crmMailBody"));card.append(content);
-  if(!sent){
-   const respond=node("button","Responder");respond.type="button";respond.onclick=()=>openMailboxComposer(root,m);card.append(respond);
-   card.append(node("small",m.lead_id?"Solicitud asociada por ruta o correo coincidente. Identidad no verificada.":"Sin solicitud asociada. Identidad no verificada."));
-   if(m.body_limited||m.attachment_count)card.append(node("p","Contenido parcial o adjuntos ("+m.attachment_count+"). Revisar el original en Resend."));
-   if(!m.read_at){const read=node("button","Marcar como leído");read.type="button";read.onclick=async()=>{read.disabled=true;const r=await sb.from("portfolio_crm_inbound").update({read_at:new Date().toISOString()}).eq("id",m.id).is("read_at",null).select("id").maybeSingle();if(r.error){notice("No se pudo marcar como leído.",true);read.disabled=false;}else void loadMailbox();};card.append(read);}
-  }
-  list.append(card);
- }
- if(!data?.length)list.append(node("p","No hay mensajes en esta bandeja."));
- const pag=node("div",undefined,"crmFilters");
- for(const [label,delta,disabled] of [["Anterior",-1,mailboxPage===0],["Siguiente",1,from+30>=(count??0)]]){const b=node("button",label);b.type="button";b.disabled=disabled;b.onclick=()=>{mailboxPage+=delta;void loadMailbox()};pag.append(b);}
- root.append(pag);
+ if(mailboxSearch)query=query.or(mailSearchFilter(mailboxSearch,sent));
+ try{
+  const {data,error,count}=await query.order(sent?"created_at":"received_at",{ascending:false}).order("id",{ascending:false}).range(from,from+mailPageSize-1);
+  if(generation!==mailboxGeneration||!isAdmin)return;
+  if(error)throw error;
+  const total=count??0;
+  if(mailboxPage>0&&from>=total){mailboxPage=Math.max(0,Math.ceil(total/mailPageSize)-1);return await loadMailbox({keepReader});}
+  mailboxRows=data||[];
+  if(mailboxSelected){const fresh=mailboxRows.find(x=>x.id===mailboxSelected.id);if(fresh)mailboxSelected=fresh;else if(!keepReader){mailboxSelected=null;mailboxOpened=false;}}
+  status.textContent=total+" "+(total===1?"mensaje":"mensajes")+(mailboxSearch?" · búsqueda activa":"");
+  renderMailList();renderMailReader();
+  el("mailPrevious").disabled=mailboxPage===0;el("mailNext").disabled=from+mailPageSize>=total;
+  el("mailPageInfo").textContent=total?(from+1)+"–"+Math.min(from+mailPageSize,total)+" de "+total:"";
+  el("mailPagination").hidden=total<=mailPageSize;
+ }catch{if(generation===mailboxGeneration&&isAdmin){status.textContent="No se pudo consultar el correo. Presioná Actualizar para reintentar.";list.append(node("p","La bandeja no está disponible temporalmente.","mailEmpty"));}}
+ finally{if(generation===mailboxGeneration)list.setAttribute("aria-busy","false");}
 }
-
-function openMailboxComposer(root,message=null){
+function setMailComposerVisible(visible){
+ const host=el("mailComposerHost"),hasForm=Boolean(host.querySelector("form"));
+ host.hidden=!visible;el("mailWorkspace").hidden=visible;el("mailDraftBar").hidden=visible||!hasForm;
+ if(visible)host.querySelector("h2")?.focus({preventScroll:true});
+ else if(hasForm)el("mailResumeDraft").focus({preventScroll:true});
+}
+function closeMailComposer({focus=true}={}){
+ el("mailComposerHost").replaceChildren();setMailDraftActive(false);setMailComposerVisible(false);
+ if(focus){const reply=el("mailReader").querySelector(".mailReplyAction");(mailboxOpened&&reply?reply:el("mailCompose")).focus({preventScroll:true});}
+}
+function openMailboxComposer(message=null){
  if(!isAdmin)return;
- if(root.querySelector(".crmGeneralComposer")){root.querySelector(".crmGeneralComposer select:not(:disabled), .crmGeneralComposer input:not(:disabled)")?.focus();notice("Terminá o cancelá el correo que estás redactando.",true);return;}
- const form=node("form",undefined,"crmReplyEditor crmGeneralComposer"),heading=node("h3",message?"Responder":"Nuevo correo");
+ const host=el("mailComposerHost");
+ if(host.querySelector("form")){setMailComposerVisible(true);if(message)notice("Ya tenés un borrador abierto. Terminá o descartalo antes de responder otro correo.",true);return;}
+ const form=node("form",undefined,"crmReplyEditor crmGeneralComposer cgaGlassForm cgaFormControls");
+ const heading=node("h2",message?"Responder":"Nuevo correo");heading.tabIndex=-1;heading.id="mailComposerTitle";form.setAttribute("aria-labelledby",heading.id);
+ const header=node("div",undefined,"mailComposerHeader"),minimize=mailButton("Minimizar","chevron");
+ minimize.onclick=()=>{if(!mailboxBusy)setMailComposerVisible(false);};header.append(heading,minimize);
  const {select:sender,locked}=crmSenderChoice(node,message);
  const to=node("input"),subject=node("input"),body=node("textarea");
- to.type="email";to.required=true;to.maxLength=254;to.value=message?.sender||"";to.readOnly=Boolean(message);
- subject.required=true;subject.maxLength=180;subject.value=message?(/^re:/i.test(message.subject)?message.subject:"Re: "+message.subject).slice(0,180):"";
- body.required=true;body.maxLength=5000;body.rows=8;
+ to.type="email";to.required=true;to.maxLength=254;to.value=message?.sender||"";to.readOnly=Boolean(message);to.autocomplete="off";
+ subject.required=true;subject.maxLength=180;subject.value=message?(/^re:/i.test(message.subject||"")?message.subject:"Re: "+(message.subject||"Sin asunto")).slice(0,180):"";
+ body.required=true;body.maxLength=5000;body.rows=10;
  function field(label,control){const wrap=node("div",undefined,"crmField"),lab=node("label",label);control.id="mail-"+crypto.randomUUID();lab.htmlFor=control.id;wrap.append(lab,control);return wrap;}
- const submit=node("button","Enviar desde CRM");submit.type="submit";
- const cancel=node("button","Cancelar");cancel.type="button";cancel.onclick=()=>form.remove();
- const status=node("p",message&&!locked?"Seleccioná la identidad desde la cual querés responder.":"");status.setAttribute("role","status");
- form.append(heading,field("De",sender),field("Para",to),field("Asunto",subject),field("Mensaje",body),submit,cancel,status);
+ const submit=mailButton("Enviar","send","cgaFormButton");submit.type="submit";
+ const cancel=mailButton("Descartar","trash");
  let attemptId=null;
+ const status=node("p",message&&!locked?"Seleccioná la identidad desde la cual querés responder.":"El borrador se conserva mientras esta sesión esté abierta.","mailComposeStatus");status.setAttribute("role","status");
+ const count=node("small","0 / 5000","mailCharacterCount");body.addEventListener("input",()=>{count.textContent=body.value.length+" / 5000";});
+ const actions=node("div",undefined,"mailComposerActions");actions.append(cancel,submit);
+ form.append(header,field("De",sender),field("Para",to),field("Asunto",subject),field("Mensaje",body),count,status,actions);
+ function setLocked(value){sender.disabled=value||locked;to.disabled=value;subject.disabled=value;body.disabled=value;}
+ cancel.onclick=async()=>{
+  if(mailboxBusy)return;
+  const epoch=mailboxEpoch;mailboxBusy=true;cancel.disabled=true;submit.disabled=true;minimize.disabled=true;
+  try{if(await window.CGADialog.confirm(attemptId?"El resultado del envío puede no estar confirmado. ¿Descartar el borrador sin reenviar?":"¿Descartar este borrador?")){if(epoch===mailboxEpoch)closeMailComposer();}}
+  finally{if(epoch===mailboxEpoch){mailboxBusy=false;cancel.disabled=false;submit.disabled=false;minimize.disabled=false;}}
+ };
  form.addEventListener("submit",async e=>{
-  e.preventDefault();if(submit.disabled||!isAdmin||!CRM_SENDERS.includes(sender.value))return;submit.disabled=true;
-  const from=sender.value;sender.disabled=true;cancel.disabled=true;to.disabled=true;subject.disabled=true;body.disabled=true;
+  e.preventDefault();if(mailboxBusy||!isAdmin||!CRM_SENDERS.includes(sender.value))return;
+  const epoch=mailboxEpoch,from=sender.value;
+  mailboxBusy=true;submit.disabled=true;cancel.disabled=true;minimize.disabled=true;setLocked(true);
   try{
-   if(!await window.CGADialog.confirm("¿Enviar este correo a "+to.value+" desde "+from+"?")){if(!attemptId){sender.disabled=locked;to.disabled=false;subject.disabled=false;body.disabled=false;}return;}
-   attemptId=attemptId||crypto.randomUUID();cancel.disabled=true;to.disabled=true;subject.disabled=true;body.disabled=true;
-   status.textContent="Enviando…";
+   if(!await window.CGADialog.confirm("¿Enviar este correo a "+to.value+" desde "+from+"?")){if(!attemptId)setLocked(false);return;}
+   if(epoch!==mailboxEpoch||!isAdmin)return;
+   attemptId=attemptId||crypto.randomUUID();status.textContent="Enviando…";submit.setAttribute("aria-busy","true");
    const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:attemptId,context:"general",recipient:to.value,subject:subject.value,body:body.value,sender:from,in_reply_to:message?.id||null}});
+   if(epoch!==mailboxEpoch||!isAdmin)return;
    if(error)throw error;
-   if(data?.status==="accepted"){notice("Correo aceptado por Resend.",false,{success:true});mailboxMode="sent";mailboxAccount=from;mailboxPage=0;await loadMailbox();return;}
-   const labels={invalid_sender:"Seleccioná una cuenta autorizada. Actualizá el CRM si es necesario.",sender_mismatch:"La cuenta no coincide con el correo original.",conflict:"El intento no coincide con el envío registrado.",contact_blocked:"Contacto no autorizado.",decision_changed:"Revisá la decisión de la solicitud.",limit:"Límite de 10 intentos de CRM por 24 horas.",duplicate:"Ya se envió un mensaje idéntico recientemente.",uncertain_previous:"Existe un envío sin confirmar. Consultá Enviados.",failed:"El proveedor rechazó el envío.",invalid_reply:"El destinatario no coincide con el mensaje.",sender_not_configured:"Remitente no habilitado."};
+   if(data?.status==="accepted"){closeMailComposer({focus:false});notice("Correo aceptado por Resend.",false,{success:true});mailboxMode="sent";mailboxAccount=from;mailboxPage=0;mailboxSearch="";el("mailSearch").value="";mailResetSelection();await loadMailbox();return;}
+   const labels={invalid_sender:"Seleccioná una cuenta autorizada.",sender_mismatch:"La cuenta no coincide con el correo original.",conflict:"El intento no coincide con el envío registrado.",contact_blocked:"Contacto no autorizado.",decision_changed:"Revisá la decisión de la solicitud.",limit:"Límite de 10 intentos de CRM por 24 horas.",duplicate:"Ya se envió un mensaje idéntico recientemente.",uncertain_previous:"Existe un envío sin confirmar. Consultá Enviados.",failed:"El proveedor rechazó el envío.",invalid_reply:"El destinatario no coincide con el mensaje.",sender_not_configured:"Remitente no habilitado."};
    status.textContent=labels[data?.status]||"Resultado no confirmado. Consultá Enviados antes de repetir.";
-   if(["contact_blocked","decision_changed","limit","duplicate","failed","invalid_reply","sender_not_configured","invalid_sender","sender_mismatch"].includes(data?.status)){attemptId=null;sender.disabled=locked;to.disabled=false;subject.disabled=false;body.disabled=false;}
-  }catch{status.textContent="Resultado no confirmado. Consultá Enviados antes de repetir."; }
-  finally{submit.disabled=false;cancel.disabled=false;}
+   if(["contact_blocked","decision_changed","limit","duplicate","failed","invalid_reply","sender_not_configured","invalid_sender","sender_mismatch"].includes(data?.status)){attemptId=null;setLocked(false);}
+  }catch{if(epoch===mailboxEpoch&&isAdmin)status.textContent="Resultado no confirmado. Consultá Enviados antes de repetir.";}
+  finally{if(epoch===mailboxEpoch){mailboxBusy=false;submit.disabled=false;cancel.disabled=false;minimize.disabled=false;submit.removeAttribute("aria-busy");}}
  });
- root.prepend(form);(message&&!locked?sender:message?body:to).focus();
+ host.append(form);setMailDraftActive(true);setMailComposerVisible(true);
 }
+function initMailbox(){
+ for(const address of CRM_SENDERS){const option=node("option",address);option.value=address;el("mailAccount").append(option);}
+ el("mailCompose").onclick=()=>openMailboxComposer();
+ el("mailResumeDraft").onclick=()=>setMailComposerVisible(true);
+ el("mailRefresh").onclick=()=>void loadMailbox();
+ for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.onclick=()=>{mailboxMode=b.dataset.mailMode;mailApplyFilters();};
+ el("mailAccount").onchange=()=>{mailboxAccount=el("mailAccount").value;mailApplyFilters();};
+ el("mailSearchForm").addEventListener("submit",e=>{e.preventDefault();mailboxSearch=normalizeMailSearch(el("mailSearch").value);el("mailSearch").value=mailboxSearch;mailApplyFilters();});
+ el("mailClearSearch").onclick=()=>{mailboxSearch="";el("mailSearch").value="";mailApplyFilters();};
+ el("mailPrevious").onclick=()=>{if(mailboxPage>0){mailboxPage--;mailResetSelection();void loadMailbox();}};
+ el("mailNext").onclick=()=>{mailboxPage++;mailResetSelection();void loadMailbox();};
+}
+initMailbox();
+verifyAdmin().catch(e=>notice(e.message,true));
