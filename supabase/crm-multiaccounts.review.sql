@@ -34,9 +34,9 @@ begin
      and (p_sender=ANY(original_recipients)) IS NOT TRUE then return jsonb_build_object('status','sender_mismatch');end if;
  end if;
 
- if (select count(*) from public.portfolio_crm_mail where created_at>clock_timestamp()-interval '24 hours')>=10 then return jsonb_build_object('status','limit'); end if;
  if exists(select 1 from public.portfolio_crm_mail where (lead_id=p_lead or lower(recipient)=address) and status in ('pending','uncertain') and created_at>clock_timestamp()-interval '24 hours') then return jsonb_build_object('status','uncertain_previous'); end if;
  if exists(select 1 from public.portfolio_crm_mail where lower(recipient)=address and sender=p_sender and subject=p_subject and body=p_body and status='accepted' and created_at>clock_timestamp()-interval '10 minutes') then return jsonb_build_object('status','duplicate'); end if;
+ if (select count(*) from public.portfolio_crm_mail where created_at>clock_timestamp()-interval '24 hours')>=10 then return jsonb_build_object('status','limit'); end if;
  insert into public.portfolio_crm_mail(id,lead_id,actor_id,recipient,sender,subject,body,context,in_reply_to) values(p_id,p_lead,p_actor,address,p_sender,p_subject,p_body,p_context,p_reply);
  return jsonb_build_object('status','reserved','recipient',address,'sender',p_sender);
 end $$;
@@ -69,9 +69,9 @@ begin
  if exists(select 1 from public.portfolio_cv_leads where lower(btrim(email))=address and coalesce(decision_status,'pendiente') not in ('avanzar','rechazada')) then return jsonb_build_object('status','decision_changed');end if;
  select count(*) into n from public.portfolio_cv_leads where lower(btrim(email))=address;
  if n=1 then select id into target_id from public.portfolio_cv_leads where lower(btrim(email))=address;end if;
- if (select count(*) from public.portfolio_crm_mail where created_at>clock_timestamp()-interval '24 hours')>=10 then return jsonb_build_object('status','limit');end if;
  if exists(select 1 from public.portfolio_crm_mail where lower(recipient)=address and status in ('pending','uncertain') and created_at>clock_timestamp()-interval '24 hours') then return jsonb_build_object('status','uncertain_previous');end if;
  if exists(select 1 from public.portfolio_crm_mail where lower(recipient)=address and sender=p_sender and subject=p_subject and body=p_body and status='accepted' and created_at>clock_timestamp()-interval '10 minutes') then return jsonb_build_object('status','duplicate');end if;
+ if (select count(*) from public.portfolio_crm_mail where created_at>clock_timestamp()-interval '24 hours')>=10 then return jsonb_build_object('status','limit');end if;
  insert into public.portfolio_crm_mail(id,lead_id,actor_id,recipient,sender,subject,body,context,in_reply_to) values(p_id,target_id,p_actor,address,p_sender,p_subject,p_body,'general',p_reply);
  return jsonb_build_object('status','reserved','recipient',address,'sender',p_sender);
 end $$;
