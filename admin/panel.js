@@ -107,6 +107,11 @@ document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async
 
 let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0;
 const adminViews=["overview","leads","mail","cv","portfolio"];
+const adminNavigation=el("app").querySelector(".adminNavigation");
+const adminWide=matchMedia("(min-width: 760px)");
+function syncAdminNavOrientation(){adminNavigation.setAttribute("aria-orientation",adminWide.matches?"vertical":"horizontal");}
+syncAdminNavOrientation();
+adminWide.addEventListener("change",syncAdminNavOrientation);
 function readAdminView(){
   try{const v=sessionStorage.getItem("cga-admin-view");return adminViews.includes(v)?v:"overview"}
   catch{return "overview"}
@@ -122,7 +127,8 @@ function navigateAdmin(view){
     tab.tabIndex=selected?0:-1;
   }
   try{sessionStorage.setItem("cga-admin-view",view)}catch{}
-  if(view==="mail")void loadMailbox();
+  // Switching modules must not discard an in-progress composer.
+  if(view==="mail"&&!el("crmMailbox").querySelector(".crmGeneralComposer"))void loadMailbox();
 }
 el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
@@ -134,13 +140,14 @@ el("app").addEventListener("click",event=>{
     else document.querySelector('button[data-admin-view="'+button.dataset.goView+'"]')?.focus();
   }
 });
-el("app").querySelector(".adminNavigation").addEventListener("keydown",event=>{
-  if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+adminNavigation.addEventListener("keydown",event=>{
+  const previous=adminWide.matches?"ArrowUp":"ArrowLeft",nextKey=adminWide.matches?"ArrowDown":"ArrowRight";
+  if(![previous,nextKey,"Home","End"].includes(event.key))return;
   const current=adminViews.indexOf(event.target.dataset.adminView);
   if(current<0)return;
   event.preventDefault();
   const next=event.key==="Home"?0:event.key==="End"?adminViews.length-1:
-    (current+(event.key==="ArrowRight"?1:-1)+adminViews.length)%adminViews.length;
+    (current+(event.key===nextKey?1:-1)+adminViews.length)%adminViews.length;
   navigateAdmin(adminViews[next]);
   document.querySelector('button[data-admin-view="'+adminViews[next]+'"]').focus();
 });
