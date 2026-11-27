@@ -187,7 +187,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-shell1">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-mail2">
 </head><body class="cgaAdminShell">
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
@@ -276,7 +276,44 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <div id="leadSummary" class="crmSummary" role="status" aria-live="polite"></div>
   <div id="leads" class="cgaFormControls">Cargando solicitudes…</div>
 </section></div>
- <div id="adminPaneMail" class="adminPane" role="tabpanel" aria-labelledby="adminTabMail" hidden><section class="panel"><div class="adminSectionHeader"><h2>Comunicaciones</h2></div><p>Correo profesional y administrativo. Los mensajes recibidos se muestran como texto seguro.</p><div id="crmMailbox" class="cgaFormControls"></div></section></div>
+ <div id="adminPaneMail" class="adminPane" role="tabpanel" aria-labelledby="adminTabMail" hidden>
+ <section class="panel adminMailPanel" aria-labelledby="mailTitle">
+  <div id="crmMailbox" class="cgaFormControls">
+   <div class="mailWorkspace" id="mailWorkspace" data-detail="false">
+    <section class="mailInbox" aria-labelledby="mailTitle">
+     <div class="adminSectionHeader mailHeading">
+      <div><h1 id="mailTitle">Correo</h1><p class="cgaMeta">Comunicaciones profesionales</p></div>
+      <div class="mailHeaderActions">
+       <button id="mailCompose" class="primary" type="button" data-cga-icon="edit">Redactar</button>
+       <button id="mailRefresh" class="cgaSoftButton cgaIconOnly" type="button" data-cga-icon="refresh" aria-label="Actualizar correo" title="Actualizar"></button>
+      </div>
+     </div>
+     <form id="mailSearchForm" class="mailSearchForm" role="search">
+      <label class="srOnly" for="mailSearch">Buscar correos</label>
+      <div class="adminSearchWrap"><svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg><input id="mailSearch" type="search" maxlength="100" placeholder="Buscar correos…" autocomplete="off"></div>
+      <button type="submit" class="cgaSoftButton">Buscar</button>
+      <button id="mailClearSearch" type="button" class="cgaSoftButton cgaIconOnly" data-cga-icon="close" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden></button>
+     </form>
+     <div class="mailFolders" role="group" aria-label="Bandejas de correo">
+      <button type="button" data-mail-mode="received" aria-pressed="true" data-cga-icon="inbox">Recibidos</button>
+      <button type="button" data-mail-mode="unread" aria-pressed="false" data-cga-icon="mail">No leídos</button>
+      <button type="button" data-mail-mode="sent" aria-pressed="false" data-cga-icon="send">Enviados</button>
+      <button type="button" data-mail-mode="unassigned" aria-pressed="false" data-cga-icon="briefcase">Sin solicitud</button>
+     </div>
+     <div class="mailAccountLine"><label for="mailAccount">Cuenta</label><select id="mailAccount"><option value="">Todas las cuentas</option></select></div>
+     <p id="mailListStatus" class="mailListStatus" role="status" aria-live="polite"></p>
+     <div id="mailList" class="mailList" aria-label="Mensajes"></div>
+     <div id="mailPagination" class="mailPagination" hidden>
+      <button id="mailPrevious" class="cgaSoftButton" type="button">Anterior</button><span id="mailPageInfo"></span><button id="mailNext" class="cgaSoftButton" type="button">Siguiente</button>
+     </div>
+    </section>
+    <section id="mailReader" class="mailReader" aria-label="Lectura de correo"></section>
+   </div>
+   <div id="mailDraftBar" class="mailDraftBar" hidden><span>Borrador en esta sesión</span><button id="mailResumeDraft" type="button" class="cgaSoftButton" data-cga-icon="edit">Continuar</button></div>
+   <section id="mailComposerHost" class="mailComposerHost" aria-label="Redacción de correo" hidden></section>
+  </div>
+ </section>
+ </div>
  <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel">
 <div class="adminSectionHeader">
   <div><h1>CV por empresa</h1></div>
@@ -387,7 +424,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=20261127-admin-shell1"></script>
+<script type="module" src="./panel.js?v=20261127-admin-mail2"></script>
 <script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
