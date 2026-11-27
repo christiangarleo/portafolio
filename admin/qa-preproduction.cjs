@@ -3,8 +3,9 @@ const { chromium }=require("playwright");
 const http=require("node:http"),fs=require("node:fs"),path=require("node:path"),assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const mime={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".webmanifest":"application/manifest+json",".svg":"image/svg+xml",".png":"image/png"};
+let disconnectAdmin=false;
 const server=http.createServer((req,res)=>{
- let url=new URL(req.url,"http://localhost");let file=path.resolve(root,"."+decodeURIComponent(url.pathname));if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
+ let url=new URL(req.url,"http://localhost");if(disconnectAdmin&&url.pathname==="/admin/"){req.socket.destroy();return;}let file=path.resolve(root,"."+decodeURIComponent(url.pathname));if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
  if(fs.existsSync(file)&&fs.statSync(file).isDirectory())file=path.join(file,"index.html");
  if(!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404).end();return;}
  res.writeHead(200,{"Content-Type":mime[path.extname(file)]||"application/octet-stream","Cache-Control":"no-store"});fs.createReadStream(file).pipe(res);
@@ -56,16 +57,20 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
  await page.locator("#adminTabMail").click();await page.locator(".mailRow").first().click();await check(key+" safe message reader",async()=>{assert((await page.locator(".mailReaderBody").textContent()).includes("<img"));assert.equal(await page.locator(".mailReaderBody img").count(),0)});
  await page.locator(".mailReplyAction").click();await page.locator("#mailComposerHost textarea").fill("QA borrador");await page.getByRole("button",{name:"Minimizar",exact:true}).click();if(w<1180)await page.locator(".mailReaderBack").click();await page.locator("#mailRefresh").click();await page.locator("#adminTabOverview").click();await page.locator("#adminTabMail").click();await page.locator("#mailResumeDraft").click();await check(key+" draft survives navigation",async()=>assert.equal(await page.locator("#mailComposerHost textarea").inputValue(),"QA borrador"));
  await page.getByRole("button",{name:"Minimizar",exact:true}).click();
- await page.locator("#adminTabLeads").click();await page.locator(".crmQueueItem").first().click();await page.getByRole("button",{name:"Ver correos de esta solicitud"}).click();await check(key+" contextual CRM mailbox",async()=>assert(await page.locator("#mailContextBar").isVisible()));
+ await page.locator("#adminTabLeads").click();await page.locator(".crmQueueItem").first().click();
+ const crmBody=page.locator(".crmDirectMail").first().locator("xpath=..").locator("textarea").first();await crmBody.fill("QA borrador CRM");
+ await page.locator("#reloadLeads").click();await page.waitForFunction(()=>[...document.querySelectorAll("#leads textarea")].some(x=>x.value==="QA borrador CRM"));
+ await check(key+" CRM draft survives refresh",async()=>assert.equal(await crmBody.inputValue(),"QA borrador CRM"));
+ await page.getByRole("button",{name:"Ver correos de esta solicitud"}).click();await check(key+" contextual CRM mailbox",async()=>assert(await page.locator("#mailContextBar").isVisible()));
  await check(key+" no JS runtime errors",async()=>assert.deepEqual(errors,[]));
  if(w===390&&scheme==="light"){
   await page.locator("#adminTabMail").click();await page.locator("#mailResumeDraft").click();await page.getByRole("button",{name:"Descartar",exact:true}).click();
   // Confirm discard through the existing modal; no real email.
   await page.locator("dialog[open] .cgaDialogConfirm").click();
-  await page.locator("#adminLogoutHeader").click();await page.locator("#loginPanel").waitFor({state:"visible"});
+  await page.locator("#adminLogoutHeader").click();await page.locator("dialog[open] .cgaDialogConfirm").click();await page.locator("#loginPanel").waitFor({state:"visible"});
   await check("logout hides admin",async()=>assert(await page.locator("#app").isHidden()));
   await check("logout removes private CV from DOM",async()=>assert(!await page.locator("#documents").textContent().then(t=>t.includes("QA Empresa"))));
-  await check("offline generic page and empty CacheStorage",async()=>{await c.setOffline(true);await page.goto(origin+"/admin/").catch(()=>{});await page.getByRole("heading",{name:"Sin conexión"}).waitFor({state:"visible"});assert.equal(await page.evaluate(async()=> (await caches.keys()).length),0);await c.setOffline(false);});
+  await check("service worker network failure fallback and empty CacheStorage",async()=>{assert(await page.evaluate(()=>!!navigator.serviceWorker.controller));disconnectAdmin=true;try{const response=await page.goto(origin+"/admin/");assert.equal(response.status(),503);assert(response.fromServiceWorker());await page.getByRole("heading",{name:"Sin conexión"}).waitFor({state:"visible"});assert.equal(await page.evaluate(async()=> (await caches.keys()).length),0);}finally{disconnectAdmin=false;}});
  }
 
  }catch(e){failures++;console.log("FAIL "+key+" journey: "+String(e.message).slice(0,240));}finally{await c.close();}
