@@ -1283,3 +1283,44 @@ html.cgaModern body.cgaAdminShell .mailComposerActions button{flex:1 1 110px;min
  html.cgaModern body.cgaAdminShell .mailComposerActions button{max-width:none}
  html.cgaModern body.cgaAdminShell .mailHeaderActions{justify-content:flex-end}
 }
+
+
+/* ========== OWNER · Operations center / CRM, phase 04 ==========
+   Preserve existing brand, semantic badges, controls, and Glass components. */
+html.cgaModern body.cgaAdminShell .adminOverviewTools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html.cgaModern body.cgaAdminShell .adminWelcome p.cgaMeta{margin:6px 0 0}
+html.cgaModern body.cgaAdminShell .adminStats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+html.cgaModern body.cgaAdminShell .adminStat{min-width:0;min-height:130px;padding:14px 13px}
+html.cgaModern body.cgaAdminShell .adminStat>span{overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .adminStat button{min-height:44px;text-align:left;justify-content:flex-start;padding:4px 0}
+html.cgaModern body.cgaAdminShell .adminOverviewScope{margin:0 0 18px;line-height:1.5}
+html.cgaModern body.cgaAdminShell .adminOperationsGrid{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+html.cgaModern body.cgaAdminShell .adminOperationsGrid>.panel{min-width:0;padding:clamp(14px,2vw,22px)}
+html.cgaModern body.cgaAdminShell .adminPriorityItem{min-width:0;gap:8px;flex-wrap:wrap}
+html.cgaModern body.cgaAdminShell .adminPriorityItem p{flex:1 1 130px;min-width:0;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .adminPriorityItem button{min-height:44px}
+html.cgaModern body.cgaAdminShell .adminAgendaItem{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border:1px solid var(--cga-border);background:var(--cga-surface-2);border-radius:9px;padding:12px}
+html.cgaModern body.cgaAdminShell .adminAgendaItem>div{flex:1 1 140px;min-width:0;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .adminAgendaItem p{margin:4px 0}
+html.cgaModern body.cgaAdminShell .adminAgendaItem button{min-height:44px}
+html.cgaModern body.cgaAdminShell .mailContextBar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px 11px;border:1px solid var(--cga-border-strong);border-radius:9px;background:var(--cga-accent-soft);margin-bottom:10px;font-size:13px;font-weight:650}
+html.cgaModern body.cgaAdminShell .mailContextBar button{min-height:44px}
+html.cgaModern body.cgaAdminShell .crmQueueUnread{font-size:12px;line-height:1.4;font-weight:750;color:var(--cga-text);border-left:3px solid var(--cga-focus);padding-left:7px}
+html.cgaModern body.cgaAdminShell .crmQueueItem{min-height:104px;gap:6px}
+html.cgaModern body.cgaAdminShell .crmQueueIdentifier{font-size:12px;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .crmInboxBack{min-height:44px}
+html.cgaModern body.cgaAdminShell .crmMailRecord>button{margin:8px 0;min-height:44px}
+html.cgaModern body.cgaAdminShell #leadCRM :is(.crmInboxPagination,.crmDeliveryButtons,.crmCopyActions) button{min-height:44px}
+@media(max-width:1179px){
+ html.cgaModern body.cgaAdminShell #leadCRM:has(.crmInboxWorkspace[data-mobile-detail="true"])>.adminLeadSearch,
+ html.cgaModern body.cgaAdminShell #leadCRM:has(.crmInboxWorkspace[data-mobile-detail="true"])>#leadFilters,
+ html.cgaModern body.cgaAdminShell #leadCRM:has(.crmInboxWorkspace[data-mobile-detail="true"])>.crmAdvancedFilters,
+ html.cgaModern body.cgaAdminShell #leadCRM:has(.crmInboxWorkspace[data-mobile-detail="true"])>#leadSummary{display:none}
+ html.cgaModern body.cgaAdminShell #leadCRM .crmInboxDetail{padding:0 12px 16px}
+}
+@media(min-width:760px){
+ html.cgaModern body.cgaAdminShell .adminStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(min-width:1180px){
+ html.cgaModern body.cgaAdminShell .adminOperationsGrid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+}
