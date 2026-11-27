@@ -1195,3 +1195,91 @@ html.cgaModern body.cgaAdminShell #app :is(.adminSearchWrap,.adminSectionHeader,
 @media(prefers-reduced-motion:reduce){
  html.cgaModern body.cgaAdminShell #app>.adminNavigation button{transition:none!important;transform:none!important}
 }
+
+
+/* ========== OWNER · Mail workspace, phase 03 ==========
+   Scoped to admin; uses the official tokens, native controls and approved Glass buttons. */
+html.cgaModern body.cgaAdminShell .adminMailPanel{padding:clamp(12px,2vw,22px)}
+html.cgaModern body.cgaAdminShell #crmMailbox{min-width:0}
+html.cgaModern body.cgaAdminShell .mailWorkspace{display:block;min-width:0}
+html.cgaModern body.cgaAdminShell .mailInbox,html.cgaModern body.cgaAdminShell .mailReader{min-width:0}
+html.cgaModern body.cgaAdminShell .mailHeading{gap:10px;align-items:center;margin-bottom:12px}
+html.cgaModern body.cgaAdminShell .mailHeading p{margin:3px 0 0}
+html.cgaModern body.cgaAdminShell .mailHeaderActions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+html.cgaModern body.cgaAdminShell .mailHeaderActions button{min-height:44px}
+html.cgaModern body.cgaAdminShell .mailSearchForm{display:flex;align-items:center;gap:6px;margin:0 0 12px}
+html.cgaModern body.cgaAdminShell .mailSearchForm .adminSearchWrap{flex:1;min-width:0}
+html.cgaModern body.cgaAdminShell .mailSearchForm input{width:100%;min-width:0;padding-left:36px;min-height:44px}
+html.cgaModern body.cgaAdminShell .mailSearchForm button{flex:none;min-height:44px;padding:8px 10px}
+html.cgaModern body.cgaAdminShell .mailFolders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:12px}
+html.cgaModern body.cgaAdminShell .mailFolders button{min-width:0;min-height:44px;gap:6px;padding:7px 6px;font-weight:650;font-size:12px;background:var(--cga-surface-2);color:var(--cga-text);border:1px solid var(--cga-border)}
+html.cgaModern body.cgaAdminShell .mailFolders button[aria-pressed="true"]{border-color:var(--cga-focus);background:var(--cga-accent-soft);box-shadow:inset 0 -2px var(--cga-focus)}
+html.cgaModern body.cgaAdminShell .mailFolders .cgaIcon{width:17px;height:17px;min-width:17px}
+html.cgaModern body.cgaAdminShell .mailAccountLine{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+html.cgaModern body.cgaAdminShell .mailAccountLine label{margin:0;flex:none}
+html.cgaModern body.cgaAdminShell .mailAccountLine select{flex:1;min-width:0;min-height:44px}
+html.cgaModern body.cgaAdminShell .mailListStatus{margin:8px 0;color:var(--cga-muted);min-height:20px}
+html.cgaModern body.cgaAdminShell .mailList{border:1px solid var(--cga-border);border-radius:12px;overflow:hidden}
+html.cgaModern body.cgaAdminShell .mailList:empty{min-height:72px}
+html.cgaModern body.cgaAdminShell .mailList .mailRow{position:relative;display:grid;gap:5px;width:100%;min-width:0;min-height:100px;text-align:left;padding:12px 13px 12px 15px;border:0;border-radius:0;background:var(--cga-surface);color:var(--cga-text);box-shadow:none;transform:none}
+html.cgaModern body.cgaAdminShell .mailList .mailRow+.mailRow{border-top:1px solid var(--cga-border)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow:hover{background:var(--cga-hover);transform:none}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[data-unread="true"]{background:var(--cga-accent-soft)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[data-unread="true"]::before{content:"";position:absolute;inset:12px auto 12px 4px;width:3px;border-radius:3px;background:var(--cga-focus)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--cga-focus)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow:focus-visible{outline-offset:-4px}
+html.cgaModern body.cgaAdminShell .mailRowTop{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+html.cgaModern body.cgaAdminShell .mailRowWho{flex:1;min-width:0;font-weight:650;font-size:14px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+html.cgaModern body.cgaAdminShell .mailRowDate{flex:none;color:var(--cga-muted);font-size:11px;white-space:nowrap}
+html.cgaModern body.cgaAdminShell .mailRowSubject{font-size:14px;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.cgaModern body.cgaAdminShell .mailRowPreview{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cga-muted);font-size:13px;line-height:1.4}
+html.cgaModern body.cgaAdminShell .mailRowMeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--cga-muted);font-size:11px}
+html.cgaModern body.cgaAdminShell .mailAccountTag{border:1px solid var(--cga-border);border-radius:6px;padding:2px 6px;color:var(--cga-text);background:var(--cga-surface-2)}
+html.cgaModern body.cgaAdminShell .mailUnreadLabel{font-weight:750;color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell .mailEmpty,html.cgaModern body.cgaAdminShell .mailReaderEmpty{padding:24px 12px;text-align:center;line-height:1.5}
+html.cgaModern body.cgaAdminShell .mailPagination{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:12px}
+html.cgaModern body.cgaAdminShell .mailPagination button{min-height:44px;padding:8px 10px}
+html.cgaModern body.cgaAdminShell .mailPagination span{font-size:12px;color:var(--cga-muted);text-align:center}
+html.cgaModern body.cgaAdminShell .mailReader{scroll-margin-top:12px}
+html.cgaModern body.cgaAdminShell .mailReaderToolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+html.cgaModern body.cgaAdminShell .mailReaderToolbar button{min-height:44px;padding:8px 10px}
+html.cgaModern body.cgaAdminShell .mailReaderTitle{font-size:clamp(20px,2.2vw,25px);line-height:1.3;overflow-wrap:anywhere;margin:0 0 16px}
+html.cgaModern body.cgaAdminShell .mailReaderMeta{display:grid;gap:7px;margin:0 0 18px;padding:12px 0;border-block:1px solid var(--cga-border)}
+html.cgaModern body.cgaAdminShell .mailReaderMeta>div{display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;align-items:baseline}
+html.cgaModern body.cgaAdminShell .mailReaderMeta dt{font-size:12px;color:var(--cga-muted);font-weight:650}
+html.cgaModern body.cgaAdminShell .mailReaderMeta dd{margin:0;overflow-wrap:anywhere;font-size:13px;color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell .mailReaderNote{background:var(--cga-surface-2);border-left:2px solid var(--cga-border-strong);padding:8px 10px;font-size:12px}
+html.cgaModern body.cgaAdminShell .mailReaderBody{white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font-size:15px;line-height:1.7;color:var(--cga-text);padding:10px 0 20px}
+html.cgaModern body.cgaAdminShell .mailDraftBar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;margin-bottom:14px;border:1px solid var(--cga-border-strong);border-radius:10px;background:var(--cga-surface-2)}
+html.cgaModern body.cgaAdminShell .mailDraftBar span{font-size:13px;font-weight:650}
+html.cgaModern body.cgaAdminShell .mailDraftBar button{min-height:44px}
+html.cgaModern body.cgaAdminShell .mailComposerHost{width:min(820px,100%);margin:0 auto;min-width:0;scroll-margin-top:12px}
+html.cgaModern body.cgaAdminShell .mailComposerHost form.crmGeneralComposer{margin:0;padding:clamp(12px,3vw,24px);min-width:0;gap:12px}
+html.cgaModern body.cgaAdminShell .mailComposerHeader{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+html.cgaModern body.cgaAdminShell .mailComposerHeader h2{margin:0;font-size:22px}
+html.cgaModern body.cgaAdminShell .mailComposerHeader button{min-height:44px}
+html.cgaModern body.cgaAdminShell .mailComposerHost .crmField{min-width:0}
+html.cgaModern body.cgaAdminShell .mailComposerHost .crmField label{margin:0 0 6px}
+html.cgaModern body.cgaAdminShell .mailComposerHost :is(input,select,textarea){width:100%;max-width:100%;min-height:44px}
+html.cgaModern body.cgaAdminShell .mailComposerHost textarea{min-height:clamp(180px,32vh,360px);resize:vertical;line-height:1.6}
+html.cgaModern body.cgaAdminShell .mailCharacterCount{color:var(--cga-muted);text-align:right}
+html.cgaModern body.cgaAdminShell .mailComposeStatus{margin:0;min-height:20px;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell .mailComposerActions{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+html.cgaModern body.cgaAdminShell .mailComposerActions button{flex:1 1 110px;min-height:48px;width:auto;max-width:220px}
+@media(max-width:1179px){
+ html.cgaModern body.cgaAdminShell .mailWorkspace[data-detail="false"]>.mailReader{display:none}
+ html.cgaModern body.cgaAdminShell .mailWorkspace[data-detail="true"]>.mailInbox{display:none}
+}
+@media(min-width:480px) and (max-width:759px){
+ html.cgaModern body.cgaAdminShell .mailFolders{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(min-width:1180px){
+ html.cgaModern body.cgaAdminShell .mailWorkspace{display:grid;grid-template-columns:minmax(285px,350px) minmax(0,1fr);gap:18px;align-items:start}
+ html.cgaModern body.cgaAdminShell .mailReader{border-left:1px solid var(--cga-border);padding:8px 0 12px 18px;min-height:420px;max-height:calc(100dvh - 132px);overflow:auto;overscroll-behavior:contain}
+ html.cgaModern body.cgaAdminShell .mailReaderBack{display:none!important}
+ html.cgaModern body.cgaAdminShell .mailList{max-height:calc(100dvh - 240px);min-height:150px;overflow:auto;overscroll-behavior:contain}
+}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell .mailComposerActions button{max-width:none}
+ html.cgaModern body.cgaAdminShell .mailHeaderActions{justify-content:flex-end}
+}
