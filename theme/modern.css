@@ -463,7 +463,8 @@ html.cgaModern body:has(#loginPanel) .crmInboxDetail .crmHeader{gap:9px}
  }
  html.cgaModern body:has(#loginPanel) .crmInboxDetail{padding:0 13px 17px}
 }
-@media(max-width:820px){
+/* Keep the list/detail pattern until the workspace is wide enough beside the admin rail. */
+@media(max-width:1179px){
  html.cgaModern body:has(#loginPanel) .crmInboxWorkspace{display:block}
  html.cgaModern body:has(#loginPanel) .crmInboxList{
   max-height:none;min-height:0;overflow:visible;
