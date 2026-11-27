@@ -187,7 +187,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-mail2">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-ops3">
 </head><body class="cgaAdminShell">
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
@@ -223,23 +223,28 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
  <div id="adminPaneOverview" class="adminPane" role="tabpanel" aria-labelledby="adminTabOverview"><section class="adminDashboard" aria-labelledby="adminWelcome">
  <div class="adminWelcome">
   <div><p class="adminEyebrow">PANEL PERSONAL</p>
-   <h1 id="adminWelcome">Tu actividad</h1></div>
-  <div class="adminOwnerBadge"><span aria-hidden="true">●</span> Acceso privado</div>
+   <h1 id="adminWelcome">Centro de operaciones</h1><p class="cgaMeta">Organizá tu jornada desde un solo lugar.</p></div>
+  <div class="adminOverviewTools"><div class="adminOwnerBadge"><span aria-hidden="true">●</span> Acceso privado</div><button id="refreshOverviewMail" class="cgaSoftButton cgaIconOnly" type="button" data-cga-icon="refresh" aria-label="Actualizar indicadores de correo" title="Actualizar correo"></button></div>
  </div>
  <div class="adminStats" aria-label="Estado de tu oficina">
-  <article class="adminStat"><span>Por decidir</span><strong id="statPending">—</strong><button type="button" data-go-view="leads" data-cga-icon="arrow">Revisar solicitudes</button></article>
-  <article class="adminStat"><span>En seguimiento</span><strong id="statActive">—</strong><button type="button" data-go-view="leads" data-cga-icon="arrow">Continuar gestión</button></article>
+  <article class="adminStat"><span>Por decidir</span><strong id="statPending">—</strong><button type="button" data-go-view="leads" data-lead-filter="pendiente" data-cga-icon="arrow">Revisar solicitudes</button></article>
+  <article class="adminStat"><span>En seguimiento</span><strong id="statActive">—</strong><button type="button" data-go-view="leads" data-lead-filter="avanzar" data-cga-icon="arrow">Continuar gestión</button></article>
+  <article class="adminStat"><span>Correos no leídos</span><strong id="statUnreadMail">—</strong><button type="button" data-go-view="mail" data-mail-folder="unread" data-cga-icon="mail">Abrir no leídos</button></article>
+  <article class="adminStat"><span>Envíos por revisar</span><strong id="statMailIssues">—</strong><button type="button" data-go-view="mail" data-mail-folder="sent" data-mail-issues="true" data-cga-icon="send">Revisar envíos</button></article>
   <article class="adminStat"><span>CV registrados</span><strong id="statCV">—</strong><button type="button" data-go-view="cv" data-cga-icon="arrow">Administrar CV</button></article>
   <article class="adminStat"><span>Portafolios PDF</span><strong id="statPortfolios">—</strong><button type="button" data-go-view="portfolio" data-cga-icon="arrow">Revisar idiomas</button></article>
  </div>
- <section class="panel adminPriority" aria-labelledby="adminPriorityTitle">
+ <p class="cgaMeta adminOverviewScope">Solicitudes: hasta las últimas 200 cargadas. Los indicadores de correo consultan todos los registros autorizados; los envíos por revisar incluyen pendientes, sin confirmar y rechazados.</p>
+ <div class="adminOperationsGrid"><section class="panel adminPriority" aria-labelledby="adminPriorityTitle">
   <div class="row" style="justify-content:space-between"><h2 id="adminPriorityTitle">Prioridades</h2></div>
   <div id="adminPriorities" class="adminPriorities" aria-live="polite">Cargando prioridades…</div>
  </section>
+ <section class="panel adminAgenda" aria-labelledby="adminAgendaTitle"><h2 id="adminAgendaTitle">Próximas reuniones propuestas</h2><div id="adminAgenda" class="adminPriorities">Consultando solicitudes…</div><p class="cgaMeta">Propuestas registradas en CRM; no son confirmaciones de calendario.</p></section></div>
  <section class="panel adminQuickAccess" aria-label="Accesos rápidos">
   <h2>Acciones rápidas</h2>
   <div class="adminQuickLinks">
    <button type="button" data-go-view="leads" data-cga-icon="inbox">Ver solicitudes</button>
+   <button type="button" data-go-view="mail" data-compose-mail="true" data-cga-icon="edit">Redactar correo</button>
    <button type="button" id="quickUploadCV" data-go-view="cv" data-cga-icon="plus">Nuevo CV</button>
    <button type="button" data-go-view="portfolio" data-cga-icon="upload">Actualizar portafolios</button>
    <a href="/empresa/?lang=es" target="_blank" rel="noopener noreferrer" data-cga-icon="external">Ver portal de empresas</a>
@@ -302,6 +307,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       <button type="button" data-mail-mode="unassigned" aria-pressed="false" data-cga-icon="briefcase">Sin solicitud</button>
      </div>
      <div class="mailAccountLine"><label for="mailAccount">Cuenta</label><select id="mailAccount"><option value="">Todas las cuentas</option></select></div>
+     <div id="mailContextBar" class="mailContextBar" hidden><span id="mailContextLabel"></span><button id="mailClearContext" type="button" class="cgaSoftButton" data-cga-icon="close">Quitar filtro</button></div>
      <p id="mailListStatus" class="mailListStatus" role="status" aria-live="polite"></p>
      <div id="mailList" class="mailList" aria-label="Mensajes"></div>
      <div id="mailPagination" class="mailPagination" hidden>
@@ -424,7 +430,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=20261127-admin-mail2"></script>
+<script type="module" src="./panel.js?v=20261127-admin-ops3"></script>
 <script src="/theme/modern.js?v=20261127-admin-mail2" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
