@@ -3,6 +3,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Oficina | Christian Gabriel Arleo</title>
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/admin/icons/cga-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/admin/icons/cga-180.png">
+<meta name="theme-color" content="#161616">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CGA ADMIN">
   <script>
     (() => {
       try {
@@ -187,16 +193,18 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-docs4">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-pwa5">
 </head><body class="cgaAdminShell">
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
   <div class="adminHeaderTools">
+    <button id="adminInstall" type="button" class="cgaSoftButton" data-cga-icon="download" aria-controls="adminInstallHelp" aria-expanded="false" hidden>Instalar</button>
     <a href="/portafolio/?lang=es" target="_blank" rel="noopener noreferrer" data-cga-icon="external">Ver sitio</a>
     <button id="adminLogoutHeader" class="logout adminHeaderLogout" type="button" data-cga-icon="lock" hidden>Salir</button>
   </div>
 </header>
 <main>
+<section id="adminInstallHelp" class="panel adminInstallHelp" aria-labelledby="adminInstallTitle" hidden><div class="adminSectionHeader"><h2 id="adminInstallTitle">Instalar CGA ADMIN</h2><button id="adminInstallClose" type="button" class="cgaSoftButton" data-cga-icon="close">Cerrar</button></div><p id="adminInstallMessage" role="status"></p><p class="cgaMeta">Se usa la misma oficina privada, con tu acceso autorizado. Requiere conexión a Internet.</p></section>
 <section class="panel cgaGlassForm cgaFormControls" id="loginPanel">
 <p class="adminEyebrow">ACCESO PERSONAL</p><h1>Tu oficina</h1><p>Ingresá con tu cuenta autorizada.</p>
 <form id="authForm" class="cgaFormAsync">
@@ -431,6 +439,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
+<script src="/admin/pwa.js?v=20261127-pwa1" defer></script>
 <script type="module" src="./panel.js?v=20261127-admin-ops3"></script>
 <script src="/theme/modern.js?v=20261127-admin-mail2" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>

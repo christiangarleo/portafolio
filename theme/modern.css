@@ -1382,3 +1382,14 @@ html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard form 
 @media(max-width:359px){
  html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions{grid-template-columns:minmax(0,1fr)}
 }
+
+/* CGA ADMIN install help — no changes to shared theme or public pages. */
+html.cgaModern body.cgaAdminShell #adminInstall{min-height:44px;padding:8px 9px;white-space:nowrap}
+html.cgaModern body.cgaAdminShell .adminInstallHelp{max-width:760px;margin:0 auto 16px;scroll-margin-top:12px}
+html.cgaModern body.cgaAdminShell .adminInstallHelp .adminSectionHeader{margin-bottom:8px;gap:8px}
+html.cgaModern body.cgaAdminShell .adminInstallHelp h2{margin:0;font-size:18px}
+html.cgaModern body.cgaAdminShell .adminInstallHelp button{min-height:44px}
+html.cgaModern body.cgaAdminShell .adminInstallHelp p{overflow-wrap:anywhere}
+@media(display-mode:standalone){
+ html.cgaModern body.cgaAdminShell #adminInstall{display:none!important}
+}
