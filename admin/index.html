@@ -279,6 +279,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
  <div id="adminPaneMail" class="adminPane" role="tabpanel" aria-labelledby="adminTabMail" hidden>
  <section class="panel adminMailPanel" aria-labelledby="mailTitle">
   <div id="crmMailbox" class="cgaFormControls">
+   <div id="mailDraftBar" class="mailDraftBar" hidden><span>Borrador en esta sesión</span><button id="mailResumeDraft" type="button" class="cgaSoftButton" data-cga-icon="edit">Continuar</button></div>
    <div class="mailWorkspace" id="mailWorkspace" data-detail="false">
     <section class="mailInbox" aria-labelledby="mailTitle">
      <div class="adminSectionHeader mailHeading">
@@ -309,7 +310,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
     </section>
     <section id="mailReader" class="mailReader" aria-label="Lectura de correo"></section>
    </div>
-   <div id="mailDraftBar" class="mailDraftBar" hidden><span>Borrador en esta sesión</span><button id="mailResumeDraft" type="button" class="cgaSoftButton" data-cga-icon="edit">Continuar</button></div>
    <section id="mailComposerHost" class="mailComposerHost" aria-label="Redacción de correo" hidden></section>
   </div>
  </section>
@@ -425,6 +425,6 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
 <script type="module" src="./panel.js?v=20261127-admin-mail2"></script>
-<script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
+<script src="/theme/modern.js?v=20261127-admin-mail2" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
