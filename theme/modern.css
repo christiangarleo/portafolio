@@ -1324,3 +1324,61 @@ html.cgaModern body.cgaAdminShell #leadCRM :is(.crmInboxPagination,.crmDeliveryB
 @media(min-width:1180px){
  html.cgaModern body.cgaAdminShell .adminOperationsGrid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
 }
+
+
+/* ========== OWNER · Document administration, phase 05 ==========
+   Presentation only. Keep existing actions, files, validation and Glass controls. */
+html.cgaModern body.cgaAdminShell #adminPaneCV .adminSectionHeader,
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .adminSectionHeader{margin-bottom:12px}
+html.cgaModern body.cgaAdminShell #adminPaneCV .adminSectionHeader p,
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .adminSectionHeader p{margin:6px 0 0}
+html.cgaModern body.cgaAdminShell #adminPaneCV .adminDocumentScope{margin:0 0 12px}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents{min-width:0}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .item{
+ min-width:0;padding:16px 14px;margin:0 0 10px;
+ border:1px solid var(--cga-border);border-radius:12px;background:var(--cga-surface-2);
+}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .item strong{font-size:15px;line-height:1.45;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .item small{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemStatus{align-items:center;min-width:0;margin-top:12px}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemStatus select{min-width:0;max-width:100%;min-height:44px}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions{margin-top:12px}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions :is(a,button){min-height:44px;white-space:normal;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions a{text-decoration:none}
+html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm .grid>*{min-width:0}
+html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm input[type=file]{max-width:100%;min-width:0}
+html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm .adminCVPrimaryField{grid-column:1/-1}
+html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm .adminCVPrimaryField label{display:flex;align-items:center;min-height:44px;margin:0;gap:6px;cursor:pointer}
+html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm .adminCVPrimaryField input{flex:none}
+html.cgaModern body.cgaAdminShell #adminPaneCV .adminDocumentNoMatches{display:none}
+html.cgaModern body.cgaAdminShell #adminPaneCV #documents:has(>article.item):not(:has(>article.item:not([hidden])))+.adminDocumentNoMatches{
+ display:block;padding:20px 12px;text-align:center;border:1px dashed var(--cga-border-strong);border-radius:10px;
+}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .adminPortfolioGroupTitle{font-size:16px;margin:22px 0 8px}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioGrid{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin:0 0 16px;align-items:start;
+}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard{padding:clamp(14px,2vw,22px);min-width:0;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioHead{align-items:flex-start;gap:6px;margin-bottom:10px}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioHead h2{font-size:17px;line-height:1.4;min-width:0}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioHead h2 small{display:block;font-size:12px;margin-top:3px}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioHead .pill{white-space:normal;max-width:100%;overflow-wrap:anywhere}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard>a{min-height:44px;margin-bottom:4px}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard form{min-width:0}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard form input[type=file]{min-width:0;max-width:100%}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard form button{min-height:44px;min-width:0;max-width:100%}
+html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioCard form .row>button{flex:1 1 110px}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm .grid{grid-template-columns:minmax(0,1fr)}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #cvUploadForm #uploadButton{width:100%;min-height:48px}
+ html.cgaModern body.cgaAdminShell #adminPaneCV .adminFilterLine{width:100%;flex-wrap:nowrap}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemStatus{align-items:stretch;flex-direction:column}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemStatus select{width:100%}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions :is(a,button){justify-content:center;text-align:center}
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions>a{grid-column:1/-1}
+ html.cgaModern body.cgaAdminShell #adminPanePortfolio .publicPortfolioActions button{width:100%}
+}
+@media(max-width:359px){
+ html.cgaModern body.cgaAdminShell #adminPaneCV #documents .itemActions{grid-template-columns:minmax(0,1fr)}
+}
