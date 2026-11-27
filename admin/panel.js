@@ -45,19 +45,23 @@ if (hashParams.get("error_code")) {
     : "No se completó la confirmación. Intentá ingresar o reenviar el correo.", true);
   window.history.replaceState({}, "", window.location.pathname + window.location.search);
 }
-let currentUser=null, isAdmin=false, documents=[];
+let currentUser=null, isAdmin=false, documents=[],authGeneration=0,documentGeneration=0,portfolioGeneration=0,logoutBusy=false;
 function show(screen){
   el("loginPanel").hidden=screen!=="login";
   el("pendingPanel").hidden=screen!=="pending";
   el("app").hidden=screen!=="app";
   el("adminLogoutHeader").hidden=screen!=="app";
-  if(screen!=="app"){resetMailbox();leadCRM.reset();resetOperations();}
+  if(screen!=="app"){resetMailbox();leadCRM.reset();resetOperations();resetDocuments();}
 }
 async function verifyAdmin(){
+  if(logoutBusy)return;
+  const generation=++authGeneration;
   const {data:{user},error}=await sb.auth.getUser();
+  if(generation!==authGeneration)return;
   if(error||!user){ currentUser=null;isAdmin=false;show("login");return; }
   currentUser=user;
   const found=await sb.from("portfolio_cv_admins").select("user_id").eq("user_id",user.id).maybeSingle();
+  if(generation!==authGeneration)return;
   if (found.error) {
     isAdmin=false;
     show("pending");
@@ -84,12 +88,14 @@ async function verifyAdmin(){
   show("app");
   navigateAdmin(readAdminView());
   await loadPublicPortfolios();
+  if(generation!==authGeneration||!isAdmin)return;
   await loadDocuments();
+  if(generation!==authGeneration||!isAdmin)return;
   await loadLeads();
   refreshOverview();
 }
 el("authForm").addEventListener("submit",async e=>{
-  e.preventDefault();const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;
+  e.preventDefault();if(logoutBusy)return;const btn=e.target.querySelector("button[type=submit]");btn.disabled=true;
   const email=el("email").value.trim(),password=el("password").value;
   const {error}=await sb.auth.signInWithPassword({email,password});
   el("password").value="";
@@ -99,14 +105,21 @@ el("authForm").addEventListener("submit",async e=>{
 });
 el("recheck").addEventListener("click",verifyAdmin);
 document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async()=>{
-  if(mailboxBusy){notice("Esperá a que termine la operación de correo.",true);return;}
-  if(mailboxDraftDirty&&!await window.CGADialog.confirm("Hay un borrador de correo sin guardar. ¿Cerrar sesión y descartarlo?"))return;
-  if(mailboxBusy)return;
-  await sb.auth.signOut();
-  currentUser=null;isAdmin=false;
-  try{sessionStorage.removeItem("cga-admin-view")}catch{}
-  show("login");
-  notice("Sesión cerrada correctamente.");
+  if(logoutBusy)return;
+  if(mailboxBusy||leadCRM.isSending?.()||documentBusy()){notice("Esperá a que termine la operación activa.",true);return;}
+  logoutBusy=true;
+  const loginButton=el("authForm").querySelector("button[type=submit]");
+  try{
+   if((mailboxDraftDirty||leadCRM.hasDrafts?.())&&!await window.CGADialog.confirm("Hay borradores de correo sin guardar. ¿Cerrar sesión y descartarlos?"))return;
+   if(mailboxBusy||leadCRM.isSending?.()||documentBusy())return;
+   ++authGeneration;currentUser=null;isAdmin=false;
+   try{sessionStorage.removeItem("cga-admin-view")}catch{}
+   show("login");el("password").value="";loginButton.disabled=true;
+   const result=await sb.auth.signOut();
+   if(result?.error){notice("La oficina se cerró localmente, pero no se pudo confirmar el cierre de sesión. Reintentá con conexión.",true);return;}
+   notice("Sesión cerrada correctamente.");
+  }catch{notice("No se pudo confirmar el cierre de sesión.",true);}
+  finally{logoutBusy=false;loginButton.disabled=false;}
 }));
 
 let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0,mailboxEpoch=0;
@@ -216,6 +229,13 @@ function refreshOverview(){
  window.CGAIcons?.decorate(agenda);
 }
 el("refreshOverviewMail").onclick=()=>void refreshOverviewMail();
+function documentBusy(){return el("uploadButton").disabled||Object.values(publicPortfolioDisplay).some(x=>el(x.button).disabled)||Boolean(el("documents").querySelector("button[data-id]:disabled,select[data-status-id]:disabled"));}
+function resetDocuments(){
+ ++documentGeneration;++portfolioGeneration;documents=[];publishedPortfolios.clear();documentsLoaded=false;portfoliosLoaded=false;
+ el("documents").replaceChildren();el("documentsCount").textContent="—";el("documentsFilter").value="";el("uploadForm").reset();el("cvUploadForm").hidden=true;el("newCVToggle").setAttribute("aria-expanded","false");
+ for(const [lang,d] of Object.entries(publicPortfolioDisplay)){const form=el("publicPortfolioForm"+portfolioSuffix[lang]);form.reset();form.hidden=true;el("editPublicPortfolio"+portfolioSuffix[lang]).setAttribute("aria-expanded","false");el(d.state).textContent="Consultando…";el(d.link).hidden=true;el(d.link).removeAttribute("href");}
+ el("publicPortfolioStatus").textContent="";
+}
 function applyDocumentFilter(){
   const query=el("documentsFilter").value.toLocaleLowerCase().trim();
   const cards=[...el("documents").querySelectorAll("article.item")];
@@ -236,6 +256,7 @@ el("documentsFilter").addEventListener("input",applyDocumentFilter);
 /* Formularios por demanda: nunca se abre una carga sin decisión del titular. */
 function setCVFormOpen(open){
   const panel=el("cvUploadForm");
+  if(el("uploadButton").disabled)return;
   panel.hidden=!open;
   el("newCVToggle").setAttribute("aria-expanded",String(open));
   if(open){
@@ -250,6 +271,7 @@ el("newCVToggle").addEventListener("click",()=>setCVFormOpen(el("cvUploadForm").
 el("cancelCVUpload").addEventListener("click",()=>setCVFormOpen(false));
 function togglePortfolioForm(lang,open){
   const form=el("publicPortfolioForm"+portfolioSuffix[lang]);
+  if(el(publicPortfolioDisplay[lang].button).disabled)return;
   const toggle=el("editPublicPortfolio"+portfolioSuffix[lang]);
   form.hidden=!open;
   toggle.setAttribute("aria-expanded",String(open));
@@ -298,12 +320,17 @@ function setPublicPortfolioState(lang,exists){
 }
 async function loadPublicPortfolios(){
   if(!isAdmin)return;
+  const generation=++portfolioGeneration;
   const message=el("publicPortfolioStatus");
+  portfoliosLoaded=false;refreshOverview();
   message.textContent="Consultando archivos publicados…";
   const {data,error}=await sb.storage.from(publicPortfolioBucket).list("",{limit:100});
+  if(!isAdmin||generation!==portfolioGeneration)return;
   if(error){
     message.textContent="No se pudo comprobar qué archivos hay publicados: "+error.message;
-    for(const lang of Object.keys(publicPortfolioDisplay))el(publicPortfolioDisplay[lang].state).textContent="Estado no disponible";
+    publishedPortfolios.clear();
+    for(const d of Object.values(publicPortfolioDisplay)){el(d.state).textContent="Estado no disponible";el(d.link).hidden=true;el(d.link).removeAttribute("href");}
+    refreshOverview();
     return;
   }
   publishedPortfolios=new Set((data||[]).map(x=>x.name));
@@ -321,6 +348,7 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
   form.addEventListener("submit",async event=>{
     event.preventDefault();
     if(!isAdmin){notice("No autorizado.",true);return;}
+    if(!portfoliosLoaded){notice("Actualizá el estado de publicación antes de guardar.",true);return;}
     const file=el(display.file).files[0];
     const path=publicPortfolioFiles[lang];
     if(!file||!path||file.size>45*1024*1024||file.size<1024||!file.name.toLowerCase().endsWith(".pdf")){
@@ -328,23 +356,23 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
     }
     const header=new TextDecoder("latin1").decode(await file.slice(0,8).arrayBuffer());
     if(!header.startsWith("%PDF-")){notice("El archivo seleccionado no es un PDF válido.",true);return;}
-    const exists=publishedPortfolios.has(path);
-    if(exists&&!await window.CGADialog.confirm("¿Reemplazar el PDF en "+display.label+"? Solo cambiará esta edición. Guardá una copia del anterior.")){
-      return;
-    }
     const button=el(display.button);
+    if(button.disabled||!isAdmin||!portfoliosLoaded)return;
+    const exists=publishedPortfolios.has(path);
+    if(!await window.CGADialog.confirm("¿"+(exists?"Reemplazar":"Publicar")+" el PDF en "+display.label+"? Solo cambiará esta edición. Si hay una copia anterior, guardala."))return;
+    if(button.disabled||!isAdmin||!portfoliosLoaded)return;
     button.disabled=true;
     const previousText=button.textContent;
     button.textContent="Subiendo PDF…";
     notice((exists?"Reemplazando":"Publicando")+" únicamente el PDF en "+display.label+"…");
     try{
       const {error}=await sb.storage.from(publicPortfolioBucket).upload(path,file,{
-        upsert:true,contentType:"application/pdf",cacheControl:"0"
+        upsert:exists,contentType:"application/pdf",cacheControl:"0"
       });
       if(error)throw error;
       publishedPortfolios.add(path);
       setPublicPortfolioState(lang,true);
-      togglePortfolioForm(lang,false);
+      button.disabled=false;togglePortfolioForm(lang,false);
       notice("PDF en "+display.label+" actualizado. Las demás ediciones no cambiaron.");
       await loadPublicPortfolios();
     }catch(error){
@@ -353,15 +381,18 @@ for(const lang of Object.keys(publicPortfolioDisplay)){
       button.disabled=false;
       button.textContent=previousText;
       window.CGAIcons?.decorate(button);
-      if(publishedPortfolios.has(path))setPublicPortfolioState(lang,true);
+      if(isAdmin&&portfoliosLoaded&&publishedPortfolios.has(path))setPublicPortfolioState(lang,true);
     }
   });
 }
 function node(tag,text,className){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;}
 async function loadDocuments(){
+ if(!isAdmin)return;
+ const generation=++documentGeneration;
  const {data,error}=await sb.from("portfolio_cv_documents").select("*").order("created_at",{ascending:false}).limit(200);
+ if(!isAdmin||generation!==documentGeneration)return;
  const target=el("documents");target.replaceChildren();
- if(error){target.textContent=error.message;return;}
+ if(error){documents=[];documentsLoaded=false;el("documentsCount").textContent="Estado no disponible";target.textContent="No se pudo consultar los CV.";refreshOverview();return;}
  documents=data||[];
  documentsLoaded=true;
  refreshOverview();
@@ -439,6 +470,7 @@ el("uploadForm").addEventListener("submit",async e=>{
   const file=el("pdf").files[0],ruc=el("ruc").value.trim().replace(/\s+/g," ").toUpperCase();
   if(!file||!/^[\p{L}\p{N}][\p{L}\p{N} ._/#&()-]{0,63}$/u.test(ruc)||!file.name.toLowerCase().endsWith(".pdf")||file.size>30*1024*1024){notice("Revisá el identificador de empresa y el PDF (máximo 30 MB).",true);return;}
   const main=el("principal").checked;const expiry=el("expires").value;
+  const company=el("company").value.trim(),role=el("position").value.trim(),application=el("applicationStatus").value;
   const path="companies/"+crypto.randomUUID()+".pdf";const btn=el("uploadButton");btn.disabled=true;
   notice("Subiendo archivo privado…");
   try {
@@ -449,21 +481,21 @@ el("uploadForm").addEventListener("submit",async e=>{
       if(offError)throw offError;
     }
     const added=await sb.from("portfolio_cv_documents").insert({
-       company_name:el("company").value.trim(),ruc,role_name:el("position").value.trim(),
+       company_name:company,ruc,role_name:role,
        original_filename:file.name,storage_path:path,is_active:true,is_main:main,
-       application_status:el("applicationStatus").value,
+       application_status:application,
        expires_at:expiry?new Date(expiry).toISOString():null
     });
     if(added.error){await sb.storage.from(bucket).remove([path]);throw added.error;}
     e.target.reset();el("principal").checked=true;el("applicationStatus").value="preparado";
     notice("CV guardado y disponible para esta empresa.");
-    setCVFormOpen(false);
+    btn.disabled=false;setCVFormOpen(false);
     await loadDocuments();
   } catch(err){notice("No se pudo subir: "+err.message,true);}
   finally{btn.disabled=false;}
 });
 el("documents").addEventListener("click",async e=>{
-  const btn=e.target.closest("button[data-id]");if(!btn)return;
+  const btn=e.target.closest("button[data-id]");if(!btn||!isAdmin)return;
   const x=documents.find(v=>v.id===btn.dataset.id);if(!x)return;
   const action=btn.dataset.action;btn.disabled=true;
   try{
