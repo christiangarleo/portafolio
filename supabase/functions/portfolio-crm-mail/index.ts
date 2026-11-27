@@ -21,13 +21,18 @@ Deno.serve(async req=>{
  let input;
  try{const raw=await req.text();if(raw.length>24000)return reply(413,{status:"invalid"});input=JSON.parse(raw);}catch{return reply(400,{status:"invalid"});}
  const id=input?.id,lead=input?.lead_id,subject=typeof input?.subject==="string"?input.subject.trim():"",body=typeof input?.body==="string"?input.body.trim():"",context=input?.context;
- if(typeof id!=="string"||typeof lead!=="string"||!uuid.test(id)||!uuid.test(lead)||!subject||subject.length>180||/[\r\n\x00]/.test(subject)||!body||body.length>5000||!["rejection","followup"].includes(context))return reply(400,{status:"invalid"});
- const reserve=await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context});
+ const general=context==="general",recipient=typeof input?.recipient==="string"?input.recipient.trim().toLowerCase():"",replyId=input?.in_reply_to??null;
+ if(typeof id!=="string"||!uuid.test(id)||!subject||subject.length>180||/[\r\n\x00]/.test(subject)||!body||body.length>5000||!["rejection","followup","general"].includes(context))return reply(400,{status:"invalid"});
+ if(general){if(!recipient||recipient.length>254||! /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(recipient)||(replyId!==null&&(typeof replyId!=="string"||!uuid.test(replyId))))return reply(400,{status:"invalid"});}
+ else if(typeof lead!=="string"||!uuid.test(lead))return reply(400,{status:"invalid"});
+ const reserve=general?await db.rpc("reserve_portfolio_crm_general_mail",{p_id:id,p_actor:user.id,p_recipient:recipient,p_subject:subject,p_body:body,p_reply:replyId}):await db.rpc("reserve_portfolio_crm_mail",{p_id:id,p_lead:lead,p_actor:user.id,p_subject:subject,p_body:body,p_context:context});
  if(reserve.error||!reserve.data)return reply(503,{status:"storage_unavailable"});
  if(reserve.data.status!=="reserved")return reply(200,{status:reserve.data.status});
+ // Fixed professional address for every message. Legacy inbound routes remain receivable.
+ const replyAddress="hola@christianarleo.com";
  let status="uncertain",providerId:string|null=null,providerHttp:number|null=null;
  try{
-   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:"hola@christianarleo.com",subject,text:body}),signal:AbortSignal.timeout(10000)});
+   const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json","Idempotency-Key":"portfolio-crm/"+id},body:JSON.stringify({from:"Christian Gabriel Arleo <hola@christianarleo.com>",to:[reserve.data.recipient],reply_to:replyAddress,subject,text:body}),signal:AbortSignal.timeout(10000)});
    providerHttp=r.status;
    if(r.ok){const result=await r.json().catch(()=>null);if(typeof result?.id==="string"&&result.id){status="accepted";providerId=result.id;}}
    else if(r.status>=400&&r.status<500&&![408,409,429].includes(r.status))status="failed";
@@ -35,12 +40,12 @@ Deno.serve(async req=>{
  const acceptedAt=status==="accepted"?new Date().toISOString():null;
  const result=await db.from("portfolio_crm_mail").update({status,provider_id:providerId,accepted_at:acceptedAt}).eq("id",id).eq("status","pending").select("id").maybeSingle();
  if(result.error||!result.data)return reply(503,{status:"uncertain"});
- if(status==="accepted"){
+ if(status==="accepted"&&!general){
    // Authoritative history is portfolio_crm_mail; legacy indicators are best-effort.
    if(context==="followup")await db.from("portfolio_cv_leads").update({email_sent_at:acceptedAt,status:"contactado"}).eq("id",lead).eq("decision_status","avanzar");
    await db.from("portfolio_cv_lead_activities").insert({lead_id:lead,event_type:context==="rejection"?"rechazo_correo_confirmado":"correo_confirmado_enviado",details:{channel:"email",source:"crm_resend",message_id:id}});
  }
- if(status!=="accepted"){
+ if(status!=="accepted"&&!general){
    const eventType="correo_crm_error_"+(providerHttp===null?"network":String(providerHttp));
    const audit=await db.from("portfolio_cv_lead_activities").insert({lead_id:lead,event_type:eventType,details:{channel:"email",source:"crm_resend",message_id:id,provider_http:providerHttp}});
    if(audit.error)console.warn("crm_mail_diagnostic_write_failed");

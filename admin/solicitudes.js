@@ -3,7 +3,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
  const root=el("leads"),filters=el("leadFilters"),summary=el("leadSummary"),searchInput=el("leadSearch");
  let leads=[],events=[],activeFilter="pendiente",firstLoad=true,loaded=false,selectedLeadId=null,page=0,mobileDetail=false;
  const meetingExpanded=new Set(), historyExpanded=new Set(), mailExpanded=new Set(), rejectionExpanded=new Set(), sending=new Set();
- let acceptedMail=new Map(),mailLoaded=false;
+ let acceptedMail=new Map(),mailLoaded=false,unreadMail=new Map(),inboundLoaded=false;
  const mailKey=(lead,context)=>lead.id+":"+context;
  const currentContext=lead=>lead.decision_status==="rechazada"?"rejection":"followup";
  const latestMail=(lead,context=currentContext(lead))=>acceptedMail.get(mailKey(lead,context));
@@ -38,7 +38,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    return (!kind||lead.kind===kind)&&(!stage||(lead.status||"nuevo")===stage)&&
     (!mode||(mode==="unknown"?!actualMode:actualMode===mode))&&
     (!age||(Number.isFinite(created)&&created>=now-Number(age)*86400000))&&
-    (!mail||(mail==="blocked"?!allowed(lead):mail==="yes"?mailConfirmed(lead):allowed(lead)&&!mailConfirmed(lead)))&&
+    (!mail||(mail==="unread"?inboundLoaded&&Boolean(unreadMail.get(lead.id)):mail==="blocked"?!allowed(lead):mail==="yes"?mailConfirmed(lead):allowed(lead)&&!mailConfirmed(lead)))&&
     (!mt||(mt==="none"?!Number.isFinite(meeting):mt==="future"?meeting>=now:meeting<now));
  }
  function sortAdvanced(rows){
@@ -153,22 +153,47 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   copy.append(n("strong",sent?"Correo enviado":legacy?"Envío registrado anteriormente":mailLoaded?"Sin correo enviado para esta respuesta":"Estado no disponible"),
     small(sent?"Desde hola@christianarleo.com · "+when(sent.accepted_at):legacy?"Confirmación histórica · "+when(legacy):mailLoaded?"El estado se actualizará automáticamente cuando envíes un correo.":"No se pudo consultar el registro de envíos."));
   badge.append(icon,copy);box.append(badge);
-  const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Historial de correos enviados"));details.open=mailExpanded.has(lead.id);
+  const details=n("details",undefined,"crmMailHistory");details.append(n("summary","Conversación por correo"));details.open=mailExpanded.has(lead.id);
   const list=n("div");details.append(list);let generation=0;
   async function refresh(){
    const g=++generation;list.replaceChildren(small("Consultando…"));
    try{
-    const {data,error}=await sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at,context").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50);
-    if(g!==generation)return;list.replaceChildren();
-    if(error)throw error;
-    if(!data?.length){list.append(small("Todavía no hay correos registrados desde el CRM."));return;}
-    const labels={accepted:"Correo enviado · aceptado por proveedor (entrega no verificada)",failed:"Rechazado por proveedor",uncertain:"Sin confirmación",pending:"Pendiente"};
-    for(const mail of data){
-     const item=n("article",undefined,"crmMailItem");
-     item.append(n("strong",mail.subject),small(when(mail.accepted_at||mail.created_at)+" · "+(mail.context==="rejection"?"Rechazo":"Seguimiento")+" · "+(labels[mail.status]||mail.status)),small("Para: "+mail.recipient));
-     const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);list.append(item);
+    const [outgoing,incoming]=await Promise.all([
+     sb.from("portfolio_crm_mail").select("subject,body,recipient,status,created_at,accepted_at,context").eq("lead_id",lead.id).order("created_at",{ascending:false}).limit(50),
+     sb.from("portfolio_crm_inbound").select("id,subject,body,sender,body_limited,received_at,read_at").eq("lead_id",lead.id).order("received_at",{ascending:false}).limit(50)
+    ]);
+    if(g!==generation)return;list.replaceChildren();if(outgoing.error)throw outgoing.error;
+    if(incoming.error)list.append(small("Recepción no disponible; se muestran los envíos."));
+    const rows=[...(outgoing.data||[]).map(x=>({...x,direction:"out",at:x.accepted_at||x.created_at})),...(incoming.data||[]).map(x=>({...x,direction:"in",at:x.received_at}))].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+    if(!rows.length){list.append(small("Todavía no hay correos registrados desde el CRM."));return;}
+    const labels={accepted:"Enviado · entrega no verificada",failed:"Rechazado por proveedor",uncertain:"Sin confirmación",pending:"Pendiente"};
+    for(const mail of rows){
+     const received=mail.direction==="in",item=n("article",undefined,"crmMailItem crmConversationItem");
+     item.dataset.direction=mail.direction;item.dataset.unread=String(received&&!mail.read_at);
+     item.append(n("strong",mail.subject||"Sin asunto"),small(when(mail.at)+" · "+(received?"Recibido"+(!mail.read_at?" · Nuevo":""):labels[mail.status]||mail.status)),small((received?"De: ":"Para: ")+(received?mail.sender:mail.recipient)));
+     const content=n("details");content.append(n("summary","Ver mensaje"),n("p",mail.body,"crmMailBody"));item.append(content);
+     if(received){
+      item.append(small("Remitente declarado; identidad no verificada de forma independiente."));
+      if(mail.body_limited)item.append(small("Contenido parcial. Consultá el original en Resend."));
+      if(!mail.read_at){const read=btn("Marcar como leído","cgaSoftButton");action(read,async()=>{
+       const result=await sb.from("portfolio_crm_inbound").update({read_at:new Date().toISOString()}).eq("id",mail.id).is("read_at",null).select("id").maybeSingle();
+       if(result.error)throw result.error;mailExpanded.add(lead.id);await load();
+      });item.append(read);}
+      if(allowed(lead)&&["avanzar","rechazada"].includes(lead.decision_status)){
+       const respond=btn("Responder","cgaSoftButton");respond.dataset.cgaIcon="mail";
+       respond.addEventListener("click",()=>{
+        const editor=n("div",undefined,"crmReplyEditor"),subject=n("input"),body=n("textarea");
+        subject.maxLength=180;subject.value=(/^re:/i.test(mail.subject)?mail.subject:"Re: "+mail.subject).slice(0,180);
+        body.rows=6;body.maxLength=5000;const cancel=btn("Cancelar");
+        cancel.addEventListener("click",()=>{editor.remove();respond.disabled=false;});
+        editor.append(labeled("Para",Object.assign(n("input"),{readOnly:true,value:lead.email})),labeled("Asunto",subject),labeled("Mensaje",body),directMail(lead,subject,body,currentContext(lead)),cancel);
+        item.append(editor);respond.disabled=true;window.CGAIcons?.decorate(editor);body.focus();
+       });item.append(respond);
+      }
+     }
+     list.append(item);
     }
-    if(data.length===50)list.append(small("Se muestran los últimos 50 intentos."));
+    if((outgoing.data||[]).length===50||(incoming.data||[]).length===50)list.append(small("Se muestran hasta los últimos 50 mensajes por dirección."));
    }catch{if(g===generation)list.replaceChildren(small("Historial de correo no disponible."));}
   }
   details.addEventListener("toggle",()=>{if(details.open){mailExpanded.add(lead.id);void refresh();}else mailExpanded.delete(lead.id);});
@@ -547,6 +572,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
   if(lead.cv_document_id)signals.push("CV");
   if(latestMail(lead,"followup")||legacyMail(lead,"followup"))signals.push("Correo ✓");
   if(latestMail(lead,"rejection")||legacyMail(lead,"rejection"))signals.push("Rechazo ✓");
+  if(inboundLoaded&&unreadMail.get(lead.id))signals.push("Nuevos "+unreadMail.get(lead.id));
   if(lead.whatsapp_sent_at)signals.push("WA ✓");
   if(signals.length)bottom.append(n("span",signals.join(" · "),"crmQueueSignals"));
   const openLabel=n("span","Ver detalle →","crmQueueOpen");
@@ -672,6 +698,9 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    }catch{complete=false;}
   }
   mailLoaded=complete;if(complete)acceptedMail=nextMail;
+  let nextUnread=new Map();inboundLoaded=true;
+  try{if(leads.length)for(let offset=0;;offset+=500){const {data:rows,error}=await sb.from("portfolio_crm_inbound").select("id,lead_id").in("lead_id",leads.map(x=>x.id)).is("read_at",null).order("id").range(offset,offset+499);if(error)throw error;for(const m of rows||[])nextUnread.set(m.lead_id,(nextUnread.get(m.lead_id)||0)+1);if((rows||[]).length<500)break;}}catch{inboundLoaded=false;}
+  unreadMail=nextUnread;
   loaded=true;
   render();
  }

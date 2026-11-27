@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm";
-import { createLeadCRM } from "./solicitudes.js?v=20-crm-mail-ux";
+import { createLeadCRM } from "./solicitudes.js?v=21-crm-inbound";
 const sb = createClient("https://gprhevdotoykofrxbufv.supabase.co", "sb_publishable_vTBBhrnC-kevNf9AJeZiyw_zGG4AB_I", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const el=id=>document.getElementById(id);
 const status=el("status");
@@ -105,7 +105,8 @@ document.querySelectorAll(".logout").forEach(x=>x.addEventListener("click",async
   notice("Sesión cerrada correctamente.");
 }));
 
-const adminViews=["overview","leads","cv","portfolio"];
+let mailboxMode="received",mailboxPage=0,mailboxGeneration=0;
+const adminViews=["overview","leads","mail","cv","portfolio"];
 function readAdminView(){
   try{const v=sessionStorage.getItem("cga-admin-view");return adminViews.includes(v)?v:"overview"}
   catch{return "overview"}
@@ -114,13 +115,14 @@ function navigateAdmin(view){
   if(!adminViews.includes(view))view="overview";
   for(const name of adminViews){
     const selected=name===view;
-    const pane=el({overview:"adminPaneOverview",leads:"adminPaneLeads",cv:"adminPaneCV",portfolio:"adminPanePortfolio"}[name]);
+    const pane=el({overview:"adminPaneOverview",leads:"adminPaneLeads",mail:"adminPaneMail",cv:"adminPaneCV",portfolio:"adminPanePortfolio"}[name]);
     const tab=document.querySelector('button[data-admin-view="'+name+'"]');
     pane.hidden=!selected;
     tab.setAttribute("aria-selected",String(selected));
     tab.tabIndex=selected?0:-1;
   }
   try{sessionStorage.setItem("cga-admin-view",view)}catch{}
+  if(view==="mail")void loadMailbox();
 }
 el("app").addEventListener("click",event=>{
   const button=event.target.closest("button[data-admin-view],button[data-go-view]");
@@ -463,3 +465,70 @@ const leadCRM=createLeadCRM({sb,el,node,notice,getDocuments:()=>documents,loadDo
 async function loadLeads(){await leadCRM.load();refreshOverview();}
 el("reloadLeads").addEventListener("click",loadLeads);
 verifyAdmin().catch(e=>notice(e.message,true));
+// Private general mailbox. No raw HTML rendering and no external resources.
+async function loadMailbox(){
+ if(!isAdmin)return;
+ const generation=++mailboxGeneration,root=el("crmMailbox");
+ const controls=node("div",undefined,"crmFilters"),list=node("div"),status=node("p","Consultando…");
+ for(const [key,label] of [["received","Recibidos"],["unread","No leídos"],["unassigned","Sin solicitud"],["sent","Enviados"]]){
+  const b=node("button",label);b.type="button";b.setAttribute("aria-pressed",String(mailboxMode===key));b.onclick=()=>{mailboxMode=key;mailboxPage=0;void loadMailbox()};controls.append(b);
+ }
+ const compose=node("button","Redactar");compose.type="button";compose.onclick=()=>openMailboxComposer(root);controls.append(compose);
+ const refresh=node("button","Actualizar");refresh.type="button";refresh.onclick=()=>void loadMailbox();controls.append(refresh);root.replaceChildren(controls,status,list);
+ const sent=mailboxMode==="sent",from=mailboxPage*30;
+ let query=sent?sb.from("portfolio_crm_mail").select("id,subject,body,recipient,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
+ if(mailboxMode==="unread")query=query.is("read_at",null);
+ if(mailboxMode==="unassigned")query=query.is("lead_id",null);
+ const {data,error,count}=await query.order(sent?"created_at":"received_at",{ascending:false}).order("id",{ascending:false}).range(from,from+29);
+ if(generation!==mailboxGeneration||!isAdmin)return;
+ if(error){status.textContent="No se pudo consultar el correo.";return;}
+ status.textContent=(count??0)+" mensajes";
+ for(const m of data||[]){
+  const card=node("article",undefined,"crmMailItem crmConversationItem");card.dataset.direction=sent?"out":"in";card.dataset.unread=String(!sent&&!m.read_at);
+  card.append(node("strong",m.subject||"Sin asunto"),node("p",(sent?"Para: "+m.recipient:"De: "+m.sender+" · Para: "+(m.recipients||[]).join(", "))),node("small",new Date(sent?m.created_at:m.received_at).toLocaleString("es-PE")+" · "+(sent?m.status:m.read_at?"Leído":"Nuevo")));
+  const content=node("details");content.append(node("summary","Ver mensaje"),node("p",m.body,"crmMailBody"));card.append(content);
+  if(!sent){
+   const respond=node("button","Responder");respond.type="button";respond.onclick=()=>openMailboxComposer(root,m);card.append(respond);
+   card.append(node("small",m.lead_id?"Solicitud asociada por ruta o correo coincidente. Identidad no verificada.":"Sin solicitud asociada. Identidad no verificada."));
+   if(m.body_limited||m.attachment_count)card.append(node("p","Contenido parcial o adjuntos ("+m.attachment_count+"). Revisar el original en Resend."));
+   if(!m.read_at){const read=node("button","Marcar como leído");read.type="button";read.onclick=async()=>{read.disabled=true;const r=await sb.from("portfolio_crm_inbound").update({read_at:new Date().toISOString()}).eq("id",m.id).is("read_at",null).select("id").maybeSingle();if(r.error){notice("No se pudo marcar como leído.",true);read.disabled=false;}else void loadMailbox();};card.append(read);}
+  }
+  list.append(card);
+ }
+ if(!data?.length)list.append(node("p","No hay mensajes en esta bandeja."));
+ const pag=node("div",undefined,"crmFilters");
+ for(const [label,delta,disabled] of [["Anterior",-1,mailboxPage===0],["Siguiente",1,from+30>=(count??0)]]){const b=node("button",label);b.type="button";b.disabled=disabled;b.onclick=()=>{mailboxPage+=delta;void loadMailbox()};pag.append(b);}
+ root.append(pag);
+}
+
+function openMailboxComposer(root,message=null){
+ if(!isAdmin)return;
+ if(root.querySelector(".crmGeneralComposer")){root.querySelector(".crmGeneralComposer input")?.focus();return;}
+ const form=node("form",undefined,"crmReplyEditor crmGeneralComposer"),heading=node("h3",message?"Responder":"Nuevo correo"),from=node("p","De: hola@christianarleo.com");
+ const to=node("input"),subject=node("input"),body=node("textarea");
+ to.type="email";to.required=true;to.maxLength=254;to.value=message?.sender||"";to.readOnly=Boolean(message);
+ subject.required=true;subject.maxLength=180;subject.value=message?(/^re:/i.test(message.subject)?message.subject:"Re: "+message.subject).slice(0,180):"";
+ body.required=true;body.maxLength=5000;body.rows=8;
+ function field(label,control){const wrap=node("div",undefined,"crmField"),lab=node("label",label);control.id="mail-"+crypto.randomUUID();lab.htmlFor=control.id;wrap.append(lab,control);return wrap;}
+ const submit=node("button","Enviar desde CRM");submit.type="submit";
+ const cancel=node("button","Cancelar");cancel.type="button";cancel.onclick=()=>form.remove();
+ const status=node("p","Las respuestas llegarán a Zoho hasta la migración del MX.");status.setAttribute("role","status");
+ form.append(heading,from,field("Para",to),field("Asunto",subject),field("Mensaje",body),submit,cancel,status);
+ let attemptId=null;
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();if(submit.disabled||!isAdmin)return;submit.disabled=true;
+  try{
+   if(!await window.CGADialog.confirm("¿Enviar este correo a "+to.value+" desde hola@christianarleo.com?"))return;
+   attemptId=attemptId||crypto.randomUUID();cancel.disabled=true;to.disabled=true;subject.disabled=true;body.disabled=true;
+   status.textContent="Enviando…";
+   const {data,error}=await sb.functions.invoke("portfolio-crm-mail",{body:{id:attemptId,context:"general",recipient:to.value,subject:subject.value,body:body.value,in_reply_to:message?.id||null}});
+   if(error)throw error;
+   if(data?.status==="accepted"){notice("Correo aceptado por Resend.",false,{success:true});mailboxMode="sent";mailboxPage=0;await loadMailbox();return;}
+   const labels={contact_blocked:"Contacto no autorizado.",decision_changed:"Revisá la decisión de la solicitud.",limit:"Límite de 10 intentos de CRM por 24 horas.",duplicate:"Ya se envió un mensaje idéntico recientemente.",uncertain_previous:"Existe un envío sin confirmar. Consultá Enviados.",failed:"El proveedor rechazó el envío.",invalid_reply:"El destinatario no coincide con el mensaje.",sender_not_configured:"Remitente no habilitado."};
+   status.textContent=labels[data?.status]||"Resultado no confirmado. Consultá Enviados antes de repetir.";
+   if(["contact_blocked","decision_changed","limit","duplicate","failed","invalid_reply","sender_not_configured"].includes(data?.status)){attemptId=null;to.disabled=false;subject.disabled=false;body.disabled=false;}
+  }catch{status.textContent="Resultado no confirmado. Consultá Enviados antes de repetir."; }
+  finally{submit.disabled=false;cancel.disabled=false;}
+ });
+ root.prepend(form);(message?body:to).focus();
+}
