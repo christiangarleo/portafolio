@@ -187,7 +187,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-ops3">
+  <link rel="stylesheet" href="/theme/modern.css?v=20261127-admin-docs4">
 </head><body class="cgaAdminShell">
 <header class="adminHeader">
   <strong>Christian Arleo <span>· Oficina</span></strong>
@@ -320,9 +320,9 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   </div>
  </section>
  </div>
- <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel">
+ <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel adminDocumentIntro">
 <div class="adminSectionHeader">
-  <div><h1>CV por empresa</h1></div>
+  <div><h1>CV por empresa</h1><p class="cgaMeta">Administrá los CV personalizados y su estado de postulación.</p></div>
   <div class="adminSectionActions">
     <button id="newCVToggle" type="button" data-cga-icon="plus" class="primary" aria-expanded="false" aria-controls="cvUploadForm">Nuevo CV</button>
   </div>
@@ -344,26 +344,27 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <option value="finalizado">Finalizado</option>
 </select></div>
 <div><label for="pdf">Archivo PDF (máximo 30 MB)</label><input id="pdf" type="file" accept="application/pdf,.pdf" required></div>
-<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>CV principal de esta empresa</label></div>
+<div class="adminCVPrimaryField"><label for="principal"><input id="principal" type="checkbox" checked>CV principal de esta empresa</label></div>
 </div><p><button class="primary" type="submit" id="uploadButton" data-cga-icon="upload">Guardar CV</button></p>
 </form>
 </div>
 </section>
-<section class="panel"><div class="adminSectionHeader">
-  <div><h2>Mis documentos</h2><p id="documentsCount" class="adminTiny">Cargando…</p></div>
+<section class="panel adminDocumentLibrary" aria-labelledby="adminDocumentsTitle"><div class="adminSectionHeader">
+  <div><h2 id="adminDocumentsTitle">Mis documentos</h2><p id="documentsCount" class="adminTiny" role="status" aria-live="polite">Cargando…</p></div>
   <div class="adminFilterLine">
     <div class="adminSearchWrap cgaFormControls"><label for="documentsFilter" class="srOnly">Buscar CV</label>
       <svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg>
       <input id="documentsFilter" type="search" placeholder="Buscar empresa, ID o vacante…" autocomplete="off" aria-label="Buscar CV"></div>
     <button id="reloadDocuments" type="button" class="cgaIconOnly cgaSoftButton" data-cga-icon="refresh" aria-label="Actualizar documentos" title="Actualizar documentos"></button>
   </div>
-</div><div id="documents" class="cgaFormControls">Sin documentos todavía.</div></section></div>
+</div><p class="cgaMeta adminDocumentScope">Búsqueda en los últimos 200 CV cargados.</p><div id="documents" class="cgaFormControls">Sin documentos todavía.</div><p class="adminDocumentNoMatches cgaMeta">No hay CV que coincidan con tu búsqueda. Modificá o borrá el texto para ver otros documentos.</p></section></div>
  <div id="adminPanePortfolio" class="adminPane" role="tabpanel" aria-labelledby="adminTabPortfolio" hidden><section class="panel" id="publicPortfolios">
   <div class="adminSectionHeader">
-    <div><h1>Portafolios</h1><p class="cgaMeta">Administrá los PDF en cada idioma.</p></div>
+    <div><h1>Portafolios</h1><p class="cgaMeta">Administrá las cuatro ediciones públicas por idioma y formato.</p></div>
     <button id="refreshPublicPortfolios" class="cgaIconOnly cgaSoftButton" data-cga-icon="refresh" aria-label="Actualizar estado de portafolios" title="Actualizar estado" type="button"></button>
   </div>
-  <div class="publicPortfolioGrid">
+  <h2 class="adminPortfolioGroupTitle">Ediciones para la web (A4)</h2>
+   <div class="publicPortfolioGrid">
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEs">
       <div class="publicPortfolioHead">
         <h2 id="publicPortfolioTitleEs">🇪🇸 Español · A4 <small>Vista web</small></h2>
@@ -393,7 +394,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       </form>
     </article>
   </div>
-  <h2>Ediciones para descargar (A3)</h2>
+  <h2 class="adminPortfolioGroupTitle">Ediciones para descargar (A3)</h2>
   <div class="publicPortfolioGrid">
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEsA3">
       <div class="publicPortfolioHead">
