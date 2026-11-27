@@ -757,7 +757,7 @@ export function createLeadCRM({sb,el,node,notice,getDocuments,loadDocuments,buck
    const row=[...root.querySelectorAll("[data-lead-id]")].find(x=>x.dataset.leadId===id);
    const label=row?.querySelector(".crmQueueUnread");
    if(label){label.textContent=count?"Correo nuevo: "+count:"";label.hidden=!count;}
-   if(advanced.leadMailFilter.value==="unread")summary.textContent+=" · Actualizá la lista para aplicar el nuevo estado de lectura.";
+   if(advanced.leadMailFilter.value==="unread"&&!summary.textContent.includes("Actualizá la lista"))summary.textContent+=" · Actualizá la lista para aplicar el nuevo estado de lectura.";
    onChange();
   }catch{/* no overwrite on unavailable count */}
  }
