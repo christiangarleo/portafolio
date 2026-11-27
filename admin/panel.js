@@ -496,7 +496,7 @@ function resetMailbox(){
  setMailDraftActive(false);
  el("mailComposerHost").replaceChildren();el("mailComposerHost").hidden=true;
  el("mailDraftBar").hidden=true;el("mailWorkspace").hidden=false;el("mailWorkspace").dataset.detail="false";
- el("mailList").replaceChildren();el("mailReader").replaceChildren();el("mailListStatus").textContent="";
+ el("mailList").replaceChildren();el("mailList").setAttribute("aria-busy","false");el("mailReader").replaceChildren();el("mailListStatus").textContent="";
  el("mailSearch").value="";el("mailAccount").value="";el("mailClearSearch").hidden=true;el("mailPagination").hidden=true;
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode==="received"));
 }
@@ -545,7 +545,7 @@ function renderMailReader(){
  if(!m){reader.append(node("p","Seleccioná un mensaje para leerlo.","mailReaderEmpty"));return;}
  const toolbar=node("div",undefined,"mailReaderToolbar");
  const back=mailButton("Bandeja","return","cgaSoftButton mailReaderBack");
- back.onclick=()=>{mailboxOpened=false;el("mailWorkspace").dataset.detail="false";const row=[...el("mailList").children].find(x=>x.dataset.mailId===m.id);(row||el("mailSearch")).focus({preventScroll:true});};
+ back.onclick=()=>{mailboxOpened=false;el("mailWorkspace").dataset.detail="false";const row=[...el("mailList").children].find(x=>x.dataset.mailId===m.id);(row||el("mailSearch")).focus();};
  toolbar.append(back);
  if(!sent){
   const reply=mailButton("Responder","return","cgaSoftButton mailReplyAction");reply.onclick=()=>openMailboxComposer(m);
@@ -610,12 +610,12 @@ async function loadMailbox({keepReader=false}={}){
 function setMailComposerVisible(visible){
  const host=el("mailComposerHost"),hasForm=Boolean(host.querySelector("form"));
  host.hidden=!visible;el("mailWorkspace").hidden=visible;el("mailDraftBar").hidden=visible||!hasForm;
- if(visible)host.querySelector("h2")?.focus({preventScroll:true});
- else if(hasForm)el("mailResumeDraft").focus({preventScroll:true});
+ if(visible){host.scrollIntoView({block:"start"});host.querySelector("h2")?.focus({preventScroll:true});}
+ else if(hasForm)el("mailResumeDraft").focus();
 }
 function closeMailComposer({focus=true}={}){
  el("mailComposerHost").replaceChildren();setMailDraftActive(false);setMailComposerVisible(false);
- if(focus){const reply=el("mailReader").querySelector(".mailReplyAction");(mailboxOpened&&reply?reply:el("mailCompose")).focus({preventScroll:true});}
+ if(focus){const reader=el("mailReader"),target=mailboxOpened&&mailboxSelected?(reader.querySelector(".mailReplyAction")||reader.querySelector("h2")):el("mailCompose");target?.focus();}
 }
 function openMailboxComposer(message=null){
  if(!isAdmin)return;
