@@ -127,7 +127,7 @@ let mailboxMode="received",mailboxAccount="",mailboxPage=0,mailboxGeneration=0,m
 let mailboxSearch="",mailboxRows=[],mailboxSelected=null,mailboxOpened=false,mailboxBusy=false,mailboxDraftDirty=false;
 let mailboxLeadId=null,mailboxIssues=false;
 const mailIssueStatuses=["pending","uncertain","failed"];
-const mailPageSize=30,mailWide=matchMedia("(min-width:1180px)");
+const mailPageSize=30,mailWide=matchMedia("(min-width:1180px) and (min-height:551px)");
 const adminViews=["overview","leads","mail","cv","portfolio"];
 const adminNavigation=el("app").querySelector(".adminNavigation");
 const adminWide=matchMedia("(min-width: 760px)");
@@ -653,7 +653,7 @@ function renderMailReader(){
   const line=node("div");line.append(node("dt",key),node("dd",value||"—"));meta.append(line);
  }
  reader.append(toolbar,title,meta);
- if(!sent)reader.append(node("p",m.lead_id?"Solicitud asociada por ruta o correo coincidente. Identidad no verificada.":"Sin solicitud asociada. Identidad no verificada.","mailReaderNote"));
+ if(!sent)reader.append(node("p",m.lead_id?"Solicitud asociada. Identidad no verificada.":"Sin solicitud. Identidad no verificada.","mailReaderNote"));
  if(!sent&&(m.body_limited||m.attachment_count))reader.append(node("p","Contenido parcial o adjuntos ("+(m.attachment_count||0)+"). Consultá el original en Resend.","mailReaderNote"));
  reader.append(node("div",m.body||"Sin contenido de texto.","crmMailBody mailReaderBody"));
 }
@@ -734,7 +734,7 @@ function openMailboxComposer(message=null){
  const submit=mailButton("Enviar","send","cgaFormButton");submit.type="submit";
  const cancel=mailButton("Descartar","trash");
  let attemptId=null;
- const status=node("p",message&&!locked?"Seleccioná la identidad desde la cual querés responder.":"El borrador se conserva mientras esta sesión esté abierta.","mailComposeStatus");status.setAttribute("role","status");
+ const status=node("p",message&&!locked?"Seleccioná la identidad desde la cual querés responder.":"Borrador temporal: se pierde al cerrar sesión.","mailComposeStatus");status.setAttribute("role","status");
  const count=node("small","0 / 5000","mailCharacterCount");body.addEventListener("input",()=>{count.textContent=body.value.length+" / 5000";});
  const actions=node("div",undefined,"mailComposerActions");actions.append(cancel,submit);
  form.append(header,field("De",sender),field("Para",to),field("Asunto",subject),field("Mensaje",body),count,status,actions);

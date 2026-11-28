@@ -1526,3 +1526,86 @@ html.cgaModern body.cgaAdminShell .mailFolderMobileLine{display:none}
  html.cgaModern body.cgaAdminShell .mailNavigation select{min-height:44px;min-width:0;width:100%;font-size:16px}
  html.cgaModern body.cgaAdminShell .mailIdentityHint{grid-column:1/-1;margin:0}
 }
+
+/* 06.1.6 physical QA: override legacy admin-only specificity, never public pages. */
+html.cgaModern body.cgaAdminShell:has(#loginPanel){--admin-nav-height:62px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminHeader{min-height:56px;padding-block:7px;gap:8px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminHeaderTools{flex-wrap:nowrap;gap:6px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminBrand{gap:8px;font-size:14px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminBrandMark{width:34px;height:34px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminBrandCopy small{font-size:11px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminSettings>summary{min-height:48px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) .adminHeaderTools .cgaThemeSwitch{--theme-size:48px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminWelcome{padding-bottom:20px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats.adminPriorityStats{grid-template-columns:minmax(0,1fr);gap:0;margin:10px 0 0}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats.adminLibraryStats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 0}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat{padding:0;min-height:0;height:auto;box-shadow:none;background:transparent;border:0;border-radius:0;position:relative}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat::before{content:none;display:none}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat button{margin:0;min-height:56px;height:auto;gap:10px;padding:12px 4px;background:transparent!important;border:0!important;border-bottom:1px solid var(--cga-border)!important;border-radius:0;box-shadow:none!important;transform:none!important;color:var(--cga-text)!important;font-size:14px;justify-content:flex-start;text-align:left}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat button .cgaIcon{color:var(--cga-muted);width:19px;height:19px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat button>span:not(.adminLibraryCount){font-size:14px;line-height:1.35;font-weight:600;min-width:0;flex:1}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat strong{font-size:24px;margin:0;color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminStat button:hover{background:var(--cga-hover)!important}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminIssueStat[data-attention="true"]{background:var(--cga-accent-soft);padding:0 10px;border-left:3px solid var(--cga-accent);border-radius:10px;margin-bottom:4px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminIssueStat[data-attention="true"] button{border-bottom:0!important}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats .adminIssueStat p{padding:0 4px 10px 30px;margin:0;line-height:1.4;font-size:12px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminLibraryStats .adminStat button{border:1px solid var(--cga-border)!important;border-radius:12px;padding:12px;min-height:64px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOverviewScope{margin:12px 0 0;color:var(--cga-muted);font-size:12px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOverviewScope summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:6px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOverviewScope summary::before{content:"+";font-size:16px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOverviewScope[open] summary::before{content:"−"}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOverviewScope p{margin:0 0 8px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminOperationsGrid{gap:18px;margin-bottom:20px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminLibrary,html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminQuickAccess{margin-bottom:20px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailHeading{padding-block:14px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderBody{font-size:16px;line-height:1.7;padding-block:14px 20px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderToolbar{gap:8px;margin-bottom:12px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderToolbar button{font-size:13px;min-height:48px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderTitle{font-size:clamp(19px,2.3vw,24px);margin:14px 0}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderMeta{margin-bottom:12px;padding:12px 0}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderMeta dd{font-size:14px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailComposerHost form.crmGeneralComposer{padding:clamp(16px,2vw,24px);gap:12px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailComposerHost .crmField label{font-size:13px}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailComposerHost textarea{min-height:clamp(140px,30dvh,270px)}
+html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailComposerHost :is(input,select,textarea){font-size:16px;min-height:48px}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell:has(#loginPanel):has(#app:not([hidden])) main{margin:12px auto 0;padding-bottom:calc(var(--admin-nav-height) + var(--admin-safe-bottom) + 24px);padding-inline:max(12px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);align-items:stretch;gap:4px;min-height:calc(var(--admin-nav-height) + var(--admin-safe-bottom));height:auto;margin:0;overflow:visible;padding:4px max(4px,var(--admin-safe-right)) calc(4px + var(--admin-safe-bottom)) max(4px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation .adminTabList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;min-width:0;gap:4px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation :is(.adminTabList>button,#adminMoreToggle){width:100%;min-width:0;min-height:54px;max-height:54px;padding:5px 2px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;border-radius:10px;background:transparent;box-shadow:none;transform:none;font-size:12px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation #adminMoreToggle{position:static;inset:auto}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation :is(.adminTabList>button,#adminMoreToggle) .cgaIcon{width:23px;height:23px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation :is(.adminTabList>button[aria-selected="true"],#adminMoreToggle[data-active="true"]){box-shadow:inset 0 -3px var(--cga-focus)!important}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation :is(#adminTabCV,#adminTabPortfolio):not([hidden]){position:absolute;right:max(8px,var(--admin-safe-right));width:min(240px,calc(100vw - 16px));height:48px;min-height:48px;flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 14px;font-size:14px;background:var(--cga-surface);border:1px solid var(--cga-border)!important;box-shadow:0 6px 18px var(--cga-shadow)}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation #adminTabCV{bottom:calc(var(--admin-nav-height) + var(--admin-safe-bottom) + 60px)}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation #adminTabPortfolio{bottom:calc(var(--admin-nav-height) + var(--admin-safe-bottom) + 6px)}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminStats.adminLibraryStats{grid-template-columns:minmax(0,1fr);gap:8px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminWelcome h1{font-size:23px;line-height:1.25}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminWelcome{padding-bottom:14px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminWelcome .adminOverviewTools{gap:6px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailHeading{padding:12px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailNavigation{padding:12px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailInbox{padding:14px 12px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReader{padding:14px 12px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderToolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderToolbar button{min-width:0;justify-content:center;white-space:normal}
+}
+@media(orientation:landscape) and (max-height:550px){
+ html.cgaModern body.cgaAdminShell:has(#loginPanel):has(#app:not([hidden])) main{margin-top:12px;padding-inline:max(12px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminNavigation .adminNavGroup{display:none}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .adminNavigation .adminTabList{gap:3px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app>.adminNavigation button{min-height:44px;padding-block:6px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailWorkspace{grid-template-columns:minmax(0,1fr)}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailNavigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start;padding:10px 14px;border-right:0;border-bottom:1px solid var(--cga-border)}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailNavigation :is(.mailFolders,.mailNavLabel){display:none}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailNavigation :is(.mailAccountLine,.mailFolderMobileLine){display:grid;gap:4px;min-width:0;margin:0}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailFolderMobileLine label{margin:0}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailNavigation select{width:100%;min-width:0;min-height:48px;font-size:16px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailIdentityHint{grid-column:1/-1;margin:0}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailWorkspace[data-detail="true"]>:is(.mailNavigation,.mailInbox){display:none}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailWorkspace[data-detail="false"]>.mailReader{display:none}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReaderBack{display:inline-flex!important}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailReader{max-height:none;min-height:0;overflow:visible;border:0;padding:16px}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailList{max-height:none;overflow:visible}
+ html.cgaModern body.cgaAdminShell:has(#loginPanel) #app .mailComposerHost textarea{min-height:112px}
+}
