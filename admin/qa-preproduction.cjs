@@ -33,6 +33,7 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
  page.on("pageerror",e=>errors.push(e.message));
  await c.route("**/*",async route=>{const u=route.request().url();if(u=== "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/+esm")return route.fulfill({contentType:"text/javascript",body:mock,headers:{"Access-Control-Allow-Origin":"*"}});if(u.startsWith(origin+"/"))return route.continue();return route.abort();});
  const key=w+" "+scheme;
+ const clickTab=async name=>{const tab=page.locator("#adminTab"+name);if(await tab.isHidden())await page.locator("#adminMoreToggle").click();await tab.click();};
  try{
  await page.goto(origin+"/admin/");await page.locator("#loginPanel").waitFor({state:"visible"});
  await check(key+" anonymous restricted",async()=>assert(await page.locator("#app").isHidden()));
@@ -48,13 +49,14 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
  await check("real Chromium service worker registration",async()=>{await page.waitForFunction(()=>!!navigator.serviceWorker.controller,{},{timeout:10000});assert((await page.evaluate(()=>navigator.serviceWorker.controller.scriptURL)).endsWith("/admin/sw.js"));});
  }
  for(const [tab,pane] of [["Overview","Overview"],["Leads","Leads"],["Mail","Mail"],["CV","CV"],["Portfolio","Portfolio"]]){
- await page.locator("#adminTab"+tab).click();await page.locator("#adminPane"+pane).waitFor({state:"visible"});
+ await clickTab(tab);await page.locator("#adminPane"+pane).waitFor({state:"visible"});
  await check(key+" "+pane+" viewport",async()=>{const dims=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,width:document.documentElement.scrollWidth,visible:[...document.querySelectorAll(".adminPane")].filter(x=>!x.hidden).length}));assert(dims.width<=dims.viewport+2,JSON.stringify(dims));assert.equal(dims.visible,1);});
  }
+ await check(key+" new navigation and library",async()=>{assert.equal(await page.locator("#adminMoreToggle").isVisible(),w<760);assert.equal(await page.locator("#adminTabCV").isVisible(),w>=760);});
  await check(key+" four portfolio cards",async()=>assert.equal(await page.locator(".publicPortfolioCard").count(),4));
- await page.locator("#adminTabCV").click();await page.locator("#documentsFilter").fill("no-match");await check(key+" CV search",async()=>assert(await page.locator(".adminDocumentNoMatches").isVisible()));await page.locator("#documentsFilter").fill("");
+ await clickTab("CV");await page.locator("#documentsFilter").fill("no-match");await check(key+" CV search",async()=>assert(await page.locator(".adminDocumentNoMatches").isVisible()));await page.locator("#documentsFilter").fill("");
  await page.locator("#newCVToggle").click();await check(key+" CV form visible",async()=>assert(await page.locator("#cvUploadForm").isVisible()));await page.locator("#cancelCVUpload").click();
- await page.locator("#adminTabMail").click();await page.locator(".mailRow").first().click();await check(key+" safe message reader",async()=>{assert((await page.locator(".mailReaderBody").textContent()).includes("<img"));assert.equal(await page.locator(".mailReaderBody img").count(),0)});
+ await page.locator("#adminTabMail").click();await page.locator("#mailIssuesFilter").click();await page.waitForFunction(()=>document.getElementById("mailBandejaTitle").textContent==="Por revisar");await check(key+" issues filter",async()=>assert.equal(await page.locator("#mailIssuesFilter").getAttribute("aria-pressed"),"true"));await page.locator("[data-mail-mode=received]").click();await page.locator(".mailRow").first().click();await check(key+" safe message reader",async()=>{assert((await page.locator(".mailReaderBody").textContent()).includes("<img"));assert.equal(await page.locator(".mailReaderBody img").count(),0)});
  await page.locator(".mailReplyAction").click();await page.locator("#mailComposerHost textarea").fill("QA borrador");await page.getByRole("button",{name:"Minimizar",exact:true}).click();if(w<1180)await page.locator(".mailReaderBack").click();await page.locator("#mailRefresh").click();await page.locator("#adminTabOverview").click();await page.locator("#adminTabMail").click();await page.locator("#mailResumeDraft").click();await check(key+" draft survives navigation",async()=>assert.equal(await page.locator("#mailComposerHost textarea").inputValue(),"QA borrador"));
  await page.getByRole("button",{name:"Minimizar",exact:true}).click();
  await page.locator("#adminTabLeads").click();await page.locator(".crmQueueItem").first().click();
@@ -67,7 +69,7 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
   await page.locator("#adminTabMail").click();await page.locator("#mailResumeDraft").click();await page.getByRole("button",{name:"Descartar",exact:true}).click();
   // Confirm discard through the existing modal; no real email.
   await page.locator("dialog[open] .cgaDialogConfirm").click();
-  await page.locator("#adminLogoutHeader").click();await page.locator("dialog[open] .cgaDialogConfirm").click();await page.locator("#loginPanel").waitFor({state:"visible"});
+  await page.locator("#adminSettings>summary").click();await page.locator("#adminLogoutHeader").click();await page.locator("dialog[open] .cgaDialogConfirm").click();await page.locator("#loginPanel").waitFor({state:"visible"});
   await check("logout hides admin",async()=>assert(await page.locator("#app").isHidden()));
   await check("logout removes private CV from DOM",async()=>assert(!await page.locator("#documents").textContent().then(t=>t.includes("QA Empresa"))));
   await check("service worker network failure fallback and empty CacheStorage",async()=>{assert(await page.evaluate(()=>!!navigator.serviceWorker.controller));disconnectAdmin=true;try{const response=await page.goto(origin+"/admin/");assert.equal(response.status(),503);assert(response.fromServiceWorker());await page.getByRole("heading",{name:"Sin conexión"}).waitFor({state:"visible"});assert.equal(await page.evaluate(async()=> (await caches.keys()).length),0);}finally{disconnectAdmin=false;}});

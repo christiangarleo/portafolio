@@ -1393,3 +1393,124 @@ html.cgaModern body.cgaAdminShell .adminInstallHelp p{overflow-wrap:anywhere}
 @media(display-mode:standalone){
  html.cgaModern body.cgaAdminShell #adminInstall{display:none!important}
 }
+
+/* 06.1.6 — approved integral V2. Admin only; retain shared brand and theme. */
+html.cgaModern body.cgaAdminShell{
+ --admin-glass:color-mix(in srgb,var(--cga-surface) 92%,transparent);
+ --admin-edge:color-mix(in srgb,var(--cga-text) 12%,transparent);
+ --admin-hi:color-mix(in srgb,var(--cga-text) 4%,transparent);
+ background:radial-gradient(ellipse at 98% 0%,#09b3dc0a,transparent 38%),radial-gradient(ellipse at 12% 0%,#f6c92814,transparent 36%),var(--cga-bg,var(--cga-surface-2));
+}
+html.cgaModern body.cgaAdminShell .adminHeader{background:var(--admin-glass);backdrop-filter:blur(18px);border-bottom:1px solid var(--cga-border);color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell .adminBrand{display:flex;align-items:center;gap:11px;font-size:14px;letter-spacing:.04em}
+html.cgaModern body.cgaAdminShell .adminHeader .adminBrandMark{display:grid;place-items:center;flex:none;width:39px;height:39px;border:1px solid #f6c928b0;border-radius:12px;background:linear-gradient(145deg,#33301b,#161616);color:#f6c928;font-weight:750;font-size:12px}
+html.cgaModern body.cgaAdminShell .adminHeader .adminBrandCopy{display:block;color:var(--cga-text);font-weight:750}
+html.cgaModern body.cgaAdminShell .adminBrandCopy small{display:block;font-size:11px;font-weight:400;letter-spacing:0;color:var(--cga-muted);margin-top:3px}
+html.cgaModern body.cgaAdminShell .adminSettings{position:relative;margin:0}
+html.cgaModern body.cgaAdminShell .adminSettings>summary{display:flex;align-items:center;gap:7px;min-height:44px;cursor:pointer;list-style:none;padding:8px 11px;border-radius:10px;border:1px solid var(--cga-border);background:var(--cga-surface);font-size:13px;color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell .adminSettings>summary::-webkit-details-marker{display:none}
+html.cgaModern body.cgaAdminShell .adminSettingsPanel{position:absolute;right:0;top:calc(100% + 9px);z-index:60;width:185px;padding:10px;border:1px solid var(--cga-border);border-radius:14px;box-shadow:0 14px 36px var(--cga-shadow);background:var(--cga-surface);display:grid;gap:8px}
+html.cgaModern body.cgaAdminShell .adminSettingsPanel :is(button,a){min-height:44px;width:100%;justify-content:flex-start;text-align:left;color:var(--cga-text);padding:9px;text-decoration:none}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation{background:var(--admin-glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+html.cgaModern body.cgaAdminShell .adminTabList{display:flex;flex-direction:column;gap:5px;width:100%;min-width:0}
+html.cgaModern body.cgaAdminShell .adminNavGroup{font-size:11px;color:var(--cga-muted);padding:18px 10px 5px}
+html.cgaModern body.cgaAdminShell .adminNavCount{margin-left:auto;min-width:18px;padding:2px 5px;border:1px solid var(--cga-border);background:var(--cga-surface-2);border-radius:6px;font-size:10px;font-variant-numeric:tabular-nums;text-align:center}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button{border-radius:12px;position:relative;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease}
+html.cgaModern body.cgaAdminShell #app>.adminNavigation button[aria-selected="true"],html.cgaModern body.cgaAdminShell #app>.adminNavigation #adminMoreToggle[data-active="true"]{background:var(--cga-accent-soft)!important;color:var(--cga-text)!important;box-shadow:inset 3px 0 #f6c928!important}
+html.cgaModern body.cgaAdminShell .adminWelcome{padding:0 0 30px;gap:12px}
+html.cgaModern body.cgaAdminShell .adminWelcome h1{font-size:clamp(24px,3vw,32px);font-weight:740;letter-spacing:-.035em}
+html.cgaModern body.cgaAdminShell .adminOverviewTools button{min-height:44px}
+html.cgaModern body.cgaAdminShell #app>.adminPane :is(.panel,.publicPortfolioCard){border-radius:20px;box-shadow:0 10px 30px var(--cga-shadow),inset 0 1px 0 var(--admin-hi)}
+html.cgaModern body.cgaAdminShell .adminOperationsGrid{gap:24px;margin-bottom:26px;align-items:start}
+html.cgaModern body.cgaAdminShell .adminOperationsGrid>.panel{padding:clamp(16px,2.6vw,26px);margin:0;background:linear-gradient(145deg,#f6c9280b,transparent 38%),var(--cga-surface)}
+html.cgaModern body.cgaAdminShell .adminPriority{border-top:1px solid var(--cga-border)}
+html.cgaModern body.cgaAdminShell .adminPriorityStats{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin:16px 0 0}
+html.cgaModern body.cgaAdminShell .adminStats .adminStat{display:block;min-height:0;padding:0;border:0;background:transparent;border-radius:0;box-shadow:none}
+html.cgaModern body.cgaAdminShell .adminStats .adminStat button{display:flex;align-items:center;gap:10px;width:100%;min-width:0;min-height:64px;padding:12px 0;border:0;border-bottom:1px solid var(--cga-border);border-radius:0;box-shadow:none;background:transparent;text-decoration:none;font-size:14px}
+html.cgaModern body.cgaAdminShell .adminStats .adminStat button>span:not(.adminLibraryCount){flex:1;min-width:0;text-align:left;overflow-wrap:anywhere;font-weight:650}
+html.cgaModern body.cgaAdminShell .adminStats .adminStat strong{font-size:25px;font-weight:740;line-height:1;margin:0;white-space:nowrap;color:var(--cga-text)}
+html.cgaModern body.cgaAdminShell .adminIssueStat[data-attention="true"]{border-left:3px solid #f6c928;border-radius:12px;background:var(--cga-accent-soft);padding:0 12px;margin-bottom:10px}
+html.cgaModern body.cgaAdminShell .adminIssueStat p{font-size:12px;margin:0 0 12px;padding-left:28px}
+html.cgaModern body.cgaAdminShell .adminIssueStat[data-attention="false"] p{display:none}
+html.cgaModern body.cgaAdminShell .adminIssueStat[data-attention="true"] button{border-bottom:0}
+html.cgaModern body.cgaAdminShell .adminPriorities{gap:12px;margin:14px 0}
+html.cgaModern body.cgaAdminShell .adminPriorities:empty{display:none}
+html.cgaModern body.cgaAdminShell .adminOverviewScope{font-size:12px;line-height:1.55;margin:18px 0 0}
+html.cgaModern body.cgaAdminShell .adminAgendaItem{padding:16px;background:transparent;border:1px solid var(--cga-border);border-radius:12px}
+html.cgaModern body.cgaAdminShell .adminLibrary{padding:clamp(16px,2.6vw,26px);margin-bottom:26px}
+html.cgaModern body.cgaAdminShell .adminLibraryStats{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0 0}
+html.cgaModern body.cgaAdminShell .adminLibraryStats .adminStat button{background:var(--cga-surface-2);border:1px solid var(--cga-border);border-radius:12px;padding:15px;min-height:72px}
+html.cgaModern body.cgaAdminShell .adminLibraryCount{display:flex;align-items:baseline;gap:3px;flex:none}
+html.cgaModern body.cgaAdminShell .adminLibraryCount small{font-size:12px;color:var(--cga-muted)}
+html.cgaModern body.cgaAdminShell .adminQuickAccess{padding:clamp(16px,2.6vw,26px);margin-bottom:24px}
+html.cgaModern body.cgaAdminShell .adminMailPanel{background:transparent;border:0;box-shadow:none!important;padding:0!important}
+html.cgaModern body.cgaAdminShell .mailWorkspace{display:grid;grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--cga-border);border-radius:20px;overflow:hidden;background:var(--cga-surface);box-shadow:0 10px 30px var(--cga-shadow)}
+html.cgaModern body.cgaAdminShell .mailHeading{grid-column:1/-1;padding:20px 22px;margin:0;border-bottom:1px solid var(--cga-border);gap:12px}
+html.cgaModern body.cgaAdminShell .mailHeading h1{margin:0;font-size:clamp(23px,3vw,30px);letter-spacing:-.035em}
+html.cgaModern body.cgaAdminShell .mailNavigation{padding:18px 16px;background:linear-gradient(150deg,#f6c9280b,transparent 45%),var(--cga-surface-2);min-width:0;border-bottom:1px solid var(--cga-border)}
+html.cgaModern body.cgaAdminShell .mailAccountLine{display:grid;gap:6px;margin:0 0 18px}
+html.cgaModern body.cgaAdminShell .mailAccountLine select{width:100%;min-width:0;font-size:14px}
+html.cgaModern body.cgaAdminShell .mailNavLabel{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cga-muted);margin:0 0 10px}
+html.cgaModern body.cgaAdminShell .mailFolders{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+html.cgaModern body.cgaAdminShell .mailFolders button{border-radius:10px;justify-content:flex-start;padding:8px}
+html.cgaModern body.cgaAdminShell .mailIdentityHint{font-size:12px;margin:14px 0 0}
+html.cgaModern body.cgaAdminShell .mailInbox{padding:18px 14px;min-width:0}
+html.cgaModern body.cgaAdminShell .mailInbox h2{font-size:19px;margin:0 0 14px}
+html.cgaModern body.cgaAdminShell .mailSearchForm{margin-bottom:16px;flex-wrap:wrap}
+html.cgaModern body.cgaAdminShell .mailList{border-radius:10px}
+html.cgaModern body.cgaAdminShell .mailList .mailRow{grid-template-columns:32px minmax(0,1fr);gap:10px;padding:16px 12px;min-height:106px}
+html.cgaModern body.cgaAdminShell .mailAvatar{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--cga-border);border-radius:10px;background:var(--cga-surface-2);font-size:11px;font-weight:700;color:var(--cga-muted)}
+html.cgaModern body.cgaAdminShell .mailRowCopy{display:grid;gap:5px;min-width:0}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[data-unread="true"]{background:var(--cga-surface)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[data-unread="true"] .mailAvatar{border-color:var(--cga-focus);color:var(--cga-focus)}
+html.cgaModern body.cgaAdminShell .mailList .mailRow[aria-pressed="true"]{background:var(--cga-accent-soft);box-shadow:inset 3px 0 #f6c928}
+html.cgaModern body.cgaAdminShell .mailReader{padding:22px 18px;min-width:0}
+html.cgaModern body.cgaAdminShell .mailReaderTitle{margin:20px 0}
+html.cgaModern body.cgaAdminShell .mailReaderMeta{padding:18px 0;margin:0 0 20px}
+html.cgaModern body.cgaAdminShell .mailReaderBody{line-height:1.8;padding:20px 0 28px}
+html.cgaModern body.cgaAdminShell .mailComposerHost form.crmGeneralComposer{border-radius:20px;padding:clamp(18px,3vw,28px);gap:17px}
+html.cgaModern body.cgaAdminShell .mailComposerActions{gap:12px;margin-top:10px}
+html.cgaModern body.cgaAdminShell #app>.adminPane:not([hidden]){animation:adminIntegralEnter .2s ease-out both}
+@keyframes adminIntegralEnter{from{opacity:.45;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(min-width:760px){
+ html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) main{margin-top:30px;padding-inline:clamp(20px,3vw,44px)}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation{padding:12px 9px}
+ html.cgaModern body.cgaAdminShell .mailWorkspace{grid-template-columns:155px minmax(0,1fr)}
+ html.cgaModern body.cgaAdminShell .mailNavigation{border-right:1px solid var(--cga-border);border-bottom:0;padding:18px 10px}
+ html.cgaModern body.cgaAdminShell .mailFolders{grid-template-columns:minmax(0,1fr)}
+}
+@media(min-width:1180px){
+ html.cgaModern body.cgaAdminShell .mailWorkspace{grid-template-columns:155px minmax(230px,.95fr) minmax(0,1.15fr);align-items:stretch;gap:0}
+ html.cgaModern body.cgaAdminShell .mailReader{padding:26px 22px;max-height:calc(100dvh - 150px);min-height:440px}
+ html.cgaModern body.cgaAdminShell .mailInbox{padding:22px 15px}
+ html.cgaModern body.cgaAdminShell .mailList{max-height:calc(100dvh - 310px)}
+}
+@media(min-width:1440px){
+ html.cgaModern body.cgaAdminShell .mailWorkspace{grid-template-columns:185px minmax(260px,.95fr) minmax(0,1.25fr)}
+}
+@media(max-width:1179px){
+ html.cgaModern body.cgaAdminShell .mailWorkspace[data-detail="true"]{grid-template-columns:minmax(0,1fr)}
+ html.cgaModern body.cgaAdminShell .mailWorkspace[data-detail="true"]>.mailNavigation{display:none}
+}
+@media(max-width:1079px){html.cgaModern body.cgaAdminShell .adminNavCount{position:absolute;right:5px;top:4px;margin:0}}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell:has(#app:not([hidden])) main{margin-top:24px;padding-inline:max(12px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation{display:block;--admin-more-gap:5px;padding-inline:max(4px,var(--admin-safe-left))}
+ html.cgaModern body.cgaAdminShell .adminTabList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:75%;gap:2px}
+ html.cgaModern body.cgaAdminShell .adminNavGroup{display:none}
+ html.cgaModern body.cgaAdminShell #adminMoreToggle{position:absolute;right:max(4px,var(--admin-safe-right));top:5px;width:calc(25% - 7px)}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation #adminMoreToggle[data-active="true"]{box-shadow:inset 0 -2px #f6c928!important}
+ html.cgaModern body.cgaAdminShell #app>.adminNavigation :is(#adminTabCV,#adminTabPortfolio):not([hidden]){position:absolute;right:10px;width:min(220px,calc(100vw - 20px));min-height:48px;flex-direction:row;justify-content:flex-start;padding:12px;background:var(--cga-surface);border:1px solid var(--cga-border);box-shadow:0 8px 24px var(--cga-shadow);font-size:14px;gap:10px}
+ html.cgaModern body.cgaAdminShell #adminTabCV{bottom:calc(130px + var(--admin-safe-bottom))}
+ html.cgaModern body.cgaAdminShell #adminTabPortfolio{bottom:calc(75px + var(--admin-safe-bottom))}
+ html.cgaModern body.cgaAdminShell .adminWelcome{padding-bottom:22px}
+ html.cgaModern body.cgaAdminShell .adminOperationsGrid{gap:20px;margin-bottom:22px}
+ html.cgaModern body.cgaAdminShell .adminLibraryStats{grid-template-columns:minmax(0,1fr);gap:12px}
+ html.cgaModern body.cgaAdminShell #app>.adminPane :is(.panel,.publicPortfolioCard),html.cgaModern body.cgaAdminShell .mailWorkspace{border-radius:16px}
+ html.cgaModern body.cgaAdminShell .mailHeading{padding:16px 13px}
+ html.cgaModern body.cgaAdminShell .mailNavigation{padding:16px 12px}
+ html.cgaModern body.cgaAdminShell .mailInbox{padding:17px 12px}
+ html.cgaModern body.cgaAdminShell .mailReader{padding:20px 16px}
+ html.cgaModern body.cgaAdminShell .mailAccountLine select{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){html.cgaModern body.cgaAdminShell #app>.adminPane:not([hidden]){animation:none!important}html.cgaModern body.cgaAdminShell #app>.adminNavigation button{transition:none!important}}
