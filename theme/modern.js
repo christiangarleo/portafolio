@@ -59,7 +59,7 @@
         }
       }
     });
-    for(const target of ["documents","leads","adminPriorities","vacancies","publicPortfolioStatus","leadForm","missingCVEditForm"]){
+    for(const target of ["documents","leads","crmMailbox","adminPriorities","vacancies","publicPortfolioStatus","leadForm","missingCVEditForm"]){
       const node=document.getElementById(target);
       if(node)observer.observe(node,{childList:true,subtree:true});
     }

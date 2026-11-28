@@ -1,8 +1,14 @@
 <!doctype html>
 <html lang="es" class="cgaModern"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Administración de CV | Christian Gabriel Arleo</title>
+<title>Oficina | Christian Gabriel Arleo</title>
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/admin/icons/cga-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/admin/icons/cga-180.png">
+<meta name="theme-color" content="#161616">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CGA ADMIN">
   <script>
     (() => {
       try {
@@ -187,16 +193,20 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 }
 </style>
   <link rel="stylesheet" href="/theme/theme.css?v=20261126-approved-yellow1">
-  <link rel="stylesheet" href="/theme/modern.css?v=20261126-crm-inbound3">
-</head><body>
+  <link rel="stylesheet" href="/theme/modern.css?v=20261128-admin-physical-r3">
+</head><body class="cgaAdminShell">
 <header class="adminHeader">
-  <strong>Christian Arleo <span>· Oficina</span></strong>
+  <strong class="adminBrand"><span class="adminBrandMark" aria-hidden="true">CGA</span><span class="adminBrandCopy">CGA ADMIN<small>Oficina privada</small></span></strong>
   <div class="adminHeaderTools">
+    <details id="adminSettings" class="adminSettings"><summary data-cga-icon="filter">Ajustes</summary><div class="adminSettingsPanel">
+    <button id="adminInstall" type="button" class="cgaSoftButton" data-cga-icon="download" aria-controls="adminInstallHelp" aria-expanded="false" hidden>Instalar</button>
     <a href="/portafolio/?lang=es" target="_blank" rel="noopener noreferrer" data-cga-icon="external">Ver sitio</a>
     <button id="adminLogoutHeader" class="logout adminHeaderLogout" type="button" data-cga-icon="lock" hidden>Salir</button>
+    </div></details>
   </div>
 </header>
 <main>
+<section id="adminInstallHelp" class="panel adminInstallHelp" aria-labelledby="adminInstallTitle" hidden><div class="adminSectionHeader"><h2 id="adminInstallTitle">Instalar CGA ADMIN</h2><button id="adminInstallClose" type="button" class="cgaSoftButton" data-cga-icon="close">Cerrar</button></div><p id="adminInstallMessage" role="status"></p><p class="cgaMeta">Se usa la misma oficina privada, con tu acceso autorizado. Requiere conexión a Internet.</p></section>
 <section class="panel cgaGlassForm cgaFormControls" id="loginPanel">
 <p class="adminEyebrow">ACCESO PERSONAL</p><h1>Tu oficina</h1><p>Ingresá con tu cuenta autorizada.</p>
 <form id="authForm" class="cgaFormAsync">
@@ -213,42 +223,49 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 <div class="row"><button id="recheck" type="button">Comprobar acceso</button><button class="logout" type="button">Cerrar sesión</button></div>
 </section>
 <div id="app" hidden>
- <nav class="adminNavigation" role="tablist" aria-label="Secciones de la oficina">
-  <button type="button" id="adminTabOverview" data-admin-view="overview" data-cga-icon="dashboard" role="tab" aria-controls="adminPaneOverview" aria-selected="true">Resumen</button>
-  <button type="button" id="adminTabLeads" data-admin-view="leads" data-cga-icon="inbox" role="tab" aria-controls="adminPaneLeads" aria-selected="false" tabindex="-1">Solicitudes</button>
-  <button type="button" id="adminTabMail" data-admin-view="mail" data-cga-icon="mail" role="tab" aria-controls="adminPaneMail" aria-selected="false" tabindex="-1">Comunicaciones</button>
-  <button type="button" id="adminTabCV" data-admin-view="cv" data-cga-icon="file" role="tab" aria-controls="adminPaneCV" aria-selected="false" tabindex="-1">CV</button>
-  <button type="button" id="adminTabPortfolio" data-admin-view="portfolio" data-cga-icon="files" role="tab" aria-controls="adminPanePortfolio" aria-selected="false" tabindex="-1">Portafolios</button>
-</nav>
+ <nav class="adminNavigation" aria-label="Secciones de la oficina"><div class="adminTabList" role="tablist" aria-label="Módulos">
+  <button type="button" id="adminTabOverview" data-admin-view="overview" data-cga-icon="dashboard" role="tab" aria-controls="adminPaneOverview" aria-selected="true"><span class="adminNavLabel">Inicio</span></button>
+  <button type="button" id="adminTabLeads" data-admin-view="leads" data-cga-icon="inbox" role="tab" aria-controls="adminPaneLeads" aria-selected="false" tabindex="-1"><span class="adminNavLabel">Solicitudes</span><span id="adminNavLeadCount" class="adminNavCount" hidden></span></button>
+  <button type="button" id="adminTabMail" data-admin-view="mail" data-cga-icon="mail" role="tab" aria-controls="adminPaneMail" aria-selected="false" tabindex="-1"><span class="adminNavLabel">Correo</span><span id="adminNavUnreadCount" class="adminNavCount" hidden></span></button>
+  <span class="adminNavGroup" aria-hidden="true">Documentos</span>
+  <button type="button" id="adminTabCV" data-admin-view="cv" data-cga-icon="file" role="tab" aria-controls="adminPaneCV" aria-selected="false" tabindex="-1"><span class="adminNavLabel">CV</span></button>
+  <button type="button" id="adminTabPortfolio" data-admin-view="portfolio" data-cga-icon="files" role="tab" aria-controls="adminPanePortfolio" aria-selected="false" tabindex="-1"><span class="adminNavLabel">Portafolios</span></button>
+</div><button type="button" id="adminMoreToggle" data-cga-icon="files" aria-expanded="false" aria-controls="adminTabCV adminTabPortfolio" hidden><span class="adminNavLabel">Más</span></button></nav>
  <div id="adminPaneOverview" class="adminPane" role="tabpanel" aria-labelledby="adminTabOverview"><section class="adminDashboard" aria-labelledby="adminWelcome">
  <div class="adminWelcome">
-  <div><p class="adminEyebrow">PANEL PERSONAL</p>
-   <h1 id="adminWelcome">Tu actividad</h1></div>
-  <div class="adminOwnerBadge"><span aria-hidden="true">●</span> Acceso privado</div>
+ <h1 id="adminWelcome">Centro de operaciones</h1>
+ <div class="adminOverviewTools"><button type="button" class="primary" data-go-view="mail" data-compose-mail="true" data-cga-icon="edit">Redactar</button><button id="refreshOverviewMail" class="cgaSoftButton cgaIconOnly" type="button" data-cga-icon="refresh" aria-label="Actualizar indicadores de correo" title="Actualizar correo"></button></div>
  </div>
- <div class="adminStats" aria-label="Estado de tu oficina">
-  <article class="adminStat"><span>Por decidir</span><strong id="statPending">—</strong><button type="button" data-go-view="leads" data-cga-icon="arrow">Revisar solicitudes</button></article>
-  <article class="adminStat"><span>En seguimiento</span><strong id="statActive">—</strong><button type="button" data-go-view="leads" data-cga-icon="arrow">Continuar gestión</button></article>
-  <article class="adminStat"><span>CV registrados</span><strong id="statCV">—</strong><button type="button" data-go-view="cv" data-cga-icon="arrow">Administrar CV</button></article>
-  <article class="adminStat"><span>Portafolios PDF</span><strong id="statPortfolios">—</strong><button type="button" data-go-view="portfolio" data-cga-icon="arrow">Revisar idiomas</button></article>
- </div>
+ <div class="adminOperationsGrid">
  <section class="panel adminPriority" aria-labelledby="adminPriorityTitle">
-  <div class="row" style="justify-content:space-between"><h2 id="adminPriorityTitle">Prioridades</h2></div>
-  <div id="adminPriorities" class="adminPriorities" aria-live="polite">Cargando prioridades…</div>
+  <h2 id="adminPriorityTitle">Prioridades</h2>
+  <div class="adminStats adminPriorityStats" aria-label="Estado de tu oficina">
+   <article class="adminStat adminIssueStat"><button type="button" data-go-view="mail" data-mail-folder="sent" data-mail-issues="true" data-cga-icon="send"><span>Envíos por revisar</span><strong id="statMailIssues">—</strong></button><p class="cgaMeta">No reenviar sin confirmar.</p></article>
+   <article class="adminStat"><button type="button" data-go-view="leads" data-lead-filter="pendiente" data-cga-icon="briefcase"><span>Solicitudes por decidir</span><strong id="statPending">—</strong></button></article>
+   <article class="adminStat"><button type="button" data-go-view="mail" data-mail-folder="unread" data-cga-icon="mail"><span>Correos sin leer</span><strong id="statUnreadMail">—</strong></button></article>
+   <article class="adminStat"><button type="button" data-go-view="leads" data-lead-filter="avanzar" data-cga-icon="clock"><span>En seguimiento</span><strong id="statActive">—</strong></button></article>
+  </div>
+  <div id="adminPriorities" class="adminPriorities" aria-live="polite">Cargando…</div>
+  <details class="adminOverviewScope"><summary>Alcance de indicadores</summary><p class="cgaMeta">Últimas 200 solicitudes. Correo: todos los registros autorizados. Envíos por revisar: pendientes, sin confirmar y rechazados.</p></details>
  </section>
+ <section class="panel adminAgenda" aria-labelledby="adminAgendaTitle"><h2 id="adminAgendaTitle">Reuniones propuestas</h2><div id="adminAgenda" class="adminPriorities">Consultando…</div><p class="cgaMeta">Propuestas del CRM, no eventos confirmados.</p></section>
+ </div>
+ <section class="panel adminLibrary" aria-labelledby="adminLibraryTitle"><h2 id="adminLibraryTitle">Biblioteca profesional</h2><div class="adminStats adminLibraryStats">
+  <article class="adminStat"><button type="button" data-go-view="cv" data-cga-icon="file"><span>CV registrados</span><strong id="statCV">—</strong></button></article>
+  <article class="adminStat"><button type="button" data-go-view="portfolio" data-cga-icon="files"><span>Portafolios publicados</span><span class="adminLibraryCount"><strong id="statPortfolios">—</strong><small>/4</small></span></button></article>
+ </div></section>
  <section class="panel adminQuickAccess" aria-label="Accesos rápidos">
   <h2>Acciones rápidas</h2>
   <div class="adminQuickLinks">
-   <button type="button" data-go-view="leads" data-cga-icon="inbox">Ver solicitudes</button>
    <button type="button" id="quickUploadCV" data-go-view="cv" data-cga-icon="plus">Nuevo CV</button>
-   <button type="button" data-go-view="portfolio" data-cga-icon="upload">Actualizar portafolios</button>
-   <a href="/empresa/?lang=es" target="_blank" rel="noopener noreferrer" data-cga-icon="external">Ver portal de empresas</a>
+   <button type="button" data-go-view="portfolio" data-cga-icon="upload">Actualizar PDF</button>
+   <a href="/empresa/?lang=es" target="_blank" rel="noopener noreferrer" data-cga-icon="external">Portal de empresas</a>
   </div>
  </section>
 </section></div>
  <div id="adminPaneLeads" class="adminPane" role="tabpanel" aria-labelledby="adminTabLeads" hidden><section class="panel" id="leadCRM">
   <div class="adminSectionHeader">
-    <div><h1>Solicitudes</h1><p class="cgaMeta">Decidí, prepará el CV y respondé.</p></div>
+    <div><h1>Solicitudes</h1></div>
     <div class="adminSectionActions">
       <button id="reloadLeads" type="button" class="cgaSoftButton" data-cga-icon="refresh">Actualizar</button>
     </div>
@@ -276,10 +293,56 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <div id="leadSummary" class="crmSummary" role="status" aria-live="polite"></div>
   <div id="leads" class="cgaFormControls">Cargando solicitudes…</div>
 </section></div>
- <div id="adminPaneMail" class="adminPane" role="tabpanel" aria-labelledby="adminTabMail" hidden><section class="panel"><div class="adminSectionHeader"><h2>Comunicaciones</h2></div><p>Correo profesional y administrativo. Los mensajes recibidos se muestran como texto seguro.</p><div id="crmMailbox" class="cgaFormControls"></div></section></div>
- <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel">
+ <div id="adminPaneMail" class="adminPane" role="tabpanel" aria-labelledby="adminTabMail" hidden>
+ <section class="panel adminMailPanel" aria-labelledby="mailTitle">
+  <div id="crmMailbox" class="cgaFormControls">
+   <div id="mailDraftBar" class="mailDraftBar" hidden><span>Borrador temporal</span><button id="mailResumeDraft" type="button" class="cgaSoftButton" data-cga-icon="edit">Continuar</button></div>
+   <div class="mailWorkspace" id="mailWorkspace" data-detail="false">
+     <div class="adminSectionHeader mailHeading">
+      <div><h1 id="mailTitle">Correo</h1></div>
+      <div class="mailHeaderActions">
+       <button id="mailCompose" class="primary" type="button" data-cga-icon="edit">Redactar</button>
+       <button id="mailRefresh" class="cgaSoftButton cgaIconOnly" type="button" data-cga-icon="refresh" aria-label="Actualizar correo" title="Actualizar"></button>
+      </div>
+     </div>
+
+    <aside class="mailNavigation" aria-label="Navegación de correo">
+     <div class="mailAccountLine"><label for="mailAccount">Cuenta</label><select id="mailAccount"><option value="">Todas las cuentas</option></select></div>
+     <div class="mailFolderMobileLine"><label for="mailFolderMobile">Bandeja</label><select id="mailFolderMobile"><option value="received">Recibidos</option><option value="unread">No leídos</option><option value="sent">Enviados</option><option value="unassigned">Sin solicitud</option><option value="issues">Por revisar</option></select></div>
+     <p class="mailNavLabel">Bandejas</p>
+     <div class="mailFolders" role="group" aria-label="Bandejas de correo">
+      <button type="button" data-mail-mode="received" aria-pressed="true" data-cga-icon="inbox">Recibidos</button>
+      <button type="button" data-mail-mode="unread" aria-pressed="false" data-cga-icon="mail">No leídos</button>
+      <button type="button" data-mail-mode="sent" aria-pressed="false" data-cga-icon="send">Enviados</button>
+      <button type="button" data-mail-mode="unassigned" aria-pressed="false" data-cga-icon="briefcase">Sin solicitud</button>
+      <button id="mailIssuesFilter" type="button" aria-pressed="false" data-cga-icon="info">Por revisar</button>
+     </div>
+     <p class="cgaMeta mailIdentityHint">Filtrar no cambia el remitente.</p>
+    </aside>
+    <section class="mailInbox" aria-labelledby="mailBandejaTitle">
+     <h2 id="mailBandejaTitle">Recibidos</h2>
+     <form id="mailSearchForm" class="mailSearchForm" role="search">
+      <label class="srOnly" for="mailSearch">Buscar correos</label>
+      <div class="adminSearchWrap"><svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg><input id="mailSearch" type="search" maxlength="100" placeholder="Buscar correos…" autocomplete="off"></div>
+      <button type="submit" class="cgaSoftButton">Buscar</button>
+      <button id="mailClearSearch" type="button" class="cgaSoftButton cgaIconOnly" data-cga-icon="close" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden></button>
+     </form>
+     <div id="mailContextBar" class="mailContextBar" hidden><span id="mailContextLabel"></span><button id="mailClearContext" type="button" class="cgaSoftButton" data-cga-icon="close">Quitar filtro</button></div>
+     <p id="mailListStatus" class="mailListStatus" role="status" aria-live="polite"></p>
+     <div id="mailList" class="mailList" aria-label="Mensajes"></div>
+     <div id="mailPagination" class="mailPagination" hidden>
+      <button id="mailPrevious" class="cgaSoftButton" type="button">Anterior</button><span id="mailPageInfo"></span><button id="mailNext" class="cgaSoftButton" type="button">Siguiente</button>
+     </div>
+    </section>
+    <section id="mailReader" class="mailReader" aria-label="Lectura de correo"></section>
+   </div>
+   <section id="mailComposerHost" class="mailComposerHost" aria-label="Redacción de correo" hidden></section>
+  </div>
+ </section>
+ </div>
+ <div id="adminPaneCV" class="adminPane" role="tabpanel" aria-labelledby="adminTabCV" hidden><section class="panel adminDocumentIntro">
 <div class="adminSectionHeader">
-  <div><h1>CV por empresa</h1></div>
+  <div><h1>CV por empresa</h1><p class="cgaMeta">Administrá los CV personalizados y su estado de postulación.</p></div>
   <div class="adminSectionActions">
     <button id="newCVToggle" type="button" data-cga-icon="plus" class="primary" aria-expanded="false" aria-controls="cvUploadForm">Nuevo CV</button>
   </div>
@@ -301,26 +364,27 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
   <option value="finalizado">Finalizado</option>
 </select></div>
 <div><label for="pdf">Archivo PDF (máximo 30 MB)</label><input id="pdf" type="file" accept="application/pdf,.pdf" required></div>
-<div><label style="margin-top:30px"><input id="principal" type="checkbox" checked>CV principal de esta empresa</label></div>
+<div class="adminCVPrimaryField"><label for="principal"><input id="principal" type="checkbox" checked>CV principal de esta empresa</label></div>
 </div><p><button class="primary" type="submit" id="uploadButton" data-cga-icon="upload">Guardar CV</button></p>
 </form>
 </div>
 </section>
-<section class="panel"><div class="adminSectionHeader">
-  <div><h2>Mis documentos</h2><p id="documentsCount" class="adminTiny">Cargando…</p></div>
+<section class="panel adminDocumentLibrary" aria-labelledby="adminDocumentsTitle"><div class="adminSectionHeader">
+  <div><h2 id="adminDocumentsTitle">Mis documentos</h2><p id="documentsCount" class="adminTiny" role="status" aria-live="polite">Cargando…</p></div>
   <div class="adminFilterLine">
     <div class="adminSearchWrap cgaFormControls"><label for="documentsFilter" class="srOnly">Buscar CV</label>
       <svg class="cgaIcon" viewBox="0 0 24 24" aria-hidden="true"><use href="/theme/icons.svg#search"></use></svg>
       <input id="documentsFilter" type="search" placeholder="Buscar empresa, ID o vacante…" autocomplete="off" aria-label="Buscar CV"></div>
     <button id="reloadDocuments" type="button" class="cgaIconOnly cgaSoftButton" data-cga-icon="refresh" aria-label="Actualizar documentos" title="Actualizar documentos"></button>
   </div>
-</div><div id="documents" class="cgaFormControls">Sin documentos todavía.</div></section></div>
+</div><p class="cgaMeta adminDocumentScope">Búsqueda en los últimos 200 CV cargados.</p><div id="documents" class="cgaFormControls">Sin documentos todavía.</div><p class="adminDocumentNoMatches cgaMeta">No hay CV que coincidan con tu búsqueda. Modificá o borrá el texto para ver otros documentos.</p></section></div>
  <div id="adminPanePortfolio" class="adminPane" role="tabpanel" aria-labelledby="adminTabPortfolio" hidden><section class="panel" id="publicPortfolios">
   <div class="adminSectionHeader">
-    <div><h1>Portafolios</h1><p class="cgaMeta">Administrá los PDF en cada idioma.</p></div>
+    <div><h1>Portafolios</h1><p class="cgaMeta">Administrá las cuatro ediciones públicas por idioma y formato.</p></div>
     <button id="refreshPublicPortfolios" class="cgaIconOnly cgaSoftButton" data-cga-icon="refresh" aria-label="Actualizar estado de portafolios" title="Actualizar estado" type="button"></button>
   </div>
-  <div class="publicPortfolioGrid">
+  <h2 class="adminPortfolioGroupTitle">Ediciones para la web (A4)</h2>
+   <div class="publicPortfolioGrid">
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEs">
       <div class="publicPortfolioHead">
         <h2 id="publicPortfolioTitleEs">🇪🇸 Español · A4 <small>Vista web</small></h2>
@@ -350,7 +414,7 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
       </form>
     </article>
   </div>
-  <h2>Ediciones para descargar (A3)</h2>
+  <h2 class="adminPortfolioGroupTitle">Ediciones para descargar (A3)</h2>
   <div class="publicPortfolioGrid">
     <article class="publicPortfolioCard" aria-labelledby="publicPortfolioTitleEsA3">
       <div class="publicPortfolioHead">
@@ -387,7 +451,8 @@ button.primary{background:#171717;color:white;border-color:#171717;font-weight:7
 </div>
 <div id="status" role="status" aria-live="polite" hidden></div>
 </main>
-<script type="module" src="./panel.js?v=20261127-crm-multiaccounts"></script>
-<script src="/theme/modern.js?v=20261126-crm-dialog1" defer></script>
+<script src="/admin/pwa.js?v=20261127-pwa1" defer></script>
+<script type="module" src="./panel.js?v=20261128-admin-physical-r3"></script>
+<script src="/theme/modern.js?v=20261127-admin-mail2" defer></script>
   <script src="/theme/theme.js?v=20261126-svg-morph2" defer></script>
 </body></html>
