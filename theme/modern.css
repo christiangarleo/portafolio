@@ -1514,3 +1514,15 @@ html.cgaModern body.cgaAdminShell #app>.adminPane:not([hidden]){animation:adminI
  html.cgaModern body.cgaAdminShell .mailAccountLine select{font-size:16px}
 }
 @media(prefers-reduced-motion:reduce){html.cgaModern body.cgaAdminShell #app>.adminPane:not([hidden]){animation:none!important}html.cgaModern body.cgaAdminShell #app>.adminNavigation button{transition:none!important}}
+
+/* 06.1.6 QA follow-up: compact mobile selectors, usable settings overlay. */
+html.cgaModern body.cgaAdminShell .adminHeader{position:relative;z-index:40}
+html.cgaModern body.cgaAdminShell .mailFolderMobileLine{display:none}
+@media(max-width:759px){
+ html.cgaModern body.cgaAdminShell .mailNavigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;align-items:start}
+ html.cgaModern body.cgaAdminShell .mailNavigation :is(.mailNavLabel,.mailFolders){display:none}
+ html.cgaModern body.cgaAdminShell .mailAccountLine,html.cgaModern body.cgaAdminShell .mailFolderMobileLine{display:grid;gap:6px;min-width:0;margin:0}
+ html.cgaModern body.cgaAdminShell .mailFolderMobileLine label{margin:0}
+ html.cgaModern body.cgaAdminShell .mailNavigation select{min-height:44px;min-width:0;width:100%;font-size:16px}
+ html.cgaModern body.cgaAdminShell .mailIdentityHint{grid-column:1/-1;margin:0}
+}

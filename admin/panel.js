@@ -101,7 +101,7 @@ el("authForm").addEventListener("submit",async e=>{
   const {error}=await sb.auth.signInWithPassword({email,password});
   el("password").value="";
   if(error)notice("No se pudo iniciar sesión. Revisá los datos o el estado de la cuenta.",true);
-  else await verifyAdmin();
+  else{clearTimeout(noticeTimer);status.hidden=true;status.replaceChildren();await verifyAdmin();}
   btn.disabled=false;
 });
 el("recheck").addEventListener("click",verifyAdmin);
@@ -581,7 +581,7 @@ function resetMailbox(){
  el("mailList").replaceChildren();el("mailList").setAttribute("aria-busy","false");el("mailReader").replaceChildren();el("mailListStatus").textContent="";
  el("mailSearch").value="";el("mailAccount").value="";el("mailClearSearch").hidden=true;el("mailPagination").hidden=true;renderMailContext();
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode==="received"));
- el("mailIssuesFilter").setAttribute("aria-pressed","false");el("mailBandejaTitle").textContent="Recibidos";
+ el("mailIssuesFilter").setAttribute("aria-pressed","false");el("mailBandejaTitle").textContent="Recibidos";el("mailFolderMobile").value="received";
 }
 function mailResetSelection(){mailboxSelected=null;mailboxOpened=false;renderMailReader();}
 function mailApplyFilters(){mailboxPage=0;mailResetSelection();void loadMailbox();}
@@ -681,7 +681,7 @@ async function loadMailbox({keepReader=false}={}){
  status.textContent="Consultando…";list.setAttribute("aria-busy","true");
  el("mailPagination").hidden=true;mailboxRows=[];list.replaceChildren();
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mailMode===mailboxMode&&!mailboxIssues));
- el("mailIssuesFilter").setAttribute("aria-pressed",String(mailboxIssues));el("mailBandejaTitle").textContent=mailboxIssues?"Por revisar":({received:"Recibidos",unread:"No leídos",sent:"Enviados",unassigned:"Sin solicitud"}[mailboxMode]||"Correo");
+ el("mailIssuesFilter").setAttribute("aria-pressed",String(mailboxIssues));el("mailFolderMobile").value=mailboxIssues?"issues":mailboxMode;el("mailBandejaTitle").textContent=mailboxIssues?"Por revisar":({received:"Recibidos",unread:"No leídos",sent:"Enviados",unassigned:"Sin solicitud"}[mailboxMode]||"Correo");
  el("mailAccount").value=mailboxAccount;el("mailClearSearch").hidden=!mailboxSearch;renderMailContext();
  let query=sent?sb.from("portfolio_crm_mail").select("id,lead_id,subject,body,recipient,sender,status,created_at",{count:"exact"}):sb.from("portfolio_crm_inbound").select("id,lead_id,sender,recipients,subject,body,body_limited,attachment_count,received_at,read_at",{count:"exact"});
  if(mailboxAccount)query=sent?query.eq("sender",mailboxAccount):query.contains("recipients",[mailboxAccount]);
@@ -772,6 +772,7 @@ function initMailbox(){
  el("mailRefresh").onclick=()=>void loadMailbox();
  for(const b of el("crmMailbox").querySelectorAll("[data-mail-mode]"))b.onclick=()=>{mailboxMode=b.dataset.mailMode;mailboxIssues=false;if(mailboxMode==="unassigned")mailboxLeadId=null;mailApplyFilters();};
  el("mailIssuesFilter").onclick=()=>{mailboxMode="sent";mailboxIssues=true;mailboxLeadId=null;mailApplyFilters();};
+ el("mailFolderMobile").onchange=()=>{const mode=el("mailFolderMobile").value;if(mode==="issues"){el("mailIssuesFilter").click();return;}el("crmMailbox").querySelector('button[data-mail-mode="'+mode+'"]')?.click();};
  el("mailClearContext").onclick=()=>{mailboxLeadId=null;mailboxIssues=false;mailApplyFilters();};
  el("mailAccount").onchange=()=>{mailboxAccount=el("mailAccount").value;mailApplyFilters();};
  el("mailSearchForm").addEventListener("submit",e=>{e.preventDefault();mailboxSearch=normalizeMailSearch(el("mailSearch").value);el("mailSearch").value=mailboxSearch;mailApplyFilters();});

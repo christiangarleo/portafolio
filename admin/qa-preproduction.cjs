@@ -24,7 +24,7 @@ const mock=String.raw`export function createClient(){
  return {from,auth:{getUser:async()=>({data:{user:auth==="none"?null:{id:"qa-user",email:"qa@example.invalid"}},error:null}),signInWithPassword:async({email})=>{auth=email.startsWith("admin")?"admin":"denied";return {error:null}},signOut:async()=>{auth="none";return {error:null}}},storage:{from:()=>({list:async()=>({data:["Christian_Arleo_Portfolio_EN.pdf","Christian_Arleo_Portafolio.pdf","Christian_Arleo_Portafolio_ES_A3.pdf","Christian_Arleo_Portfolio_EN_A3.pdf"].map(name=>({name})),error:null}),getPublicUrl:()=>({data:{publicUrl:"https://example.invalid/qa.pdf"}})})},functions:{invoke:async()=>{throw Error("QA prohibits real sending")}}};
 }`;
 let browser,failures=0,passes=0;
-async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}catch(e){failures++;console.log("FAIL "+name+": "+String(e.message).slice(0,240))}}
+async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}catch(e){failures++;console.log("FAIL "+name+": "+String(e.message).slice(0,1800))}}
 (async()=>{
  await new Promise(r=>server.listen(0,"127.0.0.1",r));const origin="http://127.0.0.1:"+server.address().port;
  browser=await chromium.launch({headless:true});
@@ -43,6 +43,7 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
  }
  await page.locator("#email").fill("admin@example.invalid");await page.locator("#password").fill("fixture-only");await page.locator("#authForm button[type=submit]").click();
  await page.locator("#app").waitFor({state:"visible"});await page.waitForFunction(()=>document.getElementById("statPending").textContent==="0"&&document.getElementById("statUnreadMail").textContent==="1");
+ await check(key+" obsolete login notice cleared",async()=>assert(await page.locator("#status").isHidden()));
  await check(key+" authorized dashboard",async()=>assert.equal(await page.locator("#statPortfolios").textContent(),"4"));
  if(w===390&&scheme==="light"){
  await check("PWA manifest and icon decode",async()=>{const result=await page.evaluate(async()=>{const m=await(await fetch("/admin/manifest.webmanifest")).json();const imgs=await Promise.all([180,192,512].map(async n=>{const i=new Image();i.src="/admin/icons/cga-"+n+".png";await i.decode();return [i.naturalWidth,i.naturalHeight]}));return {scope:m.scope,display:m.display,imgs}});assert.equal(result.scope,"/admin/");assert.equal(result.display,"standalone");assert.deepEqual(result.imgs,[[180,180],[192,192],[512,512]]);});
@@ -56,7 +57,7 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
  await check(key+" four portfolio cards",async()=>assert.equal(await page.locator(".publicPortfolioCard").count(),4));
  await clickTab("CV");await page.locator("#documentsFilter").fill("no-match");await check(key+" CV search",async()=>assert(await page.locator(".adminDocumentNoMatches").isVisible()));await page.locator("#documentsFilter").fill("");
  await page.locator("#newCVToggle").click();await check(key+" CV form visible",async()=>assert(await page.locator("#cvUploadForm").isVisible()));await page.locator("#cancelCVUpload").click();
- await page.locator("#adminTabMail").click();await page.locator("#mailIssuesFilter").click();await page.waitForFunction(()=>document.getElementById("mailBandejaTitle").textContent==="Por revisar");await check(key+" issues filter",async()=>assert.equal(await page.locator("#mailIssuesFilter").getAttribute("aria-pressed"),"true"));await page.locator("[data-mail-mode=received]").click();await page.locator(".mailRow").first().click();await check(key+" safe message reader",async()=>{assert((await page.locator(".mailReaderBody").textContent()).includes("<img"));assert.equal(await page.locator(".mailReaderBody img").count(),0)});
+ await page.locator("#adminTabMail").click();if(w<760)await page.locator("#mailFolderMobile").selectOption("issues");else await page.locator("#mailIssuesFilter").click();await page.waitForFunction(()=>document.getElementById("mailBandejaTitle").textContent==="Por revisar");await check(key+" issues filter",async()=>assert.equal(await page.locator("#mailIssuesFilter").getAttribute("aria-pressed"),"true"));if(w<760)await page.locator("#mailFolderMobile").selectOption("received");else await page.locator("[data-mail-mode=received]").click();await page.locator(".mailRow").first().click();await check(key+" safe message reader",async()=>{assert((await page.locator(".mailReaderBody").textContent()).includes("<img"));assert.equal(await page.locator(".mailReaderBody img").count(),0)});
  await page.locator(".mailReplyAction").click();await page.locator("#mailComposerHost textarea").fill("QA borrador");await page.getByRole("button",{name:"Minimizar",exact:true}).click();if(w<1180)await page.locator(".mailReaderBack").click();await page.locator("#mailRefresh").click();await page.locator("#adminTabOverview").click();await page.locator("#adminTabMail").click();await page.locator("#mailResumeDraft").click();await check(key+" draft survives navigation",async()=>assert.equal(await page.locator("#mailComposerHost textarea").inputValue(),"QA borrador"));
  await page.getByRole("button",{name:"Minimizar",exact:true}).click();
  await page.locator("#adminTabLeads").click();await page.locator(".crmQueueItem").first().click();
@@ -75,7 +76,7 @@ async function check(name,fn){try{await fn();passes++;console.log("PASS "+name)}
   await check("service worker network failure fallback and empty CacheStorage",async()=>{assert(await page.evaluate(()=>!!navigator.serviceWorker.controller));disconnectAdmin=true;try{const response=await page.goto(origin+"/admin/");assert.equal(response.status(),503);assert(response.fromServiceWorker());await page.getByRole("heading",{name:"Sin conexión"}).waitFor({state:"visible"});assert.equal(await page.evaluate(async()=> (await caches.keys()).length),0);}finally{disconnectAdmin=false;}});
  }
 
- }catch(e){failures++;console.log("FAIL "+key+" journey: "+String(e.message).slice(0,240));}finally{await c.close();}
+ }catch(e){failures++;console.log("FAIL "+key+" journey: "+String(e.message).slice(0,1800));}finally{await c.close();}
  }
  console.log(JSON.stringify({passes,failures,scope:"real Chromium, synthetic auth and data; no production, physical installation not tested"}));if(failures)process.exitCode=1;
 })().catch(e=>{console.error(e.message);process.exitCode=1}).finally(async()=>{await browser?.close();server.close()});
